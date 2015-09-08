@@ -1,0 +1,112 @@
+1.  La máquina simulada tiene 32 páginas de 128 bytes.
+
+2.  Para cambiar ese valor hay que modificar dos valores:
+            + la cantidad de páginas.
+            + el tamaño de una página.
+    El primero se encuentra en code/machine/machine.h :
+        + NumPhysPages. Actualmente su valor es 32.
+
+    El segundo se encuentr en code/machine/disk.h :
+        + SectorSize. Actualmente su valor es 128.
+
+3. El disco simlado por Nachos tiene 131 MBytes. Su estructura interna consta de 32 pistas de 32 sectores de 128 bytes cada una. Esto esta definido en las siguientes varibles :
+    + SectorSize
+    + SectorsPerTrack
+    + NumTracks
+
+Todas ellas se encuentran definidas en /code/machine/disk.h
+
+4. Las instrucciones de MIPS que implementa Nachos son 57. El listado se encuenta en code/machine/mipssim.h . A continuacion se listan:
+ADD – Add (with overflow)
+ADDI -- Add immediate (with overflow)
+ADDIU -- Add immediate unsigned (no overflow)
+ADDU -- Add unsigned (no overflow)
+AND -- Bitwise and
+ANDI -- Bitwise and immediate
+BEQ -- Branch on equal
+BGEZ -- Branch on greater than or equal to zero
+BGEZAL -- Branch on greater than or equal to zero and link
+BGTZ -- Branch on greater than zero
+BLEZ -- Branch on less than or equal to zero
+BLTZ -- Branch on less than zero
+BLTZAL -- Branch on less than zero and link
+BNE -- Branch on not equal
+DIV -- Divide
+DIVU -- Divide unsigned
+J -- Jump
+JAL -- Jump and link
+JALR -- Jump and link register
+JR -- Jump register
+LB -- Load byte
+LBU -- Load byte unsigned
+LH -- Load half word
+LHU -- Load half word unsigned
+LUI -- Load upper immediate
+LW -- Load word
+LWL -- Load word left
+LWR -- Load word right
+MFHI -- Move from HI
+MFLO -- Move from LO
+MTHI -- Move to hi
+MTLO -- Move to lo
+MULT -- Multiply
+MULTU -- Multiply unsigned
+NOR -- Put the logical NOR of the integer
+OR -- Bitwise or
+ORI -- Bitwise or immediate
+RFE -- Return from exception
+SB -- Store byte
+SH -- Store half word 
+SLL -- Shift left logical
+SLLV -- Shift left logical variable
+SLT -- Set on less than (signed)
+SLTI -- Set on less than immediate (signed)
+SLTIU -- Set on less than immediate unsigned
+SLTU -- Set on less than unsigned
+SRA -- Shift right arithmetic
+SRAV -- Shift right arithmetic variable
+SRL -- Shift right logical
+SRLV -- Shift right logical variable
+SUB -- Subtract
+SUBU -- Subtract unsigned
+SW -- Store word
+SWL -- Store word left
+SWR -- Store word right
+SYSCALL -- System call
+XOR -- Bitwise exclusive
+XORI -- Bitwise
+
+5.
+
++ registers:  es un arreglo que contiene los valores que contienen los registros. Sus indices son los registros de mips.
++ inst: Definida en /code/machine/machine.h
+class Instruction {
+  public:
+    void Decode();	// decode the binary representation of the instruction
+
+    unsigned int value; // binary representation of the instruction
+
+    char opCode;     // Type of instruction.  This is NOT the same as the
+    		     // opcode field from the instruction: see defs in mips.h
+    char rs, rt, rd; // Three registers from instruction.
+    int extra;       // Immediate or target or shamt field or offset.
+                     // Immediates are sign-extended.
+};
+En la implementacion de la instruccion ADD se utilizan inst->rs (nombre del registro de partida) y instr->rt (nombre del registro objetivo).
+
++ Constante SIGN_BIT: definida en /code/machine/mipssim.h
+Es una mascara cuyo valor es  0x80000000. Nos sirve para saber que signo tiene el nro.
+
+
+   case OP_ADD:
+	sum = registers[(int)instr->rs] + registers[(int)instr->rt];
+	if (!((registers[(int)instr->rs] ^ registers[(int)instr->rt]) & SIGN_BIT) &&
+	    ((registers[(int)instr->rs] ^ sum) & SIGN_BIT)) {
+	    RaiseException(OverflowException, 0);
+	    return;
+	}
+	registers[(int)instr->rd] = sum;
+	break;
+
+
+
