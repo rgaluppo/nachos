@@ -1,3 +1,67 @@
+% ------ Clase de documento ------
+\documentclass[a4paper, 11pt]{article}
+
+% ----------- Preámbulo ----------
+
+% Paquetes
+\usepackage[T1]{fontenc}      % Codificación de salida
+\usepackage[spanish]{babel}
+\usepackage{color}
+\usepackage[utf8]{inputenc}
+\usepackage{mathptmx}         % Selección de la fuente (tipo de letra)
+
+\usepackage{color}
+\definecolor{gray97}{gray}{.97}
+\definecolor{gray75}{gray}{.75}
+\definecolor{gray45}{gray}{.45}
+
+\usepackage{listings}
+\lstset{ frame=Ltb,
+framerule=0pt,
+aboveskip=0.5cm,
+framextopmargin=3pt,
+framexbottommargin=3pt,
+framexleftmargin=0.4cm,
+framesep=0pt,
+rulesep=.4pt,
+backgroundcolor=\color{gray97},
+rulesepcolor=\color{black},
+%
+stringstyle=\ttfamily,
+showstringspaces = false,
+basicstyle=\small\ttfamily,
+commentstyle=\color{gray45},
+keywordstyle=\bfseries,
+%
+numbers=left,
+numbersep=15pt,
+numberstyle=\tiny,
+numberfirstline = false,
+breaklines=true,
+}
+
+% minimizar fragmentado de listados
+\lstnewenvironment{listing}[1][]
+{\lstset{#1}\pagebreak[0]}{\pagebreak[0]}
+
+\lstdefinestyle{consola}
+{basicstyle=\scriptsize\bf\ttfamily,
+backgroundcolor=\color{gray75},
+}
+
+\lstdefinestyle{C}
+{language=C++,
+}
+
+% Configuración (para artículo)
+\title{Resolución Práctica 1 de Nachos}
+\author{Galuppo, Raúl I. Graf, Andrea}
+\date{\today}
+
+% ----- Cuerpo del documento -----
+\begin{document}
+\maketitle
+
 1.  La máquina simulada tiene 32 páginas de 128 bytes.
 
 2.  Para cambiar ese valor hay que modificar dos valores:
@@ -80,6 +144,8 @@ XORI -- Bitwise
 
 + registers:  es un arreglo que contiene los valores que contienen los registros. Sus indices son los registros de mips.
 + inst: Definida en /code/machine/machine.h
+
+\begin{lstlisting}[style=C]
 class Instruction {
   public:
     void Decode();	// decode the binary representation of the instruction
@@ -92,12 +158,14 @@ class Instruction {
     int extra;       // Immediate or target or shamt field or offset.
                      // Immediates are sign-extended.
 };
-En la implementacion de la instruccion ADD se utilizan inst->rs (nombre del registro de partida) y instr->rt (nombre del registro objetivo).
+\end{lstlisting}
 
-+ Constante SIGN_BIT: definida en /code/machine/mipssim.h
+En la implementación de la instruccion ADD se utilizan inst->rs (nombre del primer registro fuente ) y instr->rt (nombre del segundo registro), instr->rd (nombre del registro destino).
+
+$+ Constante SIGN_BIT: definida en /code/machine/mipssim.h
 Es una mascara cuyo valor es  0x80000000. Nos sirve para saber que signo tiene el nro.
-
-
+$
+\begin{lstlisting}[style=C]
    case OP_ADD:
 	sum = registers[(int)instr->rs] + registers[(int)instr->rt];
 	if (!((registers[(int)instr->rs] ^ registers[(int)instr->rt]) & SIGN_BIT) &&
@@ -107,6 +175,126 @@ Es una mascara cuyo valor es  0x80000000. Nos sirve para saber que signo tiene e
 	}
 	registers[(int)instr->rd] = sum;
 	break;
+\end{lstlisting}
+
+Overflow en una suma solo ocurre cuando sumo dos numeros del mismo signo y el resultado tiene distinto signo. Esto tiene lugar porque el acarreo cambia el bit de signo.
+Entonces hacemos que la condicion del if sea:      ~ ( sign1 XOR sign2) && (sign1 XOR signResult)
+Estos valores lo calculamos de la siguente manera:
+    sign1 = num1 & SIGN_BIT
+    sign2 = num2 & SIGN_BIT
+    signResult = sum & SIGN_BIT
+
+Reference: Calculating Overflow Flag: Method 1 - http://teaching.idallen.com/dat2343/10f/notes/040_overflow.txt
+
+6. 
+    el metodo DEBUG se encuentra en /code/threads/utility.cc
+    ASSERT /code/threads/utility.h  
+    el metodo Initialize se encuentra en /code/threads/system.cc
+    el metodo ThreadTest se encuenta en /code/threads/threadtest.cc
+    StartProcess() /code/userprog/progtest.cc
+    ConsoleTest() /code/userprog/progtest.cc
+    Halt() /code/machine/interrupt.cc pero es un metodo definido en la clase Interrupt, la cual se encuentra en /code/machine/interrupt.h
+    Copy() /code/filesys/fstest.cc
+    Print() /code/filesys/fstest.cc 
+    Remove()/code/filesys/directory.cc
+    List()/code/filesys/directory.cc
+    Print() /code/filesys/directory.cc //Print sin argumentos. 
+    PerformanceTest() /code/filesys/fstest.cc
+    Delay() /code/machine/sysdep.cc
+    MailTest() /code/network/nettest.cc
+    Finish() /code/threads/thread.cc
+
+7.  Se necesitaria una maquina con MIPS para correr Nachos o que Nachos implemente otro conjunto de instrucciones (Intel 64, etc).
+    Usando la maquina real, si por error un test genera un proceso que cae en deadlock, habria que reiniciar la maquina real. Al simular la CPU, podemos matar ese proceso y volver a testear.
+    Lo mismo sucederia si un test escribe mal en el disco o en la RAM (Segmentation Fault, por ejemplo).
+
+8. 	The debugging routines allow the user to turn on selected debugging messages, controllable from the command line arguments passed to Nachos (-d).  You are encouraged to add your own debugging flags.  The pre-defined debugging flags are:
+
+        '+' -- turn on all debug messages
+        't' -- thread system
+        's' -- semaphores, locks, and conditions
+        'i' -- interrupt emulation
+        'm' -- machine emulation (USER_PROGRAM)
+        'd' -- disk emulation (FILESYS)
+        'f' -- file system (FILESYS)
+        'a' -- address spaces (USER_PROGRAM)
+        'n' -- network emulation (NETWORK)
+
+9.  ASSERT : If condition is false,  print a message and dump core. Useful for documenting assumptions in the code.
+    DEBUG  : Print debug message if flag is enabled.
+
+10. 
+
+11. 
+// The following class defines a "list" -- a singly linked list of
+// list elements, each of which points to a single item on the list.
+//
+// By using the "Sorted" functions, the list can be kept in sorted
+// in increasing order by "key" in ListElement.
+
+// The following class defines a "synchronized list" -- a list for which:
+// these constraints hold:
+//	1. Threads trying to remove an item from a list will
+//	wait until the list has an element on it.
+//	2. One thread at a time can access list data structures
+
+12.
+
+/code/test/matmult.c:main()
+/code/test/halt.c:main()
+/code/test/filetest.c:main()
+/code/test/sort.c:main()
+/code/test/shell.c:main()
+
+/code/bin/coff2noff.c:main (int argc, char **argv)
+/code/bin/coff2flat.c:main (int argc, char **argv)
+
+/code/threads/main.cc:main(int argc, char **argv)
 
 
+Entendemos que el archivos en el que esta la funcion main del ejecutable de Nachos del direcctorio userprog es:
+/code/threads/main.cc:main(int argc, char **argv)
 
+13.
+
+Las lineas de comando que soporta Nachos son:
+
+// Usage: nachos -d <debugflags> -rs <random seed #>
+//		-s -x <nachos file> -c <consoleIn> <consoleOut>
+//		-f -cp <unix file> <nachos file>
+//		-p <nachos file> -r <nachos file> -l -D -t
+//              -n <network reliability> -m <machine id>
+//              -o <other machine id>
+//              -z
+//
+//    -d causes certain debugging messages to be printed (cf. utility.h)
+//    -rs causes Yield to occur at random (but repeatable) spots
+//    -z prints the copyright message
+//
+//  USER_PROGRAM
+//    -s causes user programs to be executed in single-step mode
+//    -x runs a user program
+//    -c tests the console
+//u
+//  FILESYS
+//    -f causes the physical disk to be formatted
+//    -cp copies a file from UNIX to Nachos
+//    -p prints a Nachos file to stdout
+//    -r removes a Nachos file from the file system
+//    -l lists the contents of the Nachos directory
+//    -D prints the contents of the entire file system 
+//    -t tests the performance of the Nachos file system
+//
+//  NETWORK
+//    -n sets the network reliability
+//    -m sets this machine's host id (needed for the network)
+//    -o runs a simple test of the Nachos network software
+//
+//  NOTE -- flags are ignored until the relevant assignment.
+//  Some of the flags are interpreted here; some in system.cc.
+
+El comando -rs produce que se llame al metodo Yield aliatoriamente dentro de la ejecucion. El metodo Yield lo que hace es detener la ejecucion del thread actual y selecciona uno nuevo de la lista de thread listos para ejecutar, si no hay ninguno otro listo, sigue ejecutando el thread actual.
+
+14.
+
+\end{document}

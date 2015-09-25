@@ -5,7 +5,7 @@
 *.bak
 *.swp
 *~
-entrega1/tiger
-entrega1/Tigergrm.sml
-entrega1/Tigergrm.sig
-entrega1/Tigerlex.sml
+*.aux
+*.log
+*.pdf
+*.synctex.gz
