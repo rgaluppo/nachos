@@ -87,10 +87,10 @@ class Lock {
 
   private:
     const char* name;				// para depuraci�n
-                        // a�adir aqu� otros campos que sean necesarios
-    bool isLock;
-    Semaphore* s;
-    const char* blocker;
+    // a�adir aqu� otros campos que sean necesarios
+    bool isLock;        // Indica si esta bloqueado o no.
+    Semaphore* s;       // Lo usamos para bloquear la region critica.
+    const char* blocker; // Nombre del thread que bloquea.
 };
 
 //  La siguiente clase define una "variable condici�n". Una variable condici�n
@@ -147,6 +147,8 @@ class Condition {
   private:
     const char* name;
     // aqu� se a�aden otros campos que sean necesarios
+    List<Thread*> * cola; // Es una cola que contiene los threads que esperan que se cumpla la condicion.
+    Lock* l;    // Es el cerrojo al que pertenece la variable condicion.
 };
 
 /*
