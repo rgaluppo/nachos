@@ -14,7 +14,14 @@
 
 #include "copyright.h"
 #include "system.h"
+#include "synch.h"
+#include <string>
+#include <sstream>
+using namespace std; 
 
+// Ower Semaphore...
+//Semaphore* sem = new Semaphore("casita", 3);
+Lock* lock = new Lock("casita");
 //----------------------------------------------------------------------
 // SimpleThread
 // 	Loop 10 times, yielding the CPU to another ready thread 
@@ -33,15 +40,21 @@ SimpleThread(void* name)
     // If the lines dealing with interrupts are commented,
     // the code will behave incorrectly, because
     // printf execution may cause race conditions.
+    //sem->P();
+    lock->Acquire();
+    //DEBUG('I', "Hice P\n");
     for (int num = 0; num < 10; num++) {
         //IntStatus oldLevel = interrupt->SetLevel(IntOff);
-	printf("*** thread %s looped %d times\n", threadName, num);
+    printf("*** thread %s looped %d times\n", threadName, num);
 	//interrupt->SetLevel(oldLevel);
-        currentThread->Yield();
+    currentThread->Yield();
     }
     //IntStatus oldLevel = interrupt->SetLevel(IntOff);
     printf(">>> Thread %s has finished\n", threadName);
     //interrupt->SetLevel(oldLevel);
+    //sem->V();
+    lock->Release();
+    //DEBUG('I', "Hice V\n");
 }
 
 //----------------------------------------------------------------------
@@ -55,12 +68,22 @@ void
 ThreadTest()
 {
     DEBUG('t', "Entering SimpleTest");
-
-    char *threadname = new char[128];
-    strcpy(threadname,"Hilo 1");
-    Thread* newThread = new Thread (threadname);
-    newThread->Fork (SimpleThread, (void*)threadname);
     
-    SimpleThread( (void*)"Hilo 0");
+    int i;
+    Thread* newThread;
+
+    for(i=0; i < 9; i++) {
+        char *threadname = new char[128];
+        stringstream ss;
+        string aux("Hilo ");
+
+        ss << i;
+        string str = ss.str();
+        aux += str;
+
+        strcpy(threadname, aux.c_str());
+        newThread = new Thread (threadname);
+        newThread->Fork (SimpleThread, (void*)threadname);
+    }
 }
 

@@ -296,5 +296,29 @@ Las lineas de comando que soporta Nachos son:
 El comando -rs produce que se llame al metodo Yield aliatoriamente dentro de la ejecucion. El metodo Yield lo que hace es detener la ejecucion del thread actual y selecciona uno nuevo de la lista de thread listos para ejecutar, si no hay ninguno otro listo, sigue ejecutando el thread actual.
 
 14.
+void
+ThreadTest()
+{
+    DEBUG('t', "Entering SimpleTest");
+    
+    int i;
+    Thread* newThread;
+
+    for(i=0; i < 5; i++) {
+        char *threadname = new char[128];
+        stringstream ss;
+        string aux("Hilo ");
+
+        ss << i;
+        string str = ss.str();
+        aux += str;
+
+        strcpy(threadname, aux.c_str());
+        newThread = new Thread (threadname);
+        newThread->Fork (SimpleThread, (void*)threadname);
+    }
+}
+
+15.
 
 \end{document}

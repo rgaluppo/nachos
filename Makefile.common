@@ -67,8 +67,8 @@ THREAD_C =../threads/main.cc\
 THREAD_S = ../threads/switch.s
 
 THREAD_O =main.o scheduler.o synch.o system.o thread.o \
-	utility.o threadtest.o interrupt.o stats.o sysdep.o timer.o \
-	preemptive.o
+	utility.o interrupt.o stats.o sysdep.o timer.o \
+	preemptive.o threadtest.o
 
 USERPROG_H = ../userprog/addrspace.h\
 	../userprog/bitmap.h\
