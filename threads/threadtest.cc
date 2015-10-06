@@ -15,6 +15,7 @@
 #include "copyright.h"
 #include "system.h"
 #include "synch.h"
+#include "puerto.h"
 #include <string>
 #include <sstream>
 using namespace std; 
@@ -22,6 +23,8 @@ using namespace std;
 // Ower Semaphore...
 //Semaphore* sem = new Semaphore("casita", 3);
 Lock* lock = new Lock("casita");
+Puerto* puerto = new Puerto("rosario");
+//puerto->Send(4321);
 //----------------------------------------------------------------------
 // SimpleThread
 // 	Loop 10 times, yielding the CPU to another ready thread 
