@@ -105,7 +105,6 @@ Lock::Lock(const char* debugName) {
     isLock  = false;
     s       = new Semaphore(debugName, 1);
     blocker = NULL;
-}
 
 Lock::~Lock() {
     s->~Semaphore();
@@ -133,10 +132,33 @@ bool Lock::isHeldByCurrentThread() {
     return blocker == currentThread->getName() ;
 }
 
-Condition::Condition(const char* debugName, Lock* conditionLock) { }
-Condition::~Condition() { }
-void Condition::Wait() { ASSERT(false); }
-void Condition::Signal() { }
-void Condition::Broadcast() { }
+Condition::Condition(const char* debugName, Lock* conditionLock){ 
+	cola = NULL;
+	name = debugName;
+	l = Lock (conditionLock);
+}
+
+Condition::~Condition(){
+	l->~Lock();
+}
+    
+void Condition::Wait() { 
+	ASSERT(false);
+	cola -> APPEND(currentThread);
+	l -> Release();
+}
+
+void Condition::Signal() {
+	Thread t;
+	t = cola ->Remove();
+	if t == NULL
+	  l -> Aquiere();
+}
+void Condition::Broadcast() {
+	Thread t;
+	while(t = cola -> Remove() != NULL)
+	
+	l -> Acquire();
+}
 
 
