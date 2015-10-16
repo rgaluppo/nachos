@@ -1,29 +1,53 @@
-#include "Puerto.h"
+#include "puerto.h"
 
-Puerto::Puerto (const char* name ) {
-    portname              = name;
-    Lock* lockPort        = new Lock("lock");
-    Condition* enviando   = new Condition("env", lockPort);
-    Condition* recibiendo = new Condition("rec", lockPort);
-    int* buffer           = NULL;
+Puerto::Puerto(const char* name) {
+    portname = name;
+    lockPort = new Lock("lockPort");
+    enviando = new Condition("env", lockPort);
+    recibiendo = new Condition("rev", lockPort);
+    buffer = NULL;
+    lengthEnv = lengthRec = 0;
 }
 
-Puerto::~Puerto () {
-    delete buffer;
+Puerto:: ~Puerto(){
+    lockPort->~Lock();
     enviando->~Condition();
     recibiendo->~Condition();
-    lockPort->~Lock();
+    delete buffer;
 }
 
-Puerto::Send(int mensaje) {
-   enviando->Wait();
-   buffer = buffer ++ [mensaje];
-   recibiendo->Signal();
+void Puerto::Send(int mensaje){
+   
+    lengthEnv++;
+DEBUG('t', "<<<<<Envie un  mensaje>>>>>\n");
+   
+    if(buffer == NULL) {//Si el buffer es nulo es porque no hay receptores. En este caso, esperamos.
+        lockPort -> Acquire();
+        enviando->Wait();
+    }
+
+    buffer = &mensaje;
+    lengthEnv--;
+    if(lockPort->isHeldByCurrentThread()) {//Este caso se da cuando recibimos un enviando->Signal(). 
+                                            //Se da porque hay un receptor que me esta esperando.
+        lockPort->Release();
+    }
+
+    recibiendo->Signal();
 }
 
-Puerto::Receive(int* mensajeria) {
-    while(enviando->cola == NULL)
+void Puerto::Receive(int* correo){
+    DEBUG('t', "<<<<<Recibi un  mensaje>>>>>\n");
+    if(lengthEnv == 0) { // Esta variable es nula cuando no hay remitentes esperando.
+        if(!lockPort->isHeldByCurrentThread()) { //
+            lockPort -> Acquire();
+        }
+
         recibiendo->Wait();
-    buffer = mensajeria;
-    enviando->Signal;
+    }
+
+    lockPort -> Acquire();
+    buffer = correo;
+    lockPort->Release();
+    enviando->Signal();
 }

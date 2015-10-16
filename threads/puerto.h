@@ -15,18 +15,18 @@
 class Puerto {
     public:
         Puerto(const char* name);
-
         ~Puerto();
-        
-        const char* getName() { return name; }	// para depuraci�n
+        const char* getName() { return portname; }	// para depuraci�n
 
         void Send(int mensaje);
 
         void Receive(int* correo);
 
     private:
-       const char* name;
-       Condition* enviando, recibiendo;
+       const char* portname;
+       Condition* enviando;
+       Condition* recibiendo;
        Lock* lockPort;
        int* buffer;
+       int lengthEnv, lengthRec;
 };

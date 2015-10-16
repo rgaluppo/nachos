@@ -134,7 +134,7 @@ class Condition {
 
     // libera el objeto
     ~Condition();	
-    const char* getName() { return (name); }
+    const char* getName() { return (name); };
 
     // Las tres operaciones sobre variables condici�n.
     // El hilo que invoque a cualquiera de estas operaciones debe tener
@@ -151,30 +151,5 @@ class Condition {
     Lock* l;    // Es el cerrojo al que pertenece la variable condicion.
 };
 
-/*
-
-C�digo original del Nachos para las variables condici�n - NO USAR
-  
-class Condition {
-  public:
-    Condition(char* debugName);		// initialize condition to 
-					// "no one waiting"
-    ~Condition();			// deallocate the condition
-    char* getName() { return (name); }
-    
-    void Wait(Lock *conditionLock); 	// these are the 3 operations on 
-					// condition variables; releasing the 
-					// lock and going to sleep are 
-					// *atomic* in Wait()
-    void Signal(Lock *conditionLock);   // conditionLock must be held by
-    void Broadcast(Lock *conditionLock);// the currentThread for all of 
-					// these operations
-
-  private:
-    char* name;
-    // plus some other stuff you'll need to define
-};
-
-*/
 
 #endif // SYNCH_H

@@ -22,9 +22,9 @@ using namespace std;
 
 // Ower Semaphore...
 //Semaphore* sem = new Semaphore("casita", 3);
-Lock* lock = new Lock("casita");
+//Lock* lock = new Lock("casita");
 Puerto* puerto = new Puerto("rosario");
-//puerto->Send(4321);
+int* casita = new int[128];
 //----------------------------------------------------------------------
 // SimpleThread
 // 	Loop 10 times, yielding the CPU to another ready thread 
@@ -37,27 +37,16 @@ Puerto* puerto = new Puerto("rosario");
 void
 SimpleThread(void* name)
 {
-    // Reinterpret arg "name" as a string
     char* threadName = (char*)name;
-    
-    // If the lines dealing with interrupts are commented,
-    // the code will behave incorrectly, because
-    // printf execution may cause race conditions.
-    //sem->P();
-    lock->Acquire();
-    //DEBUG('I', "Hice P\n");
     for (int num = 0; num < 10; num++) {
-        //IntStatus oldLevel = interrupt->SetLevel(IntOff);
-    printf("*** thread %s looped %d times\n", threadName, num);
-	//interrupt->SetLevel(oldLevel);
-    currentThread->Yield();
+        printf("*** thread %s looped %d times\n", threadName, num);
+        currentThread->Yield();
+        puerto->Receive(casita);
+        currentThread->Yield();
+        puerto->Send(321);
+        currentThread->Yield();
     }
-    //IntStatus oldLevel = interrupt->SetLevel(IntOff);
     printf(">>> Thread %s has finished\n", threadName);
-    //interrupt->SetLevel(oldLevel);
-    //sem->V();
-    lock->Release();
-    //DEBUG('I', "Hice V\n");
 }
 
 //----------------------------------------------------------------------
@@ -70,12 +59,12 @@ SimpleThread(void* name)
 void
 ThreadTest()
 {
-    DEBUG('t', "Entering SimpleTest");
+    DEBUG('t', "Entering SimpleTest\n");
     
     int i;
     Thread* newThread;
 
-    for(i=0; i < 9; i++) {
+    for(i=0; i < 52; i++) {
         char *threadname = new char[128];
         stringstream ss;
         string aux("Hilo ");
