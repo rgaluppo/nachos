@@ -230,6 +230,25 @@ Thread::Sleep ()
 }
 
 //----------------------------------------------------------------------
+// Thread::Join
+// bloquea al llamante hasta que el hilo en cuestion termine.
+//----------------------------------------------------------------------
+
+void
+Thread::Join()
+{
+    DEBUG('t', "Entre al JOIN\n");
+    DEBUG('t', "this thread>>>>>>>>>>>>>>>>> \"%s\"\n", this->getName());
+    DEBUG('t', "current thread>>>>>>>>>>>>>> \"%s\"\n", currentThread->getName());
+    IntStatus oldLevel = interrupt->SetLevel(IntOff);
+    SWITCH(this,currentThread);
+    
+    DEBUG('t', "Entre al JOIN-Sleep()##############################################################################\n");
+    this->Finish();
+}
+
+
+//----------------------------------------------------------------------
 // ThreadFinish, InterruptEnable
 //	Dummy functions because C++ does not allow a pointer to a member
 //	function.  So in order to do this, we create a dummy C function
@@ -309,4 +328,5 @@ Thread::RestoreUserState()
     for (int i = 0; i < NumTotalRegs; i++)
 	machine->WriteRegister(i, userRegisters[i]);
 }
+
 #endif

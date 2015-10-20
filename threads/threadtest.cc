@@ -37,6 +37,7 @@ int* casita = new int[128];
 void
 SimpleThread(void* name)
 {
+    DEBUG('t', "Entering SimpleTest\n");
     char* threadName = (char*)name;
     for (int num = 0; num < 10; num++) {
         printf("*** thread %s looped %d times\n", threadName, num);
@@ -59,8 +60,8 @@ SimpleThread(void* name)
 void
 ThreadTest()
 {
-    DEBUG('t', "Entering SimpleTest\n");
     
+    DEBUG('t', "Entering ThreadTest\n");
     int i;
     Thread* newThread;
 
@@ -76,6 +77,8 @@ ThreadTest()
         strcpy(threadname, aux.c_str());
         newThread = new Thread (threadname);
         newThread->Fork (SimpleThread, (void*)threadname);
+        newThread->Join();
+    DEBUG('t', "Entre al ##############################################################################\n");
     }
 }
 

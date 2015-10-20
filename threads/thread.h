@@ -95,6 +95,7 @@ class Thread {
     
     void CheckOverflow();   			// Check if thread has 
 						// overflowed its stack
+    void Join();   			//  bloquea al llamante hasta que  el hilo en cuestion termine.
     void setStatus(ThreadStatus st) { status = st; }
     const char* getName() { return (name); }
     void Print() { printf("%s, ", name); }
