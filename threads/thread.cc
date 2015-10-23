@@ -32,12 +32,13 @@ const unsigned STACK_FENCEPOST = 0xdeadbeef;
 //	"threadName" is an arbitrary string, useful for debugging.
 //----------------------------------------------------------------------
 
-Thread::Thread(const char* threadName)
+Thread::Thread(const char* threadName, int jFlag)
 {
     name = threadName;
     stackTop = NULL;
     stack = NULL;
     status = JUST_CREATED;
+    joinFlag = jFlag;
 #ifdef USER_PROGRAM
     space = NULL;
 #endif
@@ -240,11 +241,17 @@ Thread::Join()
     DEBUG('t', "Entre al JOIN\n");
     DEBUG('t', "this thread>>>>>>>>>>>>>>>>> \"%s\"\n", this->getName());
     DEBUG('t', "current thread>>>>>>>>>>>>>> \"%s\"\n", currentThread->getName());
+
     IntStatus oldLevel = interrupt->SetLevel(IntOff);
-    SWITCH(this,currentThread);
-    
-    DEBUG('t', "Entre al JOIN-Sleep()##############################################################################\n");
-    this->Finish();
+
+    if(joinFlag){
+        //SWITCH(this,currentThread);
+        DEBUG('t', "Entre al JOIN-Sleep()##############################################################################\n");
+	currentThread->Sleep();
+    }
+
+    interrupt->SetLevel(oldLevel);
+    //currentThread->Finish();
 }
 
 

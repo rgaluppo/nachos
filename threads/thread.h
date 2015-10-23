@@ -78,11 +78,11 @@ class Thread {
     HostMemoryAddress machineState[MachineStateSize];	// all registers except for stackTop
 
   public:
-    Thread(const char* debugName);	// initialize a Thread 
-    ~Thread(); 				// deallocate a Thread
-					// NOTE -- thread being deleted
-					// must not be running when delete 
-					// is called
+    Thread(const char* debugName, int jFlag);	// initialize a Thread 
+    ~Thread(); 					// deallocate a Thread
+						// NOTE -- thread being deleted
+						// must not be running when delete 
+						// is called
 
     // basic thread operations
 
@@ -108,6 +108,7 @@ class Thread {
 					// (If NULL, don't deallocate stack)
     ThreadStatus status;		// ready, running or blocked
     const char* name;
+    int joinFlag;
 
     void StackAllocate(VoidFunctionPtr func, void* arg);
     					// Allocate a stack for thread.

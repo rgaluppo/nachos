@@ -35,19 +35,26 @@ int* casita = new int[128];
 //----------------------------------------------------------------------
 
 void
+SimpleThread2(void* name)
+{
+    DEBUG('t', "Entering SimpleTest2\n");
+
+}
+void
 SimpleThread(void* name)
 {
+    Thread* newThread;
     DEBUG('t', "Entering SimpleTest\n");
     char* threadName = (char*)name;
+        puerto->Receive(casita);
     for (int num = 0; num < 10; num++) {
         printf("*** thread %s looped %d times\n", threadName, num);
-        currentThread->Yield();
-        puerto->Receive(casita);
-        currentThread->Yield();
-        puerto->Send(321);
-        currentThread->Yield();
     }
+        puerto->Send(321);
     printf(">>> Thread %s has finished\n", threadName);
+        newThread = new Thread ("threadname", 2);
+        newThread->Fork (SimpleThread2, (void*) "pryueba");
+        newThread->Join();
 }
 
 //----------------------------------------------------------------------
@@ -65,7 +72,7 @@ ThreadTest()
     int i;
     Thread* newThread;
 
-    for(i=0; i < 52; i++) {
+    for(i=0; i < 3; i++) {
         char *threadname = new char[128];
         stringstream ss;
         string aux("Hilo ");
@@ -75,10 +82,11 @@ ThreadTest()
         aux += str;
 
         strcpy(threadname, aux.c_str());
-        newThread = new Thread (threadname);
+	printf("<<< i%2= %d\n", i%2);
+        newThread = new Thread (threadname, (i%2));
         newThread->Fork (SimpleThread, (void*)threadname);
         newThread->Join();
-    DEBUG('t', "Entre al ##############################################################################\n");
+        DEBUG('t', "Entre al ##############################################################################\n");
     }
 }
 
