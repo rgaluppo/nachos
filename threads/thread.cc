@@ -157,6 +157,7 @@ Thread::Finish ()
     threadToBeDestroyed = currentThread;
 
     if(joinFlag) {
+    DEBUG('t', "Changing to parent thread \"%s\"\n", parentThread->getName());
     scheduler->ReadyToRun(parentThread);
     }
     Sleep();					// invokes SWITCH
@@ -245,13 +246,10 @@ void
 Thread::Join()
 {
     DEBUG('t', "Entre al JOIN\n");
-    DEBUG('t', "this thread>>>>>>>>>>>>>>>>> \"%s\"\n", this->getName());
-    DEBUG('t', "current thread>>>>>>>>>>>>>> \"%s\"\n", currentThread->getName());
 
     IntStatus oldLevel = interrupt->SetLevel(IntOff);
-
     if(joinFlag){
-        DEBUG('t', "Entre al JOIN-Sleep()##############################################################################\n");
+        DEBUG('t', "Entre al JOIN-Sleep()######\n");
         parentThread = currentThread;
         currentThread->Sleep();
     }

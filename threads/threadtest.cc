@@ -62,7 +62,7 @@ ThreadTest()
     int i;
     Thread* newThread;
 
-    for(i=0; i < 3; i++) {
+    for(i=0; i < 10; i++) {
         char *threadname = new char[128];
         stringstream ss;
         string aux("Hilo ");
@@ -72,8 +72,8 @@ ThreadTest()
         aux += str;
 
         strcpy(threadname, aux.c_str());
-	printf("<<< %d%2= %d\n", i, i%2);
-        newThread = new Thread (threadname, (i%2));
+	printf("<<< %d%2= %d\n", i, i%5);
+        newThread = new Thread (threadname, (i%5));
         newThread->Fork (SimpleThread, (void*)threadname);
         newThread->Join();
         DEBUG('t', "Entre al ##############################################################################\n");
