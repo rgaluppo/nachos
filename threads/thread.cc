@@ -24,6 +24,8 @@
 // for detecting stack overflows
 const unsigned STACK_FENCEPOST = 0xdeadbeef;	
 
+
+Thread* parentThread;
 //----------------------------------------------------------------------
 // Thread::Thread
 // 	Initialize a thread control block, so that we can then call
@@ -153,6 +155,10 @@ Thread::Finish ()
     DEBUG('t', "Finishing thread \"%s\"\n", getName());
     
     threadToBeDestroyed = currentThread;
+
+    if(joinFlag) {
+    scheduler->ReadyToRun(parentThread);
+    }
     Sleep();					// invokes SWITCH
     // not reached
 }
@@ -245,13 +251,11 @@ Thread::Join()
     IntStatus oldLevel = interrupt->SetLevel(IntOff);
 
     if(joinFlag){
-        //SWITCH(this,currentThread);
         DEBUG('t', "Entre al JOIN-Sleep()##############################################################################\n");
-	currentThread->Sleep();
+        parentThread = currentThread;
+        currentThread->Sleep();
     }
-
     interrupt->SetLevel(oldLevel);
-    //currentThread->Finish();
 }
 
 

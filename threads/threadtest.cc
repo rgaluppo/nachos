@@ -35,15 +35,8 @@ int* casita = new int[128];
 //----------------------------------------------------------------------
 
 void
-SimpleThread2(void* name)
-{
-    DEBUG('t', "Entering SimpleTest2\n");
-
-}
-void
 SimpleThread(void* name)
 {
-    Thread* newThread;
     DEBUG('t', "Entering SimpleTest\n");
     char* threadName = (char*)name;
         puerto->Receive(casita);
@@ -52,9 +45,6 @@ SimpleThread(void* name)
     }
         puerto->Send(321);
     printf(">>> Thread %s has finished\n", threadName);
-        newThread = new Thread ("threadname", 2);
-        newThread->Fork (SimpleThread2, (void*) "pryueba");
-        newThread->Join();
 }
 
 //----------------------------------------------------------------------
@@ -82,11 +72,12 @@ ThreadTest()
         aux += str;
 
         strcpy(threadname, aux.c_str());
-	printf("<<< i%2= %d\n", i%2);
+	printf("<<< %d%2= %d\n", i, i%2);
         newThread = new Thread (threadname, (i%2));
         newThread->Fork (SimpleThread, (void*)threadname);
         newThread->Join();
         DEBUG('t', "Entre al ##############################################################################\n");
     }
+        DEBUG('t', "#####\n");
 }
 
