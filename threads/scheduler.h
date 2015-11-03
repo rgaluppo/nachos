@@ -13,6 +13,8 @@
 #include "list.h"
 #include "thread.h"
 
+#define MAX_PRIORITY 10
+
 // The following class defines the scheduler/dispatcher abstraction -- 
 // the data structures and operations needed to keep track of which 
 // thread is running, and which threads are ready but not running.
@@ -29,7 +31,7 @@ class Scheduler {
     void Print();			// Print contents of ready list
     
   private:
-    List<Thread*> *readyList;  		// queue of threads that are ready to run,
+    List< List<Thread*> > *readyList;  		// queue of threads that are ready to run,
 					// but not running
 };
 

@@ -34,13 +34,15 @@ Thread* parentThread;
 //	"threadName" is an arbitrary string, useful for debugging.
 //----------------------------------------------------------------------
 
-Thread::Thread(const char* threadName, int jFlag)
+Thread::Thread(const char* threadName, int jFlag, int threadPriority)
 {
     name = threadName;
     stackTop = NULL;
     stack = NULL;
     status = JUST_CREATED;
     joinFlag = jFlag;
+    priority = threadPriority;
+
 #ifdef USER_PROGRAM
     space = NULL;
 #endif
@@ -245,8 +247,6 @@ Thread::Sleep ()
 void
 Thread::Join()
 {
-    DEBUG('t', "Entre al JOIN\n");
-
     IntStatus oldLevel = interrupt->SetLevel(IntOff);
     if(joinFlag){
         DEBUG('t', "Entre al JOIN-Sleep()######\n");

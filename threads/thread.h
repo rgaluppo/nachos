@@ -78,7 +78,7 @@ class Thread {
     HostMemoryAddress machineState[MachineStateSize];	// all registers except for stackTop
 
   public:
-    Thread(const char* debugName, int jFlag);	// initialize a Thread 
+    Thread(const char* debugName, int jFlag, int priority);	// initialize a Thread 
     ~Thread(); 					// deallocate a Thread
 						// NOTE -- thread being deleted
 						// must not be running when delete 
@@ -99,6 +99,7 @@ class Thread {
     void setStatus(ThreadStatus st) { status = st; }
     const char* getName() { return (name); }
     void Print() { printf("%s, ", name); }
+    int getPriority() { return priority; };
 
   private:
     // some of the private data for this class is listed above
@@ -109,6 +110,7 @@ class Thread {
     ThreadStatus status;		// ready, running or blocked
     const char* name;
     int joinFlag;
+    int priority;
 
     void StackAllocate(VoidFunctionPtr func, void* arg);
     					// Allocate a stack for thread.
