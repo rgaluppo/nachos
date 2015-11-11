@@ -31,8 +31,8 @@ Scheduler::Scheduler()
 { 
     readyList = new List< List<Thread*> >; 
     for(int i=0; i < MAX_PRIORITY; i++){
-        List<Thread*> list = *(new List<Thread*>);
-        readyList->Append(list);
+        List<Thread*>* list = new List<Thread*>;
+        readyList->SortedInsert(*list, i);
     }
 } 
 
@@ -43,7 +43,9 @@ Scheduler::Scheduler()
 
 Scheduler::~Scheduler()
 { 
-    delete readyList; 
+    for(int i=0; i < MAX_PRIORITY; i++){
+        delete readyList; 
+    }
 } 
 
 //----------------------------------------------------------------------
@@ -61,10 +63,10 @@ Scheduler::ReadyToRun (Thread *thread)
 
     int position = thread->getPriority();
     thread->setStatus(READY);
-    List<Thread*> actualPriorityList = (readyList+position)->Remove();
-    actualPriorityList->Append(thread);
+
+    List<Thread*> actualPriorityList = readyList->SortedRemove(&position);
+    actualPriorityList.Append(thread);
     readyList->SortedInsert(actualPriorityList, position);
-    readyList-position;
 }
 
 //----------------------------------------------------------------------
@@ -79,16 +81,15 @@ Thread *
 Scheduler::FindNextToRun ()
 {
     int cont = MAX_PRIORITY;
-    List<Thread*> aux = (readyList+cont)->Remove();
-    while(aux->IsEmpty() && cont != 0) {
+    List<Thread*> aux = readyList->SortedRemove(&cont);
+    while(aux.IsEmpty() && cont != 0) {
         cont--;
-        aux = (readyList+cont)->Remove();
+        aux = readyList->SortedRemove(&cont);
     }
     if(cont == 0){
         return NULL;
     }
-    readyList-cont;
-    return aux->Remove();
+    return aux.Remove();
 }
 
 //----------------------------------------------------------------------
@@ -166,6 +167,8 @@ ThreadPrint (Thread* t) {
 void
 Scheduler::Print()
 {
-    printf("Ready list contents:\n");
-    readyList->Apply(ThreadPrint);
+    //printf("Ready list contents:\n");
+    //List<Thread*>* printList = new List<Thread*>;
+    //printList->App(ThreadPrint);
+    //readyList->Apply(printList);
 }
