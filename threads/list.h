@@ -205,10 +205,14 @@ template <class Item>
 bool
 List<Item>::IsEmpty() 
 { 
-    if (first == NULL)
+    if (first == NULL){
+    	DEBUG('t', "&&&&&TRUE \n");
         return true;
-    else
+    }
+    else {
+    	DEBUG('t', "&&&&&FALSE \n");
 	return false; 
+    }
 }
 
 //----------------------------------------------------------------------

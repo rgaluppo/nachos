@@ -39,10 +39,12 @@
 
 #include "copyright.h"
 #include "utility.h"
+#include <puerto.h>
 
 #ifdef USER_PROGRAM
 #include "machine.h"
 #include "addrspace.h"
+
 #endif
 
 // CPU register state to be saved on context switch.  
@@ -111,6 +113,7 @@ class Thread {
     const char* name;
     int joinFlag;
     int priority;
+    Puerto joinPort;
 
     void StackAllocate(VoidFunctionPtr func, void* arg);
     					// Allocate a stack for thread.
@@ -129,7 +132,7 @@ class Thread {
 
     AddrSpace *space;			// User code this thread is running.
 #endif
-};
+}
 
 // Magical machine-dependent routines, defined in switch.s
 

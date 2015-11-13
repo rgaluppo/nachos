@@ -32,7 +32,7 @@ class Scheduler {
     
   private:
 //    List<Thread*> *readyList [MAX_PRIORITY]
-    List< List<Thread*> > *readyList;  		// queue of threads that are ready to run,
+    List< List<Thread*> *> *readyList;  		// queue of threads that are ready to run,
 					// but not running
 };
 

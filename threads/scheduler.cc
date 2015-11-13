@@ -29,12 +29,8 @@
 
 Scheduler::Scheduler()
 { 
-    readyList = new List< List<Thread*> >; 
-    for(int i=0; i < MAX_PRIORITY; i++){
-        List<Thread*>* list = new List<Thread*>;
-        readyList->SortedInsert(*list, i);
-    }
-} 
+    readyList = new List< List<Thread*> *>; 
+}	 
 
 //----------------------------------------------------------------------
 // Scheduler::~Scheduler
@@ -43,9 +39,13 @@ Scheduler::Scheduler()
 
 Scheduler::~Scheduler()
 { 
-    for(int i=0; i < MAX_PRIORITY; i++){
-        delete readyList; 
+    List< Thread*>* actualList;
+    while (!(readyList -> IsEmpty())){
+	actualList = readyList -> Remove();
+	if(!actualList ->IsEmpty())
+	    delete actualList;
     }
+    delete readyList;
 } 
 
 //----------------------------------------------------------------------
@@ -61,12 +61,26 @@ Scheduler::ReadyToRun (Thread *thread)
 {
     DEBUG('t', "Putting thread %s on ready list.\n", thread->getName());
 
-    int position = thread->getPriority();
+    int actualKey= thread->getPriority();
     thread->setStatus(READY);
 
-    List<Thread*> actualPriorityList = readyList->SortedRemove(&position);
-    actualPriorityList.Append(thread);
-    readyList->SortedInsert(actualPriorityList, position);
+    List<Thread*> *actualPriorityList = readyList->SortedRemove(&actualKey);
+    DEBUG('t', "&&&&&casita  \n");
+    bool boolaux = actualPriorityList -> IsEmpty();
+    DEBUG('t', "&&&&&IsEmpty = %b \n", boolaux);
+    if (boolaux){
+
+    DEBUG('t', "##############&&&&&THEN \n");
+
+	List <Thread *> *newPL = new List <Thread*>;
+	newPL -> Append(thread);
+	readyList -> SortedInsert(newPL, actualKey);
+    }
+    else {
+    DEBUG('t', "##############&&&&&ELSE \n");
+	actualPriorityList -> Append (thread);
+	readyList -> SortedInsert (actualPriorityList, actualKey);
+    }
 }
 
 //----------------------------------------------------------------------
@@ -80,16 +94,23 @@ Scheduler::ReadyToRun (Thread *thread)
 Thread *
 Scheduler::FindNextToRun ()
 {
-    int cont = MAX_PRIORITY;
-    List<Thread*> aux = readyList->SortedRemove(&cont);
-    while(aux.IsEmpty() && cont != 0) {
-        cont--;
-        aux = readyList->SortedRemove(&cont);
+    DEBUG('t', "Finding next thread  to run.\n");
+    int k = MAX_PRIORITY;
+    List<Thread*> *actualList;
+    Thread * nextT;
+    while(k != 0) {
+        k--;
+        actualList= readyList->SortedRemove(&k);
+	if (actualList != NULL){
+	   nextT = actualList -> Remove();
+	   readyList -> SortedInsert (actualList, k);
+	   break;
+	}
     }
-    if(cont == 0){
+    if(k == 0){
         return NULL;
     }
-    return aux.Remove();
+    return nextT;
 }
 
 //----------------------------------------------------------------------

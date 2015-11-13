@@ -17,7 +17,6 @@
 #include "copyright.h"
 #include "thread.h"
 #include "switch.h"
-#include "synch.h"
 #include "system.h"
 
 // this is put at the top of the execution stack,
@@ -25,7 +24,6 @@
 const unsigned STACK_FENCEPOST = 0xdeadbeef;	
 
 
-Thread* parentThread;
 //----------------------------------------------------------------------
 // Thread::Thread
 // 	Initialize a thread control block, so that we can then call
@@ -42,6 +40,7 @@ Thread::Thread(const char* threadName, int jFlag, int threadPriority)
     status = JUST_CREATED;
     joinFlag = jFlag;
     priority = threadPriority;
+    joinPort = new Puerto ("Join");
 
 #ifdef USER_PROGRAM
     space = NULL;
@@ -160,8 +159,9 @@ Thread::Finish ()
 
     if(joinFlag) {
     DEBUG('t', "Changing to parent thread \"%s\"\n", parentThread->getName());
-    scheduler->ReadyToRun(parentThread);
+    currentThread -> joinPort -> Send(1);
     }
+
     Sleep();					// invokes SWITCH
     // not reached
 }
@@ -249,9 +249,10 @@ Thread::Join()
 {
     IntStatus oldLevel = interrupt->SetLevel(IntOff);
     if(joinFlag){
-        DEBUG('t', "Entre al JOIN-Sleep()######\n");
-        parentThread = currentThread;
-        currentThread->Sleep();
+        int * newInt = new int [1];
+	DEBUG('t', "Entre al JOIN-Sleep()######\n");
+        currentThread ->joinPort -> Receive(newInt)
+        scheduler -> ReadyToRun (currentThread);
     }
     interrupt->SetLevel(oldLevel);
 }
