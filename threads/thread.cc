@@ -18,6 +18,7 @@
 #include "thread.h"
 #include "switch.h"
 #include "system.h"
+#include "puerto.h"
 
 // this is put at the top of the execution stack,
 // for detecting stack overflows
@@ -158,7 +159,6 @@ Thread::Finish ()
     threadToBeDestroyed = currentThread;
 
     if(joinFlag) {
-    DEBUG('t', "Changing to parent thread \"%s\"\n", parentThread->getName());
     currentThread -> joinPort -> Send(1);
     }
 
@@ -251,7 +251,7 @@ Thread::Join()
     if(joinFlag){
         int * newInt = new int [1];
 	DEBUG('t', "Entre al JOIN-Sleep()######\n");
-        currentThread ->joinPort -> Receive(newInt)
+        currentThread ->joinPort -> Receive(newInt);
         scheduler -> ReadyToRun (currentThread);
     }
     interrupt->SetLevel(oldLevel);

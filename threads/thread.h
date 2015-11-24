@@ -39,7 +39,6 @@
 
 #include "copyright.h"
 #include "utility.h"
-#include <puerto.h>
 
 #ifdef USER_PROGRAM
 #include "machine.h"
@@ -71,6 +70,8 @@ enum ThreadStatus { JUST_CREATED, RUNNING, READY, BLOCKED };
 //    
 //  Some threads also belong to a user address space; threads
 //  that only run in the kernel have a NULL address space.
+
+class Puerto;
 
 class Thread {
   private:
@@ -113,7 +114,7 @@ class Thread {
     const char* name;
     int joinFlag;
     int priority;
-    Puerto joinPort;
+    Puerto* joinPort;
 
     void StackAllocate(VoidFunctionPtr func, void* arg);
     					// Allocate a stack for thread.
@@ -132,7 +133,7 @@ class Thread {
 
     AddrSpace *space;			// User code this thread is running.
 #endif
-}
+};
 
 // Magical machine-dependent routines, defined in switch.s
 
