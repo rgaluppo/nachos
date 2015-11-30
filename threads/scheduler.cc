@@ -39,11 +39,11 @@ Scheduler::Scheduler()
 
 Scheduler::~Scheduler()
 { 
-    List< Thread*>* actualList;
+    List< Thread*>* actualList = new List<Thread*>;
     while (!(readyList -> IsEmpty())){
-	actualList = readyList -> Remove();
-	if(!actualList ->IsEmpty())
-	    delete actualList;
+	    actualList = readyList -> Remove();
+	    if(!actualList ->IsEmpty())
+	        delete actualList;
     }
     delete readyList;
 } 
@@ -61,25 +61,21 @@ Scheduler::ReadyToRun (Thread *thread)
 {
     DEBUG('t', "Putting thread %s on ready list.\n", thread->getName());
 
-    int actualKey= thread->getPriority();
+    int actualKey = thread->getPriority();
     thread->setStatus(READY);
 
-    List<Thread*> *actualPriorityList = readyList->SortedRemove(&actualKey);
-    DEBUG('t', "&&&&&casita  \n");
-    bool boolaux = actualPriorityList -> IsEmpty();
-    DEBUG('t', "&&&&&IsEmpty = %b \n", boolaux);
-    if (boolaux){
+    List<Thread*> *actualPriorityList = NULL ;
+    actualPriorityList = readyList->SortedRemove(&actualKey);
+    if (actualPriorityList == NULL) {
+        DEBUG('t', "##############&&&&&THEN \n");
 
-    DEBUG('t', "##############&&&&&THEN \n");
-
-	List <Thread *> *newPL = new List <Thread*>;
-	newPL -> Append(thread);
-	readyList -> SortedInsert(newPL, actualKey);
-    }
-    else {
-    DEBUG('t', "##############&&&&&ELSE \n");
-	actualPriorityList -> Append (thread);
-	readyList -> SortedInsert (actualPriorityList, actualKey);
+	    List<Thread*> *newPL = new List <Thread*>;
+	    newPL -> Append(thread);
+	    readyList -> SortedInsert(newPL, actualKey);
+    } else {
+        DEBUG('t', "##############&&&&&ELSE \n");
+	    actualPriorityList -> Append(thread);
+	    readyList -> SortedInsert(actualPriorityList, actualKey);
     }
 }
 
@@ -96,16 +92,16 @@ Scheduler::FindNextToRun ()
 {
     DEBUG('t', "Finding next thread  to run.\n");
     int k = MAX_PRIORITY;
-    List<Thread*> *actualList;
-    Thread * nextT;
+    List<Thread*> *actualList = new List<Thread*>;
+    Thread* nextT = NULL;
     while(k != 0) {
         k--;
         actualList= readyList->SortedRemove(&k);
-	if (actualList != NULL){
-	   nextT = actualList -> Remove();
-	   readyList -> SortedInsert (actualList, k);
-	   break;
-	}
+    	if (actualList != NULL) {
+	        nextT = actualList -> Remove();
+	        readyList -> SortedInsert (actualList, k);
+	        break;
+	    }
     }
     if(k == 0){
         return NULL;

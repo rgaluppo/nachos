@@ -72,7 +72,7 @@ ThreadTest()
         aux += str;
 
         strcpy(threadname, aux.c_str());
-	printf("<<< %d%2= %d\n", i, i%2);
+	    printf("<<< %d%2= %d\n", i, i%2);
         newThread = new Thread (threadname, (i%2), i);
         newThread->Fork (SimpleThread, (void*)threadname);
         newThread->Join();

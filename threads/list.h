@@ -206,11 +206,9 @@ bool
 List<Item>::IsEmpty() 
 { 
     if (first == NULL){
-    	DEBUG('t', "&&&&&TRUE \n");
         return true;
     }
     else {
-    	DEBUG('t', "&&&&&FALSE \n");
 	return false; 
     }
 }
