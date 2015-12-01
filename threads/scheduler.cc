@@ -21,6 +21,7 @@
 #include "copyright.h"
 #include "scheduler.h"
 #include "system.h"
+#include <stdexcept>
 
 //----------------------------------------------------------------------
 // Scheduler::Scheduler
@@ -59,24 +60,31 @@ Scheduler::~Scheduler()
 void
 Scheduler::ReadyToRun (Thread *thread)
 {
-    DEBUG('t', "Putting thread %s on ready list.\n", thread->getName());
-
-    int actualKey = thread->getPriority();
+    DEBUG('t', "Putting thread %s on ready list. My priority is %d.\n", thread->getName(), thread->getPriority());
+    
+    if(thread->getPriority() > MAX_PRIORITY) {
+       throw std::invalid_argument( "Prioridad incorrecta. Es superior a la prioridad maxima" ); 
+    }
     thread->setStatus(READY);
 
     List<Thread*> *actualPriorityList = NULL ;
+    int actualKey = thread->getPriority();
+        DEBUG('t', "actualKey:=%d \n", actualKey);
     actualPriorityList = readyList->SortedRemove(&actualKey);
+        DEBUG('t', "actualKey:=%d  After remove\n", actualKey);
     if (actualPriorityList == NULL) {
-        DEBUG('t', "##############&&&&&THEN \n");
+        DEBUG('t', "##############&&&&&THEN///actualKey:=%d \n", thread->getPriority());
+        
 
 	    List<Thread*> *newPL = new List <Thread*>;
 	    newPL -> Append(thread);
-	    readyList -> SortedInsert(newPL, actualKey);
+	    readyList -> SortedInsert(newPL, thread->getPriority());
     } else {
-        DEBUG('t', "##############&&&&&ELSE \n");
+        DEBUG('t', "##############&&&&&ELSE///actualKey:=%d \n", thread->getPriority());
 	    actualPriorityList -> Append(thread);
-	    readyList -> SortedInsert(actualPriorityList, actualKey);
+	    readyList -> SortedInsert(actualPriorityList, thread->getPriority());
     }
+    Print();
 }
 
 //----------------------------------------------------------------------
@@ -95,13 +103,13 @@ Scheduler::FindNextToRun ()
     List<Thread*> *actualList = new List<Thread*>;
     Thread* nextT = NULL;
     while(k != 0) {
-        k--;
         actualList= readyList->SortedRemove(&k);
     	if (actualList != NULL) {
 	        nextT = actualList -> Remove();
 	        readyList -> SortedInsert (actualList, k);
 	        break;
 	    }
+        k--;
     }
     if(k == 0){
         return NULL;
@@ -184,8 +192,6 @@ ThreadPrint (Thread* t) {
 void
 Scheduler::Print()
 {
-    //printf("Ready list contents:\n");
-    //List<Thread*>* printList = new List<Thread*>;
-    //printList->App(ThreadPrint);
-    //readyList->Apply(printList);
+    int key = MAX_PRIORITY;
+        printf("TODOReady list contents:\n");
 }
