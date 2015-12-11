@@ -72,7 +72,7 @@ Scheduler::ReadyToRun (Thread *thread)
     }
     thread->setStatus(READY);
     int actualKey = -1;
-    List<std::pair<List<Thread*>, int>*> *temp = new List< std::pair<List<Thread*>, int>* >;
+    List< List<Thread*>* > *temp = new List<List<Thread*>*>;
     List<Thread*> *actualPriorityList = new List<Thread*>;
     actualPriorityList = readyList->SortedRemove(&actualKey);
 
@@ -81,12 +81,16 @@ Scheduler::ReadyToRun (Thread *thread)
 	    newPL -> Append(thread);
 	    readyList -> SortedInsert(newPL, thread->getPriority());
     } else {
-        while(actualKey != thread->getPriority() && actualKey != -1) {
-            std::pair<List<Thread*>, int> newPair = std::make_pair(actualPriorityList, actualKey);
-            temp -> Append(&newPair);
+        while(actualKey != thread->getPriority() && actualKey != -1 ) {
+            DEBUG('t', "Buscando la lista con la prioridad %d\n", actualKey);
+            temp -> SortedInsert(actualPriorityList, actualKey);
             actualPriorityList = readyList->SortedRemove(&actualKey);
+            if( readyList -> IsEmpty() ) {
+                break;
+            }
         }
-        if(actualKey == -1) {
+        //TODO Ver que pasa cuando readyList esta vacia
+        if(actualKey == -1 || readyList -> IsEmpty()) {
             List<Thread*> *newPL = new List <Thread*>;
             newPL -> Append(thread);
             readyList -> SortedInsert(newPL, thread->getPriority());
@@ -95,11 +99,16 @@ Scheduler::ReadyToRun (Thread *thread)
             readyList -> SortedInsert(actualPriorityList, thread->getPriority());
         }
 
-        while(! temp -> IsEmpty()){
-            std::pair<List<Thread*>, int> newPair = new std::pair();
-            newPair = temp->Remove();
-            readyList -> SortedInsert(newPair->first, newPair->second), 
+        while(temp -> IsEmpty()){
+            DEBUG('t', "Vaciando TEMP\n");
+            List<Thread*>* tempList = new List<Thread*>;
+            tempList = temp->Remove();
+            Thread* tempThread = tempList -> Remove();
+            int tempPriority = tempThread -> getPriority();
+            tempList -> Prepend(tempThread);
+            readyList -> SortedInsert(tempList, tempPriority); 
         }
+            DEBUG('t', "TEMP es NULL\n");
     }
 
 /*
