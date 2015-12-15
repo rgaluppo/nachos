@@ -81,10 +81,10 @@ Scheduler::ReadyToRun (Thread *thread)
 	    List<Thread*> *newPL = new List <Thread*>;
 	    newPL -> Append(thread);
 	    readyList -> SortedInsert(newPL, MAX_PRIORITY - thread->getPriority());
-    } else {
+    } else { // Busco la lista cuya prioridad es la que busco. Lo hago hasta que la encuentre o hasta vaciar readyList.
         DEBUG('t',"\t actualKey = %d\n", actualKey);
-        while(actualKey != thread->getPriority()) { // Busco la lista cuya prioridad es la que busco. Lo hago hasta que la encuentre o
-            DEBUG('t', "Buscando la lista con la prioridad %d\n", actualKey);  // hasta vaciar readyList.
+        while(actualKey != thread->getPriority()) {
+            DEBUG('t', "Buscando la lista con la prioridad %d\n", actualKey);  
             temp -> SortedInsert(actualPriorityList, actualKey);
             if( readyList -> IsEmpty() ) {
                 DEBUG('t',"\t readyList == []\n");
@@ -104,15 +104,15 @@ Scheduler::ReadyToRun (Thread *thread)
             readyList -> SortedInsert(actualPriorityList, actualKey);
         }
 
-
         List<Thread*>* tempList = new List<Thread*>;
         int tempPriority;
-        while(!temp -> IsEmpty()){ // Paso las listas que estan en la lista temp hacia readyList.
+        while(!temp -> IsEmpty()){ // Paso las listas que estan en la lista temp hacia readyList/
             DEBUG('t', "Vaciando TEMP\n");
             tempList = temp->SortedRemove(&tempPriority);
             readyList -> SortedInsert(tempList, tempPriority); 
         }
     }
+    Print();
     DEBUG('t', "Fin readyToRun\n\n");
 }
 
@@ -221,20 +221,18 @@ Scheduler::Run (Thread *nextThread)
 
 static void
 ThreadPrint (Thread* t) {
-  t->Print();
+    t->Print();
 }
 
 static void 
 ListThreadPrint (List<Thread*>* xs) {
-        printf("\nInner List\n");
-         xs->Apply(ThreadPrint);
-        printf("\t");
+    xs->Apply(ThreadPrint);
 }
 
 void
 Scheduler::Print()
 {
-        printf("\nReady list contents:\n");
-        readyList->Apply(ListThreadPrint);
+    printf("\nReady list contents:\n");
+    readyList->Apply(ListThreadPrint);
     printf("\n");
 }

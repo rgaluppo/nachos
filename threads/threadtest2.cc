@@ -32,6 +32,7 @@ SimpleThread(void* name)
     for (int num = 0; num < 10; num++) {
         printf("*** thread %s looped %d times\n", threadName, num);
     }
+    currentThread-> Yield();
     printf(">>> Thread %s has finished\n", threadName);
 }
 
@@ -49,7 +50,7 @@ ThreadTest()
     int i;
     Thread* newThread;
 
-    for(i=0; i < 5; i++) {
+    for(i=0; i < 9; i++) {
         char *threadname = new char[128];
         stringstream ss;
         string aux("Hilo ");
@@ -60,7 +61,7 @@ ThreadTest()
 
         strcpy(threadname, aux.c_str());
         DEBUG('t', "Value of i: %d \n", i);
-        newThread = new Thread (threadname, 0, i);
+        newThread = new Thread (threadname, 0, i%3);
         newThread->Fork (SimpleThread, (void*)threadname);
     }
 }
