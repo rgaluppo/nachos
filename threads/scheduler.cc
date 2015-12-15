@@ -22,7 +22,6 @@
 #include "scheduler.h"
 #include "system.h"
 #include <stdexcept>
-#include <utility>      // std::pair, std::make_pair
  
 static void ThreadPrint(Thread*);
 static void ListThreadPrint (List<Thread*>* xs);
@@ -74,62 +73,47 @@ Scheduler::ReadyToRun (Thread *thread)
     int actualKey = -1;
     List< List<Thread*>* > *temp = new List<List<Thread*>*>;
     List<Thread*> *actualPriorityList = new List<Thread*>;
+
     actualPriorityList = readyList->SortedRemove(&actualKey);
 
-    if(actualPriorityList == NULL) {
+    if(actualPriorityList == NULL) { // readyList es vacia.
+        DEBUG('t', "ACTUAL PRIORITY LIST es NULL\n");
 	    List<Thread*> *newPL = new List <Thread*>;
 	    newPL -> Append(thread);
-	    readyList -> SortedInsert(newPL, thread->getPriority());
+	    readyList -> SortedInsert(newPL, MAX_PRIORITY - thread->getPriority());
     } else {
-        while(actualKey != thread->getPriority() && actualKey != -1 ) {
-            DEBUG('t', "Buscando la lista con la prioridad %d\n", actualKey);
+        DEBUG('t',"\t actualKey = %d\n", actualKey);
+        while(actualKey != thread->getPriority()) { // Busco la lista cuya prioridad es la que busco. Lo hago hasta que la encuentre o
+            DEBUG('t', "Buscando la lista con la prioridad %d\n", actualKey);  // hasta vaciar readyList.
             temp -> SortedInsert(actualPriorityList, actualKey);
-            actualPriorityList = readyList->SortedRemove(&actualKey);
             if( readyList -> IsEmpty() ) {
-                break;
+                DEBUG('t',"\t readyList == []\n");
+                break;  // Vacie readyList.
             }
+            actualPriorityList = readyList->SortedRemove(&actualKey);
         }
-        //TODO Ver que pasa cuando readyList esta vacia
-        if(actualKey == -1 || readyList -> IsEmpty()) {
+
+        if(readyList -> IsEmpty()) { // Es verdadero cuando no encontro una lista cuya prioridad es igual a thread->getPriority().
+            DEBUG('t',"IF\n");
             List<Thread*> *newPL = new List <Thread*>;
             newPL -> Append(thread);
-            readyList -> SortedInsert(newPL, thread->getPriority());
-        } else {
+            readyList -> SortedInsert(newPL, MAX_PRIORITY - thread->getPriority());
+        } else { // Sino, se encontro la lista. 
+            DEBUG('t',"ELSE\n");
             actualPriorityList -> Append(thread);
-            readyList -> SortedInsert(actualPriorityList, thread->getPriority());
+            readyList -> SortedInsert(actualPriorityList, actualKey);
         }
 
-        while(temp -> IsEmpty()){
+
+        List<Thread*>* tempList = new List<Thread*>;
+        int tempPriority;
+        while(!temp -> IsEmpty()){ // Paso las listas que estan en la lista temp hacia readyList.
             DEBUG('t', "Vaciando TEMP\n");
-            List<Thread*>* tempList = new List<Thread*>;
-            tempList = temp->Remove();
-            Thread* tempThread = tempList -> Remove();
-            int tempPriority = tempThread -> getPriority();
-            tempList -> Prepend(tempThread);
+            tempList = temp->SortedRemove(&tempPriority);
             readyList -> SortedInsert(tempList, tempPriority); 
         }
-            DEBUG('t', "TEMP es NULL\n");
     }
-
-/*
-    List<Thread*> *actualPriorityList = new List<Thread*>  ;
-    int actualKey = thread->getPriority();
-        DEBUG('t', "actualKey:=%d \n", actualKey);
-    actualPriorityList = readyList->SortedRemove(&actualKey);
-        printf("actualKey:=%d  After remove\n",thread->getPriority());
-    if (actualPriorityList == NULL) {
-        DEBUG('t', "##############&&&&&THEN///actualKey:=%d \n", thread->getPriority());
-	    List<Thread*> *newPL = new List <Thread*>;
-	    newPL -> Append(thread);
-        ListThreadPrint(newPL);
-	    readyList -> SortedInsert(newPL, thread->getPriority());
-    } else {
-        DEBUG('t', "##############&&&&&ELSE///actualKey:=%d \n", thread->getPriority());
-	    actualPriorityList -> Append(thread);
-        ListThreadPrint(actualPriorityList);
-	    readyList -> SortedInsert(actualPriorityList, thread->getPriority());
-    }
-    */
+    DEBUG('t', "Fin readyToRun\n\n");
 }
 
 //----------------------------------------------------------------------
@@ -144,6 +128,9 @@ Thread *
 Scheduler::FindNextToRun ()
 {
     DEBUG('t', "Finding next thread  to run.\n");
+
+    
+   
     int k,j;
     k = j = MAX_PRIORITY;
     List<Thread*> *actualList = new List<Thread*>;
@@ -162,6 +149,7 @@ Scheduler::FindNextToRun ()
         return NULL;
     }
     return nextT;
+    
 }
 
 //----------------------------------------------------------------------
