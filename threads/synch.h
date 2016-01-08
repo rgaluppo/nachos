@@ -90,7 +90,7 @@ class Lock {
     // a�adir aqu� otros campos que sean necesarios
     bool isLock;        // Indica si esta bloqueado o no.
     Semaphore* s;       // Lo usamos para bloquear la region critica.
-    const char* blocker; // Nombre del thread que bloquea.
+    Thread* blocker;    // Thread que bloquea.
 };
 
 //  La siguiente clase define una "variable condici�n". Una variable condici�n

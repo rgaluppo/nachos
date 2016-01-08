@@ -58,7 +58,7 @@ THREAD_C =../threads/main.cc\
 	../threads/system.cc\
 	../threads/thread.cc\
 	../threads/utility.cc\
-	../threads/threadtest2.cc\
+	../threads/threadtestLock.cc\
 	../machine/interrupt.cc\
 	../machine/sysdep.cc\
 	../machine/stats.cc\
@@ -70,7 +70,7 @@ THREAD_S = ../threads/switch.s
 
 THREAD_O =main.o scheduler.o synch.o system.o thread.o \
 	utility.o interrupt.o stats.o sysdep.o timer.o \
-	preemptive.o threadtest2.o puerto.o 
+	preemptive.o threadtestLock.o puerto.o 
 
 USERPROG_H = ../userprog/addrspace.h\
 	../userprog/bitmap.h\

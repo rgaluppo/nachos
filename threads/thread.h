@@ -103,6 +103,7 @@ class Thread {
     const char* getName() { return (name); }
     void Print() { printf("%s - PR=%d, ", name, priority); }
     int getPriority() { return priority; };
+    void setPriority(int p) { priority = p; };
 
   private:
     // some of the private data for this class is listed above

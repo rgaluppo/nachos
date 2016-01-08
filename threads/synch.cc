@@ -104,7 +104,7 @@ Lock::Lock(const char* debugName) {
     name    = debugName;
     isLock  = false;
     s       = new Semaphore(debugName, 1);
-    blocker = NULL;
+    blocker = NULL; //new Thread("bloker", 0, 0);
 }
 
 Lock::~Lock() {
@@ -116,19 +116,25 @@ void Lock::Acquire() {
 
     s->P();
     isLock  = true;
-    blocker = currentThread->getName();
+    blocker = currentThread;
 }
 
 void Lock::Release() {
     ASSERT(isHeldByCurrentThread())
 
+    if(currentThread->getPriority() > blocker->getPriority()) {
+        blocker->setPriority(currentThread->getPriority()); 
+    }
     isLock  = false;
     blocker = NULL;
     s->V();
 }
 
 bool Lock::isHeldByCurrentThread() {
-    return blocker == currentThread->getName() ;
+    if(blocker == NULL) {
+        return false;
+    }
+    return blocker->getName() == currentThread->getName() ;
 }
 
 Condition::Condition(const char* debugName, Lock* conditionLock){ 
