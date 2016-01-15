@@ -67,7 +67,7 @@ Semaphore::P()
     IntStatus oldLevel = interrupt->SetLevel(IntOff);	// disable interrupts
     
     while (value == 0) { 			// semaphore not available
-	queue->Append(currentThread);		// so go to sleep
+	queue->SortedInsert(currentThread, MAX_PRIORITY - currentThread->getPriority());		// so go to sleep
 	currentThread->Sleep();
     } 
     value--; 					// semaphore available, 
@@ -92,7 +92,7 @@ Semaphore::V()
 
     thread = queue->Remove();
     if (thread != NULL)	   // make thread ready, consuming the V immediately
-	scheduler->ReadyToRun(thread);
+        scheduler->ReadyToRun(thread);
     value++;
     interrupt->SetLevel(oldLevel);
 }
@@ -114,6 +114,10 @@ Lock::~Lock() {
 void Lock::Acquire() {
     ASSERT(isHeldByCurrentThread() == false)
 
+    if(blocker != NULL && currentThread->getPriority() > blocker->getPriority()) {
+        blocker->setPriority(currentThread->getPriority()); 
+    }
+
     s->P();
     isLock  = true;
     blocker = currentThread;
@@ -122,9 +126,6 @@ void Lock::Acquire() {
 void Lock::Release() {
     ASSERT(isHeldByCurrentThread())
 
-    if(currentThread->getPriority() > blocker->getPriority()) {
-        blocker->setPriority(currentThread->getPriority()); 
-    }
     isLock  = false;
     blocker = NULL;
     s->V();

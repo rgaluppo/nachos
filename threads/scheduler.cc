@@ -112,7 +112,7 @@ Scheduler::ReadyToRun (Thread *thread)
             readyList -> SortedInsert(tempList, tempPriority); 
         }
     }
-    Print();
+    //Print();
     DEBUG('t', "Fin readyToRun\n\n");
 }
 

@@ -19,7 +19,7 @@ Puerto:: ~Puerto(){
 void Puerto::Send(int mensaje){
    
     lengthEnv++;
-    DEBUG('t', "<<<<<Envie un  mensaje>>>>>\n");
+    printf("<<<<<Envie un  mensaje>>>>>\n");
    
     if(buffer == NULL) {//Si el buffer es nulo es porque no hay receptores. En este caso, esperamos.
         lockPort -> Acquire();
@@ -36,7 +36,7 @@ void Puerto::Send(int mensaje){
 }
 
 void Puerto::Receive(int* correo){
-    DEBUG('t', "<<<<<Recibi un  mensaje>>>>>\n");
+    printf("<<<<<Recibi un  mensaje>>>>>\n");
     if(lengthEnv == 0) { // Esta variable es nula cuando no hay remitentes esperando.
         if(!lockPort->isHeldByCurrentThread()) { //Verifico que no tengo adquirido el lock
             lockPort -> Acquire();               //(producto de un lockPort->Signal() ).
