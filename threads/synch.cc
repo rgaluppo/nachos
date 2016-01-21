@@ -104,7 +104,7 @@ Lock::Lock(const char* debugName) {
     name    = debugName;
     isLock  = false;
     s       = new Semaphore(debugName, 1);
-    blocker = NULL; //new Thread("bloker", 0, 0);
+    blocker = NULL; 
 }
 
 Lock::~Lock() {
