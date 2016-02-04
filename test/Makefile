@@ -1,4 +1,4 @@
-ï»¿# use normal make for this Makefile
+# use normal make for this Makefile
 #
 # Makefile for building user programs to run on top of Nachos
 #
@@ -13,7 +13,7 @@
 # if you are cross-compiling, you need to point to the right executables
 # and change the flags to ld and the build procedure for as
 #GCCDIR = ~/gnu/local/decstation-ultrix/bin/
-GCCDIR = /home/raul/nachos/mips-dec-ultrix42/mips- 
+GCCDIR = `pwd`/mips-dec-ultrix42/mips-
 LDFLAGS = -T script -N
 ASFLAGS = -mips1
 CPPFLAGS = $(INCDIR)
@@ -76,14 +76,14 @@ filetest: filetest.o start.o
 	../bin/coff2noff filetest.coff filetest
 
 # Estas reglas sirven para compilar programas simples,
-# que consistan en un ï¿½nico fuente.
+# que consistan en un único fuente.
 # Las reglas anteriores para construir los ejecutables
-# halt, shell, sort y filetest se podrï¿½an suprimir
+# halt, shell, sort y filetest se podrían suprimir
 
 %: %.c 
 	make start.o 
 	$(CC) $(CFLAGS) -c $<
 	$(LD) $(LDFLAGS) start.o $*.o -o $*.coff
-	../bin/coff2noff $*.coff $@
+	../bin/ $*.coff $@
 	
 

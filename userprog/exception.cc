@@ -53,9 +53,55 @@ ExceptionHandler(ExceptionType which)
 {
     int type = machine->ReadRegister(2);
 
-    if ((which == SyscallException) && (type == SC_Halt)) {
-	DEBUG('a', "Shutdown, initiated by user program.\n");
-   	interrupt->Halt();
+    if ((which == SyscallException)) {
+    	switch(type) {
+		case "SC_Halt" :
+			DEBUG('a', "Shutdown, initiated by user program.\n");
+		   	interrupt->Halt();
+			break;
+		case "SC_Exit" :
+			DEBUG('a', "Exit sysCall.\n");
+    			int arg = machine->ReadRegister(4);
+			//TODO Implementar Exit 
+			SysCall->Exit(arg);
+			break;
+		case "SC_Exec" :
+			DEBUG('a', "Exec sysCall.\n");
+			//TODO 
+			break;
+		case "SC_Join":
+			DEBUG('a', "Join sysCall.\n");
+			//TODO 
+			break;
+		case "SC_Create":
+			DEBUG('a', "Create sysCall.\n");
+    			int arg = machine->ReadRegister(4);
+			SysCall->Create(arg);
+			//TODO aumentar el pc
+			break;
+		case "SC_Open" :
+			DEBUG('a', "Open sysCall.\n");
+    			int arg = machine->ReadRegister(4);
+			int result = SysCall->Open(arg);
+			machine->WriteRegister(2, result);
+			//TODO aumentar el pc
+			break;
+		case "SC_Read" :
+			DEBUG('a', "Read sysCall.\n");
+			//TODO 
+			break;
+		case "SC_Write" :
+			DEBUG('a', "Write sysCall.\n");
+			//TODO 
+			break;
+		case "SC_Close" :
+			DEBUG('a', "Close sysCall.\n");
+			//TODO 
+			break;
+		default: 
+			printf("Unexpected syscall exception %d %d\n", which, type);
+			ASSERT(false);
+	}
     } else {
 	printf("Unexpected user mode exception %d %d\n", which, type);
 	ASSERT(false);
