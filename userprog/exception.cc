@@ -52,49 +52,55 @@ void
 ExceptionHandler(ExceptionType which)
 {
     int type = machine->ReadRegister(2);
+    int arg;
 
     if ((which == SyscallException)) {
     	switch(type) {
-		case "SC_Halt" :
+		case SC_Halt:
 			DEBUG('a', "Shutdown, initiated by user program.\n");
 		   	interrupt->Halt();
 			break;
-		case "SC_Exit" :
+		case SC_Exit:
+		       {
 			DEBUG('a', "Exit sysCall.\n");
-    			int arg = machine->ReadRegister(4);
-			//TODO Implementar Exit 
-			SysCall->Exit(arg);
+    			arg = machine->ReadRegister(4);
+			Exit(arg);
 			break;
-		case "SC_Exec" :
+		       }
+		case SC_Exec:
 			DEBUG('a', "Exec sysCall.\n");
 			//TODO 
 			break;
-		case "SC_Join":
+		case SC_Join:
 			DEBUG('a', "Join sysCall.\n");
 			//TODO 
 			break;
-		case "SC_Create":
+		case SC_Create:
+		       {
 			DEBUG('a', "Create sysCall.\n");
-    			int arg = machine->ReadRegister(4);
-			SysCall->Create(arg);
+    			arg = machine->ReadRegister(4);
+			Create((char*) &arg);
 			//TODO aumentar el pc
 			break;
-		case "SC_Open" :
+ 		       }
+		case SC_Open:
+                       {
 			DEBUG('a', "Open sysCall.\n");
-    			int arg = machine->ReadRegister(4);
-			int result = SysCall->Open(arg);
+    			arg = machine->ReadRegister(4);
+			int result = Open((char *) &arg);
 			machine->WriteRegister(2, result);
 			//TODO aumentar el pc
 			break;
-		case "SC_Read" :
+			}
+		case SC_Read:
 			DEBUG('a', "Read sysCall.\n");
 			//TODO 
 			break;
-		case "SC_Write" :
+		case SC_Write:
 			DEBUG('a', "Write sysCall.\n");
 			//TODO 
 			break;
-		case "SC_Close" :
+		case SC_Close:
 			DEBUG('a', "Close sysCall.\n");
 			//TODO 
 			break;

@@ -48,8 +48,9 @@ int Join(SpaceId id);
 
  
 /* Create a Nachos file, with "name" */
-void Syscall::Create(char *name){
-     char *name386 = readStrFromUsr(name,..);
+void Create(char *name){
+     char name386[128];
+     readStrFromUsr(name,name386);
      if (Filesys->Create(name386, 0)){
 	return;
      }
@@ -59,16 +60,18 @@ void Syscall::Create(char *name){
 /* Open the Nachos file "name", and return an "OpenFileId" that can 
  * be used to read and write to the file.
  */
-OpenFileId Syscall::Open(char *name){
-	  char *name386 = readStrFromUsr();
-	  return Filesys->Open(name386);
+OpenFileId Open(char *name){
+     char name386[128];
+     readStrFromUsr(name, name386);
+     return Filesys->Open(name386);
 }
 	  	
 
 /* Write "size" bytes from "buffer" to the open file. */
-void Syscall::Write(char *buffer, int size, OpenFileId id){
-     char *buffer386 = readBuffFromUsr(..,buffer, size);
-     OpenFile->OpenFile (id);
+void Write(char *buffer, int size, OpenFileId id){
+     char *buffer386 = new char[size];
+     readBuffFromUsr(buffer386 ,buffer, size);
+     OpenFile->OpenFile(id);
      if (OpenFile->Write(buffer386, size) > 0){
 	return;
      }	
@@ -81,12 +84,12 @@ void Syscall::Write(char *buffer, int size, OpenFileId id){
  * characters to read, return whatever is available (for I/O devices, 
  * you should always wait until you can return at least one character).
  */
-int Syscall::Read(char *buffer, int size, OpenFileId id) {
-     char *buffer386 = NULL;
+int Read(char *buffer, int size, OpenFileId id) {
+     char *buffer386 = new char[size];
      int result = 0;
      OpenFile->OpenFile (id);
      result = OpenFile->Read(buffer386, size); 
-     buffer = WriteBuffFromUsr(buffer386, ... ,  size);
+     WriteBuffFromUsr(buffer, buffer386 , size);
      return result;
 }
 
@@ -94,8 +97,6 @@ int Syscall::Read(char *buffer, int size, OpenFileId id) {
 void Close(OpenFileId id){
     OpenFile->Close(id);
 }	
-
-
 
 /* User-level thread operations: Fork and Yield.  To allow multiple
  * threads to run within a user program. 
