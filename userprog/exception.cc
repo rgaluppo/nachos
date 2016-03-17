@@ -25,6 +25,32 @@
 #include "system.h"
 #include "syscall.h"
 
+//---------------------------------------------------------------------
+//movingPC
+//	This function update the program counter to maintain the correct 
+//	working of the register stack.
+//---------------------------------------------------------------------
+
+void movingPC ()
+{
+     int pc;
+     pc = machine -> ReadRegister(PCReg);
+     machine -> WriteRegister(PrevPCReg, pc);
+     pc = machine -> ReadRegister(NextPCReg);
+     machine -> WriteRegister(PCReg, pc);
+     pc += 4;
+     machine -> WriteRegister(NextPCReg, pc);
+}
+
+#define File_length_MAX 64
+char* intTOchar(int* data) {
+	char* result = new char[File_length_MAX];
+	for(int i=0; data[i] != '\0'; i++) {
+		result[i] = data[i];
+	}
+	return result;
+}
+	
 //----------------------------------------------------------------------
 // ExceptionHandler
 // 	Entry point into the Nachos kernel.  Called when a user program
@@ -53,6 +79,10 @@ ExceptionHandler(ExceptionType which)
 {
     int type = machine->ReadRegister(2);
     int arg;
+    int arg2;
+    int arg3;
+    int arg4;
+    int result;
 
     if ((which == SyscallException)) {
     	switch(type) {
@@ -79,35 +109,43 @@ ExceptionHandler(ExceptionType which)
 		       {
 			DEBUG('a', "Create sysCall.\n");
     			arg = machine->ReadRegister(4);
-			Create((char*) &arg);
-			//TODO aumentar el pc
+			Create(intTOchar(&arg));
 			break;
  		       }
 		case SC_Open:
                        {
 			DEBUG('a', "Open sysCall.\n");
     			arg = machine->ReadRegister(4);
-			int result = Open((char *) &arg);
+			result = Open(intTOchar(&arg));
 			machine->WriteRegister(2, result);
-			//TODO aumentar el pc
 			break;
 			}
 		case SC_Read:
 			DEBUG('a', "Read sysCall.\n");
-			//TODO 
+			//int Read(char *buffer, int size, OpenFileId id);
+    			arg  = machine->ReadRegister(4);
+    			arg2 = machine->ReadRegister(5);
+    			arg3 = machine->ReadRegister(6);
+			result = Read(arg, arg2, arg3);
 			break;
 		case SC_Write:
 			DEBUG('a', "Write sysCall.\n");
-			//TODO 
+			//Write(char *buffer, int size, OpenFileId id);
+			arg  = machine->ReadRegister(4);
+    			arg2 = machine->ReadRegister(5);
+    			arg3 = machine->ReadRegister(6);
+			Write(&arg, arg2, arg3);
 			break;
 		case SC_Close:
 			DEBUG('a', "Close sysCall.\n");
-			//TODO 
+			arg  = machine->ReadRegister(4);
+			Close(arg);
 			break;
 		default: 
 			printf("Unexpected syscall exception %d %d\n", which, type);
 			ASSERT(false);
 	}
+	movingPC();
     } else {
 	printf("Unexpected user mode exception %d %d\n", which, type);
 	ASSERT(false);

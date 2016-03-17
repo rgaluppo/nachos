@@ -48,10 +48,10 @@ int Join(SpaceId id);
 
  
 /* Create a Nachos file, with "name" */
-void Create(char *name){
-     char name386[128];
+void Create(char *name) {
+     const char name386[128];
      readStrFromUsr(name,name386);
-     if (Filesys->Create(name386, 0)){
+     if (Filesys->Create(name386, 0)) {
 	return;
      }
      throw "Error al crear el archivo";
@@ -60,7 +60,7 @@ void Create(char *name){
 /* Open the Nachos file "name", and return an "OpenFileId" that can 
  * be used to read and write to the file.
  */
-OpenFileId Open(char *name){
+OpenFileId Open(char *name) {
      char name386[128];
      readStrFromUsr(name, name386);
      return Filesys->Open(name386);
@@ -68,11 +68,11 @@ OpenFileId Open(char *name){
 	  	
 
 /* Write "size" bytes from "buffer" to the open file. */
-void Write(char *buffer, int size, OpenFileId id){
+void Write(char *buffer, int size, OpenFileId id) {
      char *buffer386 = new char[size];
-     readBuffFromUsr(buffer386 ,buffer, size);
+     readBuffFromUsr(buffer386 , buffer, size);
      OpenFile->OpenFile(id);
-     if (OpenFile->Write(buffer386, size) > 0){
+     if (OpenFile->Write(buffer386, size) > 0) {
 	return;
      }	
      throw "Error al escribir en el archivo";
