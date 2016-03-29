@@ -1,5 +1,6 @@
-#include "copyright.h";
-#include "machine.h";
+#include "copyright.h"
+#include "machine.h"
+#include "system.h"
 
 class userTranslate {
     public:

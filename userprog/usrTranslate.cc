@@ -1,54 +1,35 @@
-#include "copyright.h";
-#include "usrTranslate.h";
+#include "copyright.h"
+#include "usrTranslate.h"
+#include "machine.h"
+#include "system.h"
 
 void userTranslate :: readStrFromUsr(int usrAddr, char *outStr) {
-    int* value;
-    int count = 0;
-
-    while( ReadMem(usrAddr, 1, value) && (*value != '\0') ) {
-        outStr = value;
-        outStr++;
+    int value, count = 0;
+    while( machine->ReadMem(usrAddr, 1, &value) && (value != '\0') ) {
+        outStr[count] = value;
         count++;
     }
-    *outStr = '\0'
-    outStr - count;
+    outStr[count] = '\0';
 };
 
 void userTranslate :: readBuffFromUsr(int usrAddr, char *outBuff, int byteCount) {
-    int* value;
-    int count = 0;
-
+    int value;
     for(int i=0; i < byteCount; i++) {
-        if( ReadMem(usrAddr, 1, value) ) {
-            count++;
-            outBuff = value;
-            outBuff++;
+        if( machine->ReadMem(usrAddr, 1, &value) ) {
+            outBuff[i] = (char) value;
         }
     }
-    outBuff - count;
 };
 
 void userTranslate :: writeStrToUsr(char *str, int usrAddr) {
-   int count = 0;
-    
    while(*str != '\0') {
-       WriteMem(usrAddr, 1, *str);
-       str++;
-       usrAddr++;
-       count++;
+       machine->WriteMem(usrAddr++, 1, *(str++));
     }
-    WriteMem(++usrAddr, 1, '\0');
-    str - count;
+    machine->WriteMem(usrAddr, 1, *str);
 };
 
 void userTranslate :: writeBuffToUsr(char *str, int usrAddr, int byteCount) {
-   int* value;
-   int count = 0;
-
    for(int i=0; i < byteCount; i++) {
-        WriteMem(usrAddr, 1, *str);
-        count++;
-        str++;
+        machine->WriteMem(usrAddr + i, 1, str[i]);
     }
-    str - count;
 };
