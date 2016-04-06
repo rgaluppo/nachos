@@ -80,7 +80,7 @@ ExceptionHandler(ExceptionType which)
     arguments[0] = machine->ReadRegister(4);
     arguments[1] = machine->ReadRegister(5);
     arguments[2] = machine->ReadRegister(6);
-    arguments[0] = machine->ReadRegister(4);
+    arguments[3] = machine->ReadRegister(7);
     int result;
     OpenFile* file;
     char name386[128];
@@ -111,32 +111,34 @@ ExceptionHandler(ExceptionType which)
             case SC_Open:
                 DEBUG('a', "Open sysCall.\n");
                 readStrFromUsr(arguments[0], name386);
-                file = fileSystem->Open(name386);
-                //TODO convertir OpenFile to int...
+                result = ( fileSystem->Open(name386) ) ? 0 : -1;
                 break;
             case SC_Read:
                 DEBUG('a', "Read sysCall.\n");
-                file = fileSystem->Open(arguments[0]);
-                result = file->Read(name386, arguments[1]); 
-                WriteBuffFromUsr(arguments[0], buffer386 , arguments[1]);
-                break;
+                readStrFromUsr(arguments[0], name386);
+                file = fileSystem->Open(name386);
+                char bufferR[arguments[1]];
+                result = file->Read(bufferR, arguments[1]); 
             case SC_Write:
                 DEBUG('a', "Write sysCall.\n");
-                //Write(char *buffer, int size, OpenFileId id);
-                //Write(intTOchar(&arg), arg2, (OpenFileId) arg3);
+                readStrFromUsr(arguments[0], name386);
+                file = fileSystem->Open(name386);
+                char bufferW[arguments[1]];
+                result = file->Write(bufferW, arguments[1]); 
                 break;
             case SC_Close:
                 DEBUG('a', "Close sysCall.\n");
-                //Close(arg);
+                readStrFromUsr(arguments[0], name386);
+                result = fileSystem->Remove(name386);
                 break;
             default: 
                 printf("Unexpected syscall exception %d %d\n", which, type);
                 ASSERT(false);
-	}
-	movingPC();
-    machine->WriteRegister(2, result);
+	    }
+	    movingPC();
+        machine->WriteRegister(2, result);
     } else {
-	printf("Unexpected user mode exception %d %d\n", which, type);
-	ASSERT(false);
+        printf("Unexpected user mode exception %d %d\n", which, type);
+        ASSERT(false);
     }
 }

@@ -13,7 +13,7 @@ void readBuffFromUsr(int usrAddr, char *outBuff, int byteCount) {
     int value;
     for(int i=0; i < byteCount; i++) {
         if( machine->ReadMem(usrAddr, 1, &value) ) {
-            outBuff[i] = (char) value;
+            outBuff[i] = value;
         }
     }
 };
