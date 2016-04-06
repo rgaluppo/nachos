@@ -22,7 +22,12 @@
 // of liability and disclaimer of warranty provisions.
 
 #include <syscall.h>
-#include <usrTranslate.h>
+#include "usrTranslate.h"
+#include "synchConsole.h"
+
+#define File_length_MAX 64
+
+SynchConsole* synchConsole = new SynchConsole();
 
 //---------------------------------------------------------------------
 //movingPC
@@ -40,15 +45,6 @@ void movingPC ()
      machine -> WriteRegister(NextPCReg, pc);
 }
 
-#define File_length_MAX 64
-char* intTOchar(int* data) {
-	char* result = new char[File_length_MAX];
-	for(int i=0; data[i] != '\0'; i++) {
-		result[i] = data[i];
-	}
-	return result;
-}
-	
 //----------------------------------------------------------------------
 // ExceptionHandler
 // 	Entry point into the Nachos kernel.  Called when a user program
@@ -118,7 +114,14 @@ ExceptionHandler(ExceptionType which)
                 readStrFromUsr(arguments[0], name386);
                 file = fileSystem->Open(name386);
                 char bufferR[arguments[1]];
-                result = file->Read(bufferR, arguments[1]); 
+                if(arguments[2] == ConsoleInput) {
+                    for(int i=0; i < arguments[1]; i++) {
+                        bufferR[i] = synchConsole->GetChar();
+                    }
+                } else {
+                    result = file->Read(bufferR, arguments[1]); 
+                }
+                break;
             case SC_Write:
                 DEBUG('a', "Write sysCall.\n");
                 readStrFromUsr(arguments[0], name386);
