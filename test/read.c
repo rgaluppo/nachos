@@ -1,9 +1,11 @@
 #include "syscall.h"
+//#include <stdio.h>
 
 int main()
 {
-    char *buff;
-    Read(buff,1024, 0);
-    Write("holas",5,1);
+    char *buff[24];
+    Read(buff, 10, 0);
+    Write(buff, 10, 1);
+ //   printf("esto es lo que escribimos en la consola: \n\t%s",buff);
     return 0;
 }

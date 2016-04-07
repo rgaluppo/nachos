@@ -15,9 +15,6 @@
 
 #include "copyright.h"
 
-#define ConsoleInput  0
-#define ConsoleOutput 1
-
 /* system call codes -- used by the stubs to tell the kernel which system call
  * is being asked for
  */

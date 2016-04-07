@@ -16,13 +16,13 @@ SynchConsole::~SynchConsole() {
 }
 
 void SynchConsole::PutChar(char c) {
-	canWrite->Adquire();	
+	canWrite->Acquire();	
 	console->PutChar(c);	// echo it!
 	done->P();         // wait for write to finish
 	canWrite->Release();
 }
 
 char SynchConsole::GetChar() {
-	readAvail->P();		// wait for character to arrive
+	done->P();		// wait for character to arrive
 	return console->GetChar();
 }

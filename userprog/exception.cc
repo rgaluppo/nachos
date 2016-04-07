@@ -78,7 +78,7 @@ ExceptionHandler(ExceptionType which)
     OpenFile* file;
     char name386[128];
 
-    if ((which == SyscallException)) {
+    if (which == SyscallException) {
     	switch(type) {
             case SC_Halt:
                 DEBUG('a', "Shutdown, initiated by user program.\n");
@@ -107,25 +107,42 @@ ExceptionHandler(ExceptionType which)
                 result = ( fileSystem->Open(name386) ) ? 0 : -1;
                 break;
             case SC_Read:
+		{
                 DEBUG('a', "Read sysCall.\n");
-                readStrFromUsr(arguments[0], name386);
+		int filename = arguments[0];
+		int size = arguments[1];
+		int descriptor = arguments[2];
+                readStrFromUsr(filename, name386);
                 file = fileSystem->Open(name386);
-                char bufferR[arguments[1]];
-                if(arguments[2] == ConsoleInput) {
-                    for(int i=0; i < arguments[1]; i++) {
+                char bufferR[size];
+                if(descriptor == ConsoleInput) {
+                    for(int i=0; i < size; i++) {
                         bufferR[i] = synchConsole->GetChar();
                     }
                 } else {
-                    result = file->Read(bufferR, arguments[1]); 
+                    result = file->Read(bufferR, size); 
                 }
                 break;
+		}
             case SC_Write:
+		{
                 DEBUG('a', "Write sysCall.\n");
-                readStrFromUsr(arguments[0], name386);
+		int filename = arguments[0];
+		int size = arguments[1];
+		int descriptor = arguments[2];
+                readStrFromUsr(filename, name386);
                 file = fileSystem->Open(name386);
-                char bufferW[arguments[1]];
-                result = file->Write(bufferW, arguments[1]); 
+                char bufferW[size];
+		if(descriptor == ConsoleOutput) {
+			result = file->Write(bufferW, size); 
+			for(int j=0; j < size; j++) {
+				synchConsole->PutChar(bufferW[j]);
+			}
+		} else {
+			result = file->Write(bufferW, size); 
+		}	
                 break;
+		}
             case SC_Close:
                 DEBUG('a', "Close sysCall.\n");
                 readStrFromUsr(arguments[0], name386);
@@ -134,11 +151,11 @@ ExceptionHandler(ExceptionType which)
             default: 
                 printf("Unexpected syscall exception %d %d\n", which, type);
                 ASSERT(false);
-	    }
-	    movingPC();
+    	}
+    	movingPC();
         machine->WriteRegister(2, result);
     } else {
-        printf("Unexpected user mode exception %d %d\n", which, type);
+        printf("Unexpected user mode exception:\t which=%d  type=%d\n", which, type);
         ASSERT(false);
     }
 }

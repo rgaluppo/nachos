@@ -1,6 +1,8 @@
 #include <console.h>
 #include <synch.h>
 
+#define MAX_OPERATION 5
+
 class SynchConsole {
     public:
         SynchConsole();
@@ -15,9 +17,8 @@ class SynchConsole {
     		        // "readHandler" is called whenever there is 
 				    // a char to be gotten
 
+        Semaphore *done;
     private:
         Console *console;
 	Lock* canWrite;
-        Semaphore *done;
-
 };
