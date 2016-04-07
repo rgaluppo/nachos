@@ -23,11 +23,8 @@
 
 #include <syscall.h>
 #include "usrTranslate.h"
-#include "synchConsole.h"
 
 #define File_length_MAX 64
-
-SynchConsole* synchConsole = new SynchConsole();
 
 //---------------------------------------------------------------------
 //movingPC
