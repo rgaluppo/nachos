@@ -15,8 +15,9 @@ class SynchConsole {
     		        // "readHandler" is called whenever there is 
 				    // a char to be gotten
 
-        Semaphore *readAvail;
-        Semaphore *writeDone;
     private:
         Console *console;
+	Lock* canWrite;
+        Semaphore *done;
+
 };

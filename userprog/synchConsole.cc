@@ -1,24 +1,25 @@
 #include "synchConsole.h"
 
-static void ReadAvail(void* console) { ( (SynchConsole*) console)->readAvail->V(); }
-static void WriteDone(void* console) { ( (SynchConsole*) console)->writeDone->V(); }
+static void Done(void* console) { ( (SynchConsole*) console)->done->V(); }
 
 
 SynchConsole::SynchConsole() {
-    readAvail = new Semaphore("readyToRead", 0);
-    writeDone = new Semaphore("writeDone", 0);
-    console = new Console(NULL, NULL, ReadAvail, WriteDone, this);
+    console  = new Console(NULL, NULL, Done, Done, this);
+    canWrite = new Lock("can_write?");
+    done     = new Semaphore("operation_done", MAX_OPERATION);
 }
 
 SynchConsole::~SynchConsole() {
-    delete readAvail;
-    delete writeDone;
     delete console;
+    delete canWrite;
+    delete done;
 }
 
 void SynchConsole::PutChar(char c) {
+	canWrite->Adquire();	
 	console->PutChar(c);	// echo it!
-	writeDone->P();         // wait for write to finish
+	done->P();         // wait for write to finish
+	canWrite->Release();
 }
 
 char SynchConsole::GetChar() {
