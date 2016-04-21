@@ -104,7 +104,11 @@ ExceptionHandler(ExceptionType which)
             case SC_Open:
                 DEBUG('a', "Open sysCall.\n");
                 readStrFromUsr(arguments[0], name386);
-                result = ( fileSystem->Open(name386) ) ? 0 : -1;
+ 		file = fileSystem->Open(name386);
+		result = -1;
+                if(file != NULL) {
+			result = currentThread->addFile(file);
+		}
                 break;
             case SC_Read:
 		{
@@ -144,8 +148,8 @@ ExceptionHandler(ExceptionType which)
 		}
             case SC_Close:
                 DEBUG('a', "Close sysCall.\n");
-                readStrFromUsr(arguments[0], name386);
-                result = fileSystem->Remove(name386);
+		currentThread->removeFile(arguments[0]);
+                result = 0;
                 break;
             default: 
                 printf("Unexpected syscall exception %d %d\n", which, type);

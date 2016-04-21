@@ -339,4 +339,38 @@ Thread::RestoreUserState()
 	machine->WriteRegister(i, userRegisters[i]);
 }
 
+OpenFile*
+Thread::getFile(OpenFileId descriptor) 
+{
+	OpenFile* file = NULL;
+	file = currentThread->filesDescriptors[descriptor];
+	if (file != NULL)
+		return file;
+	return NULL;
+}
+
+OpenFileId
+Thread::addFile(OpenFile* file)
+{
+	int i = 0;
+	while (i < MAX_FILES_OPENED && currentThread->filesDescriptors[i] != NULL)
+		i++;
+	if(currentThread->filesDescriptors[i] == NULL) {
+		currentThread->filesDescriptors[i] = file;
+		return i;
+	}
+	return -1;
+} 
+
+void
+Thread::removeFile(OpenFileId descriptor)
+{
+	if (currentThread->filesDescriptors[descriptor] != NULL) {
+		currentThread->filesDescriptors[descriptor] = NULL;
+		return;
+	}
+	printf("No se puede cerrar un archivo que no se abrió\n");
+	ASSERT(false);
+}
+
 #endif

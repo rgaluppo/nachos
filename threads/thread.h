@@ -43,6 +43,8 @@
 #ifdef USER_PROGRAM
 #include "machine.h"
 #include "addrspace.h"
+#include <syscall.h>
+#define MAX_FILES_OPENED 5
 
 #endif
 
@@ -127,12 +129,16 @@ class Thread {
 // while executing kernel code.
 
     int userRegisters[NumTotalRegs];	// user-level CPU register state
+    OpenFile* filesDescriptors[MAX_FILES_OPENED];
 
   public:
     void SaveUserState();		// save user-level register state
     void RestoreUserState();		// restore user-level register state
 
     AddrSpace *space;			// User code this thread is running.
+    OpenFile* getFile(OpenFileId descriptor);
+    OpenFileId addFile(OpenFile* file);
+    void removeFile(OpenFileId descriptor);
 #endif
 };
 
