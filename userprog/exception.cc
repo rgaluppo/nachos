@@ -112,9 +112,9 @@ ExceptionHandler(ExceptionType which)
 		int filename = arguments[0];
 		int size = arguments[1];
 		int descriptor = arguments[2];
-                readStrFromUsr(filename, name386);
                 file = fileSystem->Open(name386);
                 char bufferR[size];
+                readStrFromUsr(filename, name386);
                 if(descriptor == ConsoleInput) {
                     for(int i=0; i < size; i++) {
                         bufferR[i] = synchConsole->GetChar();
@@ -126,21 +126,20 @@ ExceptionHandler(ExceptionType which)
 		}
             case SC_Write:
 		{
-                DEBUG('a', "Write sysCall.\n");
-		int filename = arguments[0];
-		int size = arguments[1];
-		int descriptor = arguments[2];
-                readStrFromUsr(filename, name386);
-                file = fileSystem->Open(name386);
-                char bufferW[size];
-		if(descriptor == ConsoleOutput) {
-			result = file->Write(bufferW, size); 
-			for(int j=0; j < size; j++) {
-				synchConsole->PutChar(bufferW[j]);
-			}
-		} else {
-			result = file->Write(bufferW, size); 
-		}	
+            DEBUG('a', "Write sysCall.\n");
+            int addr = arguments[0];
+            int size = arguments[1];
+            OpenFileId descriptor = arguments[2];
+            char bufferW[size];
+
+            readBuffFromUsr(addr, bufferW, size);
+            if(descriptor == ConsoleOutput) {
+                for(int j=0; j < size; j++) {
+                    synchConsole->PutChar(bufferW[j]);
+                }
+            } else {
+                result = file->Write(bufferW, size); 
+            }	
                 break;
 		}
             case SC_Close:

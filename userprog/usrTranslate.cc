@@ -1,10 +1,11 @@
-#include <usrTranslate.h>
+#include "usrTranslate.h"
 
 void readStrFromUsr(int usrAddr, char *outStr) {
     int value, count = 0;
     while( machine->ReadMem(usrAddr, 1, &value) && (value != '\0') ) {
         outStr[count] = value;
         count++;
+        usrAddr++;
     }
     outStr[count] = '\0';
 };
@@ -12,9 +13,8 @@ void readStrFromUsr(int usrAddr, char *outStr) {
 void readBuffFromUsr(int usrAddr, char *outBuff, int byteCount) {
     int value;
     for(int i=0; i < byteCount; i++) {
-        if( machine->ReadMem(usrAddr, 1, &value) ) {
-            outBuff[i] = value;
-        }
+        machine->ReadMem(usrAddr+i, 1, &value);
+        outBuff[i] = value;
     }
 };
 

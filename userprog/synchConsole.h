@@ -1,7 +1,7 @@
 #include <console.h>
 #include <synch.h>
 
-#define MAX_OPERATION 5
+#define MAX_OPERATION 0
 
 class SynchConsole {
     public:
