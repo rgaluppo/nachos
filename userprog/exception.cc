@@ -98,9 +98,10 @@ ExceptionHandler(ExceptionType which)
                 break;
             case SC_Create:
                 DEBUG('a', "Create sysCall.\n");
-                readStrFromUsr(arguments[0],name386);
-                printf("antes de Create: result =\n");
-                result = fileSystem->Create(name386, 0);
+                readStrFromUsr(arguments[0], name386);
+                printf(" antes de Create: path=%s\n", name386);
+                result = fileSystem->Create(name386, 512);
+                printf(" despues de Create: result =\n");
                 break;
             case SC_Open:
                 DEBUG('a', "Open sysCall.\n");
