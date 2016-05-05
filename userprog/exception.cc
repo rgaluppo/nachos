@@ -85,13 +85,22 @@ ExceptionHandler(ExceptionType which)
                 interrupt->Halt();
                 break;
             case SC_Exit:
+		{
                 DEBUG('a', "Exit sysCall.\n");
-                Exit(arguments[0]);
+                int state = arguments[0];
+		if(state == 0) 
+			printf("The program finish without problems.\n");
+		else
+			printf("The program finish with problems.\n");
+		currentThread->Finish();
                 break;
+		}
             case SC_Exec:
+		{
                 DEBUG('a', "Exec sysCall.\n");
-                //TODO 
+		readStrFromUsr(arguments[0], name386);
                 break;
+		}
             case SC_Join:
                 DEBUG('a', "Join sysCall.\n");
                 //TODO 
