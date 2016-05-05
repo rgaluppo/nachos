@@ -99,7 +99,7 @@ ExceptionHandler(ExceptionType which)
             case SC_Create:
                 DEBUG('a', "Create sysCall.\n");
                 readStrFromUsr(arguments[0],name386);
-                printf("antes de Create: result = %d", result);
+                printf("antes de Create: result =\n");
                 result = fileSystem->Create(name386, 0);
                 break;
             case SC_Open:
@@ -126,10 +126,10 @@ ExceptionHandler(ExceptionType which)
                         bufferR[i] = synchConsole->GetChar();
                     }
                     result = i;
+		    writeBuffToUsr(bufferR, filename, size); 
                 } else {
                     result = file->Read(bufferR, size); 
                 }
-                printf("termino read\n");
                 break;
 		}
             case SC_Write:
@@ -146,6 +146,7 @@ ExceptionHandler(ExceptionType which)
                     synchConsole->PutChar(bufferW[j]);
                 }
             } else {
+		file = currentThread->getFile(descriptor);
                 result = file->Write(bufferW, size); 
             }	
                 break;
