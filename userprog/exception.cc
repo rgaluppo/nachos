@@ -99,6 +99,7 @@ ExceptionHandler(ExceptionType which)
             case SC_Create:
                 DEBUG('a', "Create sysCall.\n");
                 readStrFromUsr(arguments[0],name386);
+                printf("antes de Create: result = %d", result);
                 result = fileSystem->Create(name386, 0);
                 break;
             case SC_Open:
@@ -120,12 +121,15 @@ ExceptionHandler(ExceptionType which)
                 char bufferR[size];
                 readStrFromUsr(filename, name386);
                 if(descriptor == ConsoleInput) {
-                    for(int i=0; i < size; i++) {
+                    int i;
+                    for(i=0; i < size; i++) {
                         bufferR[i] = synchConsole->GetChar();
                     }
+                    result = i;
                 } else {
                     result = file->Read(bufferR, size); 
                 }
+                printf("termino read\n");
                 break;
 		}
             case SC_Write:
