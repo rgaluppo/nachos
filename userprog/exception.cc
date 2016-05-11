@@ -98,7 +98,10 @@ ExceptionHandler(ExceptionType which)
             case SC_Exec:
 		{
                 DEBUG('a', "Exec sysCall.\n");
-		readStrFromUsr(arguments[0], name386);
+		        readStrFromUsr(arguments[0], name386);
+                file = fileSystem->Open(name386);
+                Thread* execThread = new Thread(name386);
+
                 break;
 		}
             case SC_Join:
