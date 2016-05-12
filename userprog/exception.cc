@@ -42,6 +42,14 @@ void movingPC ()
      machine -> WriteRegister(NextPCReg, pc);
 }
 
+
+void doExcecution(void* file) {
+	currentThread->space = new AddrSpace ((OpenFile*) file);
+	currentThread->space->InitRegisters();
+ 	machine->Run();	
+}
+
+
 //----------------------------------------------------------------------
 // ExceptionHandler
 // 	Entry point into the Nachos kernel.  Called when a user program
@@ -98,9 +106,10 @@ ExceptionHandler(ExceptionType which)
             case SC_Exec:
 		{
                 DEBUG('a', "Exec sysCall.\n");
-		        readStrFromUsr(arguments[0], name386);
+		readStrFromUsr(arguments[0], name386);
                 file = fileSystem->Open(name386);
-                Thread* execThread = new Thread(name386);
+                Thread* execThread = new Thread(name386, 0, 0);
+		execThread->Fork(doExcecution, (void *) file);
 
                 break;
 		}
@@ -129,9 +138,9 @@ ExceptionHandler(ExceptionType which)
                 DEBUG('a', "Read sysCall.\n");
 		int filename = arguments[0];
 		int size = arguments[1];
-		int descriptor = arguments[2];
-                file = fileSystem->Open(name386);
+		OpenFileId descriptor = arguments[2];
                 char bufferR[size];
+
                 readStrFromUsr(filename, name386);
                 if(descriptor == ConsoleInput) {
                     int i;
@@ -141,6 +150,7 @@ ExceptionHandler(ExceptionType which)
                     result = i;
 		    writeBuffToUsr(bufferR, filename, size); 
                 } else {
+		    file = currentThread->getFile(descriptor);
                     result = file->Read(bufferR, size); 
                 }
                 break;

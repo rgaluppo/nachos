@@ -11,3 +11,5 @@
 *.synctex.gz
 *.swo
 *.swn
+*.swm
+*.coff

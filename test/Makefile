@@ -13,8 +13,8 @@
 # if you are cross-compiling, you need to point to the right executables
 # and change the flags to ld and the build procedure for as
 #GCCDIR = ~/gnu/local/decstation-ultrix/bin/
-GCCDIR = ~/nachos/mips-dec-ultrix42/mips-
-#GCCDIR = ~/nachos/test/mips-dec-ultrix42/mips-
+#GCCDIR = ~/nachos/mips-dec-ultrix42/mips-
+GCCDIR = ~/nachos/test/mips-dec-ultrix42/mips-
 LDFLAGS = -T script -N
 ASFLAGS = -mips1
 CPPFLAGS = $(INCDIR)
@@ -35,7 +35,7 @@ CPP = /lib/cpp
 INCDIR =-I../userprog -I../threads
 CFLAGS = -G 0 -c $(INCDIR) -mips1
 
-all: halt shell matmult sort filetest read testsyscall
+all: halt shell matmult sort filetest read testsyscall write
 
 start.o: start.s ../userprog/syscall.h
 	$(CPP) $(CPPFLAGS) start.s > strt.s
@@ -84,6 +84,13 @@ filetest.o: filetest.c
 filetest: filetest.o start.o
 	$(LD) $(LDFLAGS) start.o filetest.o -o filetest.coff
 	../bin/coff2noff filetest.coff filetest
+
+write.o: write.c
+	$(CC) $(CFLAGS) -c write.c
+write: write.o start.o
+	$(LD) $(LDFLAGS) start.o write.o -o write.coff
+	../bin/coff2noff write.coff write
+
 
 # Estas reglas sirven para compilar programas simples,
 # que consistan en un único fuente.

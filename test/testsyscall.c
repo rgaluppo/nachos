@@ -8,6 +8,7 @@ main()
 //	char buffer[50];
 //	Read(buffer, 10, descriptor);
 //	Write(buffer, 5, ConsoleOutput);
-	Exit(0);          
-//	return 0;
+	Exec("/home/agraf/nachos/test/read");
+//	Exit(0);
+	return 0;
 }
