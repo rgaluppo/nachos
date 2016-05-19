@@ -188,8 +188,16 @@ ExceptionHandler(ExceptionType which)
 		}
             case SC_Close:
                 DEBUG('a', "Close sysCall.\n");
-		currentThread->removeFile(arguments[0]);
-                result = 0;
+            	OpenFileId descriptor = arguments[0];
+		file = currentThread->getFile(descriptor);
+		if(file != NULL) {
+			file->~OpenFile();
+			currentThread->removeFile(descriptor);
+                	result = 0;
+		} else {
+			printf("An error ocurrs on Close operation.");
+			result = -1;
+		}
                 break;
             default: 
                 printf("Unexpected syscall exception %d %d\n", which, type);
