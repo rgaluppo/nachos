@@ -352,8 +352,8 @@ Thread::getFile(OpenFileId descriptor)
 OpenFileId
 Thread::addFile(OpenFile* file)
 {
-	int i = 0;
-	while (i < MAX_FILES_OPENED && currentThread->filesDescriptors[i] != NULL)
+	int i = 2;
+	while (i < (MAX_FILES_OPENED + 2) && currentThread->filesDescriptors[i] != NULL)
 		i++;
 	if(currentThread->filesDescriptors[i] == NULL) {
 		currentThread->filesDescriptors[i] = file;
