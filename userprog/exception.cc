@@ -26,6 +26,8 @@
 
 #define File_length_MAX 64
 
+int amountThread = 1; //Only main thread exists. 
+
 //---------------------------------------------------------------------
 //movingPC
 //	This function update the program counter to maintain the correct 
@@ -95,12 +97,21 @@ ExceptionHandler(ExceptionType which)
             case SC_Exit:
 		{
                 DEBUG('a', "Exit sysCall.\n");
+		amountThread--;
                 int state = arguments[0];
-		if(state == 0) 
+		if(state == 0) {
 			printf("The program finish without problems.\n");
-		else
+		} else {
 			printf("The program finish with problems.\n");
-		currentThread->Finish();
+		}
+		if(amountThread < 1) { // The only thread is main.
+			interrupt->Halt();
+		} else {
+			if(currentThread->space != NULL) {
+				currentThread->space->~AddrSpace();
+			}
+			currentThread->Finish();
+		}
                 break;
 		}
             case SC_Exec:
@@ -108,7 +119,8 @@ ExceptionHandler(ExceptionType which)
                 DEBUG('a', "Exec sysCall.\n");
 		readStrFromUsr(arguments[0], name386);
                 file = fileSystem->Open(name386);
-                Thread* execThread = new Thread(name386, 0, 0);
+                Thread* execThread = new Thread(name386, 1, 0);
+		amountThread++; 
 		execThread->Fork(doExcecution, (void *) file);
 
                 break;
