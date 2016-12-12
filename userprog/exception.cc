@@ -95,40 +95,49 @@ ExceptionHandler(ExceptionType which)
                 interrupt->Halt();
                 break;
             case SC_Exit:
-		{
+            {
                 DEBUG('a', "Exit sysCall.\n");
-		amountThread--;
+                amountThread--;
                 int state = arguments[0];
-		if(state == 0) {
-			printf("The program finish without problems.\n");
-		} else {
-			printf("The program finish with problems.\n");
-		}
-		if(amountThread < 1) { // The only thread is main.
-			interrupt->Halt();
-		} else {
-			if(currentThread->space != NULL) {
-				currentThread->space->~AddrSpace();
-			}
-			currentThread->Finish();
-		}
+                if(state == 0) {
+                    printf("The program finish without problems.\n");
+                } else {
+                    printf("The program finish with problems.\n");
+                }
+                if(amountThread < 1) { // The only thread is main.
+                    interrupt->Halt();
+                } else {
+                    if(currentThread->space != NULL) {
+                        currentThread->space->~AddrSpace();
+                    }
+                    currentThread->Finish();
+                }
                 break;
-		}
+            }
             case SC_Exec:
-		{
+            {
                 DEBUG('a', "Exec sysCall.\n");
-		readStrFromUsr(arguments[0], name386);
+                readStrFromUsr(arguments[0], name386);
                 file = fileSystem->Open(name386);
                 Thread* execThread = new Thread(name386, 1, 0);
-		amountThread++; 
-		execThread->Fork(doExcecution, (void *) file);
-
+                amountThread++;
+                execThread->Fork(doExcecution, (void *) file);
                 break;
-		}
+            }
             case SC_Join:
+            {
                 DEBUG('a', "Join sysCall.\n");
-                //TODO 
+                int pid = arguments[0];
+                Thread* child = runningThreadTable[pid];
+                if(child==NULL){
+                    DEBUG('a', "Erron in JOIN: The thread not exists");
+                    result = -1;
+                } else{
+                   child->Join();
+                   result = 0;
+                }
                 break;
+            }
             case SC_Create:
                 DEBUG('a', "Create sysCall.\n");
                 readStrFromUsr(arguments[0], name386);
@@ -139,18 +148,18 @@ ExceptionHandler(ExceptionType which)
             case SC_Open:
                 DEBUG('a', "Open sysCall.\n");
                 readStrFromUsr(arguments[0], name386);
- 		file = fileSystem->Open(name386);
-		result = -1;
+                file = fileSystem->Open(name386);
+                result = -1;
                 if(file != NULL) {
-			result = currentThread->addFile(file);
-		}
+                    result = currentThread->addFile(file);
+                }
                 break;
             case SC_Read:
-		{
+            {
                 DEBUG('a', "Read sysCall.\n");
-		int filename = arguments[0];
-		int size = arguments[1];
-		OpenFileId descriptor = arguments[2];
+                int filename = arguments[0];
+                int size = arguments[1];
+                OpenFileId descriptor = arguments[2];
                 char bufferR[size];
 
                 readStrFromUsr(filename, name386);
@@ -160,45 +169,47 @@ ExceptionHandler(ExceptionType which)
                         bufferR[i] = synchConsole->GetChar();
                     }
                     result = i;
-		    writeBuffToUsr(bufferR, filename, size); 
+                    writeBuffToUsr(bufferR, filename, size);
                 } else {
-		    file = currentThread->getFile(descriptor);
+                    file = currentThread->getFile(descriptor);
                     result = file->Read(bufferR, size); 
                 }
                 break;
-		}
+            }
             case SC_Write:
-		{
-            DEBUG('a', "Write sysCall.\n");
-            int addr = arguments[0];
-            int size = arguments[1];
-            OpenFileId descriptor = arguments[2];
-            char bufferW[size];
+            {
+                DEBUG('a', "Write sysCall.\n");
+                int addr = arguments[0];
+                int size = arguments[1];
+                OpenFileId descriptor = arguments[2];
+                char bufferW[size];
 
-            readBuffFromUsr(addr, bufferW, size);
-            if(descriptor == ConsoleOutput) {
-                for(int j=0; j < size; j++) {
-                    synchConsole->PutChar(bufferW[j]);
+                readBuffFromUsr(addr, bufferW, size);
+                if(descriptor == ConsoleOutput) {
+                    for(int j=0; j < size; j++) {
+                        synchConsole->PutChar(bufferW[j]);
+                    }
+                } else {
+                    file = currentThread->getFile(descriptor);
+                    result = file->Write(bufferW, size);
                 }
-            } else {
-		file = currentThread->getFile(descriptor);
-                result = file->Write(bufferW, size); 
-            }	
                 break;
-		}
+            }
             case SC_Close:
+            {
                 DEBUG('a', "Close sysCall.\n");
             	OpenFileId descriptor = arguments[0];
-		file = currentThread->getFile(descriptor);
-		if(file != NULL) {
-			file->~OpenFile();
-			currentThread->removeFile(descriptor);
+                file = currentThread->getFile(descriptor);
+                if(file != NULL) {
+                    file->~OpenFile();
+                    currentThread->removeFile(descriptor);
                 	result = 0;
-		} else {
-			printf("An error ocurrs on Close operation.");
-			result = -1;
-		}
+                } else {
+                    printf("An error ocurrs on Close operation.");
+                    result = -1;
+                }
                 break;
+            }
             default: 
                 printf("Unexpected syscall exception %d %d\n", which, type);
                 ASSERT(false);
