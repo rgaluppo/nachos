@@ -13,3 +13,5 @@
 *.swn
 *.swm
 *.coff
+userprog/nachos
+threads/nachos
