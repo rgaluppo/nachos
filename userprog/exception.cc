@@ -128,14 +128,7 @@ ExceptionHandler(ExceptionType which)
             {
                 DEBUG('a', "Join sysCall.\n");
                 int pid = arguments[0];
-                Thread* child = runningThreadTable[pid];
-                if(child==NULL){
-                    DEBUG('a', "Erron in JOIN: The thread not exists");
-                    result = -1;
-                } else{
-                   child->Join();
-                   result = 0;
-                }
+		//TODO
                 break;
             }
             case SC_Create:

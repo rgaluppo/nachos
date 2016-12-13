@@ -12,6 +12,7 @@
 #include "copyright.h"
 #include "list.h"
 #include "thread.h"
+#include "bitmap.h"
 
 #define MAX_PRIORITY 10
 
@@ -30,10 +31,9 @@ class Scheduler {
     void Run(Thread* nextThread);	// Cause nextThread to start running
     void Print();			// Print contents of ready list
     
+    BitMap* memoryMap;
   private:
-//    List<Thread*> *readyList [MAX_PRIORITY]
-    List< List<Thread*> *> *readyList;  		// queue of threads that are ready to run,
-					// but not running
+    List< List<Thread*> *> *readyList;  // queue of threads that are ready to run,
 };
 
 #endif // SCHEDULER_H
