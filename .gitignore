@@ -15,5 +15,3 @@
 *.coff
 userprog/nachos
 threads/nachos
-Makefile
-userprog/Makefile
