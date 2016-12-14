@@ -50,6 +50,7 @@ Timer::Timer(VoidFunctionPtr timerHandler, void* callArg, bool doRandom)
     // schedule the first interrupt from the timer device
     interrupt->Schedule(TimerHandler, this, TimeOfNextInterrupt(), 
 		TimerInt); 
+    slice = -1;
 }
 
 //----------------------------------------------------------------------
@@ -79,7 +80,15 @@ int
 Timer::TimeOfNextInterrupt() 
 {
     if (randomize)
-	return 1 + (Random() % (TimerTicks * 2));
+        return 1 + (Random() % (TimerTicks * 2));
+    else if (slice > 0)
+        return slice;
     else
-	return TimerTicks; 
+        return TimerTicks; 
+}
+
+int
+Timer::SetTimeSlice(int time)
+{
+    slice = time;
 }
