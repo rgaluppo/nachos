@@ -23,6 +23,7 @@
 
 #include <syscall.h>
 #include "usrTranslate.h"
+#include <stdlib.h>
 
 #define File_length_MAX 64
 
@@ -196,7 +197,7 @@ ExceptionHandler(ExceptionType which)
                 if(file != NULL) {
                     file->~OpenFile();
                     currentThread->removeFile(descriptor);
-                	result = 0;
+		    result = 0;
                 } else {
                     printf("An error ocurrs on Close operation.");
                     result = -1;
@@ -210,7 +211,37 @@ ExceptionHandler(ExceptionType which)
     	movingPC();
         machine->WriteRegister(2, result);
     } else {
-        printf("Unexpected user mode exception:\t which=%d  type=%d\n", which, type);
+	char *exception = "";
+	switch(which){
+		case NoException:
+			exception = "NoException";
+			break;
+		case SyscallException:
+			exception = "SyscallException";
+			break;
+	     	case PageFaultException:
+			exception = "PageFaultException";
+			break;
+	     	case ReadOnlyException: 
+			exception = "ReadOnlyException";
+			break;
+	     	case BusErrorException: 
+			exception = "BusErrorException";
+			break;
+	     	case AddressErrorException:
+			exception = "AddressErrorException";
+			break;
+	     	case OverflowException:
+			exception = "OverflowException";
+			break;
+	     	case IllegalInstrException:
+			exception = "IllegalInstrException";
+			break;
+		default:
+			printf("Unexpected user mode exception.");
+			ASSERT(false);
+	}
+        printf("Unexpected user mode exception:\t which=%s  type=%d\n", exception, type);
         ASSERT(false);
     }
-}
+  }
