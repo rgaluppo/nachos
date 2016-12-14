@@ -35,6 +35,7 @@ SynchDisk   *synchDisk;
 #ifdef USER_PROGRAM	// requires either FILESYS or FILESYS_STUB
 Machine *machine;	// user program memory and registers
 SynchConsole* synchConsole;
+#define TIME_SLICE 200;
 #endif
 
 #ifdef NETWORK
@@ -156,8 +157,10 @@ Initialize(int argc, char **argv)
     stats = new Statistics();			// collect statistics
     interrupt = new Interrupt;			// start up interrupt handling
     scheduler = new Scheduler();		// initialize the ready queue
-    if (randomYield)				// start the timer (if needed)
-	timer = new Timer(TimerInterruptHandler, 0, randomYield);
+    timer = new Timer(TimerInterruptHandler, 0, randomYield);
+#ifdef USER_PROGRAM
+    timer -> SetTimeSlice(TIME_SLICE);
+#endif
 
     threadToBeDestroyed = NULL;
 
