@@ -35,8 +35,10 @@ static void ListThreadPrint (List<Thread*>* xs);
 Scheduler::Scheduler()
 { 
     readyList = new List< List<Thread*> *>; 
+#ifdef USER_PROG
     int memorySize = MemorySize;
     memoryMap = new BitMap(memorySize);
+#endif
 }	 
 
 //----------------------------------------------------------------------

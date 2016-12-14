@@ -86,7 +86,11 @@ AddrSpace::AddrSpace(OpenFile *executable)
     pageTable = new TranslationEntry[numPages];
     int firstFreePhySpace = -1;
     for (i = 0; i < numPages; i++) {
+#ifdef USER_PROG
         firstFreePhySpace = scheduler -> memoryMap -> Find();
+#else
+	firstFreePhySpace = i;
+#endif
 	ASSERT(firstFreePhySpace != -1);	//Always found space in physical memory.
 	pageTable[i].virtualPage = i;
 	pageTable[i].physicalPage = firstFreePhySpace;
@@ -125,8 +129,10 @@ AddrSpace::AddrSpace(OpenFile *executable)
 
 AddrSpace::~AddrSpace()
 {
+#ifdef USER_PROG
    for(unsigned int i=0; i < numPages; i++)
        scheduler -> memoryMap -> Clear (pageTable[i].physicalPage);
+#endif
    delete pageTable;
 }
 
