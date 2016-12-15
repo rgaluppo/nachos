@@ -3,12 +3,11 @@
 int
 main()
 {
-	//Create("/home/agraf/nachos/test/hola.txt");
-//	int descriptor = Open("/home/agraf/nachos/test/hola.txt");
-//	char buffer[50];
-//	Read(buffer, 10, descriptor);
-//	Write(buffer, 5, ConsoleOutput);
-	Exec("/home/agraf/nachos/test/read");
-//	Exit(0);
-	return 0;
+	Create("/home/agraf/nachos/test/hola.txt");
+	int descriptor = Open("/home/agraf/nachos/test/hola.txt");
+	char buffer[50];
+	Read(buffer, 10, descriptor);
+	Write(buffer, 5, ConsoleOutput);
+	//Exec("/home/agraf/nachos/test/read");
+	Exit(0);
 }

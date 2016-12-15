@@ -87,7 +87,7 @@ Timer::TimeOfNextInterrupt()
         return TimerTicks; 
 }
 
-int
+void
 Timer::SetTimeSlice(int time)
 {
     slice = time;
