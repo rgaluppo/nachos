@@ -6,7 +6,7 @@ Process::Process(Thread *myExecutor, Process *myParent)
 	parent = myParent;
 	container = myExecutor;
 	nChildren = 0;
-	exitCode = -1;//TODO ver como inicializarlo...
+	exitCode = 0 //TODO ver como inicializarlo...
 	status = ProcessStatus.PROCESS_JUST_CREATED;
 	children = new List();
 	waitqueue = new List();
@@ -30,34 +30,17 @@ Process::addChild(Process *myChild)
 void
 Process::wakeUpJoiner()
 {
-	ASSERT(waitqueue->IsEmpty());
-
-	parent->setStatus(ProcessStatus.PROCESS_READY);
-	Thread* pt = parent->getThread();
-	scheduler->ReadyToRun(pt);
 }
 
 void 
-Process::exit(int ec)
-{
+Process::exit(int ec){
 }
 
 void
-Process::addJoiner(Process *joiner)
-{
-	waitqueue->SortedInsert((void *) joiner, joiner->getId());
+Process::addJoiner(Process *joiner){
 }
 
 void 
 Process::deathOfChild(Process *p)
 {
-	children->SortedRemoved(p->getId());
-	waitqueue->SortedRemoved(p->getId());
-	if(waitqueue->IsEmpty())
-		p->wakeUpJoiner()
-}
-
-void
-Process::dumpChildInfo()
-{
-}
+} 

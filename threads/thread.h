@@ -118,7 +118,6 @@ class Thread {
     int joinFlag;
     int priority;
     Puerto* joinPort;
-
     void StackAllocate(VoidFunctionPtr func, void* arg);
     					// Allocate a stack for thread.
 					// Used internally by Fork()
@@ -128,10 +127,15 @@ class Thread {
 // one for its state while executing user code, one for its state 
 // while executing kernel code.
 
+    int threadId;			//This will be the identifier of the processes
     int userRegisters[NumTotalRegs];	// user-level CPU register state
     OpenFile* filesDescriptors[MAX_FILES_OPENED];
 
   public:
+
+    int CreateID ();			// Create a new identifier
+    int getThreadId () {return threadId};
+
     void SaveUserState();		// save user-level register state
     void RestoreUserState();		// restore user-level register state
 

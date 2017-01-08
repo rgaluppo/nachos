@@ -44,6 +44,7 @@ Thread::Thread(const char* threadName, int jFlag, int threadPriority)
     joinPort = new Puerto ("Join");
 
 #ifdef USER_PROGRAM
+    threadId = CreateId();
     space = NULL;
 #endif
 }
@@ -371,6 +372,12 @@ Thread::removeFile(OpenFileId descriptor)
 	}
 	printf("No se puede cerrar un archivo que no se abrió\n");
 	ASSERT(false);
+}
+
+int
+Thread::CreateId()			//Crea un nuevo identificador, pensé que era mejor que fuera aleatorio
+{
+	return random(time()); 		//Hay que agragar las librerías de C necesarias, no las recuerdo	
 }
 
 #endif
