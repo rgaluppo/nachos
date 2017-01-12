@@ -127,7 +127,7 @@ class Thread {
 // one for its state while executing user code, one for its state 
 // while executing kernel code.
 
-    int threadId;			//This will be the identifier of the processes
+    static int threadId = 0;			//This will be the identifier of the processes
     int userRegisters[NumTotalRegs];	// user-level CPU register state
     OpenFile* filesDescriptors[MAX_FILES_OPENED];
 

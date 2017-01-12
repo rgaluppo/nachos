@@ -377,7 +377,7 @@ Thread::removeFile(OpenFileId descriptor)
 int
 Thread::CreateId()			//Crea un nuevo identificador, pensé que era mejor que fuera aleatorio
 {
-	return random(time()); 		//Hay que agragar las librerías de C necesarias, no las recuerdo	
+	return ++threadId;
 }
 
 #endif
