@@ -46,10 +46,32 @@ void movingPC ()
 }
 
 
-void doExcecution(void* file) {
-	currentThread->space = new AddrSpace ((OpenFile*) file);
-	currentThread->space->InitRegisters();
+int startProcess(char *filename) {
+    OpenFile *executable = fileSystem->Open(filename)
+    if(executable == NULL) {
+        printf("Can not open file %s\n", filename);
+        return -1;
+    }
+	AddrSpace *execSpace = new AddSpace(filename);  //Create space address for process.
+    Thread *execThread = new Thread(filename, 1, 0);    //Create thread executor.
+    amountThread++;
+    execThread->space = execSpace;
+
+    int processId = execThread->getThreadId();
+    execThread->Fork(doExecution, 0);   //Create process.
+
+    delete executable;  //Close file.
+
+    return processId;
+}
+
+void doExecution(int arg) {
+	currentThread->space->InitRegisters();  //Inicialization for MIPS registers.
+	currentThread->space->RestoreState();   //Load page table register.
+
  	machine->Run();	
+
+    ASSERT(false);  //Machine->Run never returns.
 }
 
 
@@ -119,10 +141,7 @@ ExceptionHandler(ExceptionType which)
             {
                 DEBUG('a', "Exec sysCall.\n");
                 readStrFromUsr(arguments[0], name386);
-                file = fileSystem->Open(name386);
-                Thread* execThread = new Thread(name386, 1, 0);
-                amountThread++;
-                execThread->Fork(doExcecution, (void *) file);
+                result = startProcess(name386);
                 break;
             }
             case SC_Join:
