@@ -45,14 +45,22 @@ void movingPC ()
      machine -> WriteRegister(NextPCReg, pc);
 }
 
+void doExecution(void* arg) {
+	currentThread->space->InitRegisters();  //Inicialization for MIPS registers.
+	currentThread->space->RestoreState();   //Load page table register.
+
+ 	machine->Run();	
+
+    ASSERT(false);  //Machine->Run never returns.
+}
 
 int startProcess(char *filename) {
-    OpenFile *executable = fileSystem->Open(filename)
+    OpenFile *executable = fileSystem->Open(filename);
     if(executable == NULL) {
         printf("Can not open file %s\n", filename);
         return -1;
     }
-	AddrSpace *execSpace = new AddSpace(filename);  //Create space address for process.
+	AddrSpace *execSpace = new AddrSpace(executable);  //Create space address for process.
     Thread *execThread = new Thread(filename, 1, 0);    //Create thread executor.
     amountThread++;
     execThread->space = execSpace;
@@ -64,16 +72,6 @@ int startProcess(char *filename) {
 
     return processId;
 }
-
-void doExecution(int arg) {
-	currentThread->space->InitRegisters();  //Inicialization for MIPS registers.
-	currentThread->space->RestoreState();   //Load page table register.
-
- 	machine->Run();	
-
-    ASSERT(false);  //Machine->Run never returns.
-}
-
 
 //----------------------------------------------------------------------
 // ExceptionHandler

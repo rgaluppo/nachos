@@ -308,6 +308,8 @@ Thread::StackAllocate (VoidFunctionPtr func, void* arg)
 #ifdef USER_PROGRAM
 #include "machine.h"
 
+int Thread::threadId = 0;
+
 //----------------------------------------------------------------------
 // Thread::SaveUserState
 //	Save the CPU state of a user program on a context switch.
