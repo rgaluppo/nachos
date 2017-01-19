@@ -35,7 +35,7 @@ SynchDisk   *synchDisk;
 #ifdef USER_PROGRAM	// requires either FILESYS or FILESYS_STUB
 Machine *machine;	// user program memory and registers
 SynchConsole* synchConsole;
-#define TIME_SLICE 200
+#define TIME_SLICE 2000000
 #endif
 
 #ifdef NETWORK

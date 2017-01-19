@@ -15,12 +15,8 @@
 int
 main()
 {
-    int dummy = 0, i;
-    Create("test.txt");
-    OpenFileId o = Open("test.txt");  
-    for(i=0; i < 1000; i++)
-	dummy++;
-    Write("Hello world\n",12,o);
-    Close(o);
+	int myProcess;
+	myProcess = Exec("../test/filetest");
+	Exit(0);
     /* not reached */
 }

@@ -115,17 +115,28 @@ AddrSpace::AddrSpace(OpenFile *executable)
 #ifdef USER_PROG
 
 // then, copy in the code and data segments into memory
+    unsigned int index, j;	
+    int memoryAddr = 0;
+    
     if (noffH.code.size > 0) {
-        DEBUG('a', "Initializing code segment, at 0x%x, size %d\n", 
-			noffH.code.virtualAddr, noffH.code.size);
-        executable->ReadAt(&(machine->mainMemory[(pageTable[noffH.code.virtualAddr])]),
-			noffH.code.size, noffH.code.inFileAddr);
+	index = divRoundUp(noffH.code.size, PageSize); 
+	j = noffH.code.virtualAddr;
+	for(i=0; i < noffH.code.size; i = i + PageSize) {
+		memoryAddr = pageTable[j].physicalPage * PageSize;
+	        executable->ReadAt(&(machine->mainMemory[memoryAddr]),
+			noffH.code.size, noffH.code.inFileAddr + i);
+		j++;
+	}
     }
-    if (noffH.initData.size > 0) {
-        DEBUG('a', "Initializing data segment, at 0x%x, size %d\n", 
-			noffH.initData.virtualAddr, noffH.initData.size);
-        executable->ReadAt(&(machine->mainMemory[(pageTable[noffH.initData.virtualAddr])]),
-			noffH.initData.size, noffH.initData.inFileAddr);
+    if (noffH.initData.size > 0) { //modificacion dudosa
+	index = divRoundUp(noffH.initData.size, PageSize);
+	j = noffH.initData.virtualAddr;
+	for(i=0; i < noffH.code.size; i = i + PageSize) {
+		memoryAddr = pageTable[j].physicalPage * PageSize;
+        	executable->ReadAt(&(machine->mainMemory[memoryAddr]),
+			noffH.initData.size, noffH.initData.inFileAddr + i);
+		j++;
+	}
     }
 
 	
@@ -194,6 +205,9 @@ AddrSpace::InitRegisters()
    // allocated the stack; but subtract off a bit, to make sure we don't
    // accidentally reference off the end!
     machine->WriteRegister(StackReg, numPages * PageSize - 16);
+   // allocated the stack; but subtract off a bit, to make sure we don't
+   // accidentally reference off the end!
+    machine->WriteRegister(StackReg, numPages * PageSize - 16);
     DEBUG('a', "Initializing stack register to %d\n", numPages * PageSize - 16);
 }
 
@@ -209,6 +223,9 @@ void AddrSpace::SaveState()
 { 
     pageTable = machine->pageTable;
     numPages = machine->pageTableSize;
+    DEBUG('s', "Save state for %s: register PC = %d\n", currentThread->getName(), machine->ReadRegister(34));
+    DEBUG('s', "Save state for %s: register nextPC = %d\n", currentThread->getName(), machine->ReadRegister(35));
+    DEBUG('s', "Save state for %s: register prevPC = %d\n", currentThread->getName(), machine->ReadRegister(36));
 }
 
 //----------------------------------------------------------------------
@@ -223,4 +240,7 @@ void AddrSpace::RestoreState()
 {
     machine->pageTable = pageTable;
     machine->pageTableSize = numPages;
+    DEBUG('s', "Restore state for %s: register PC = %d\n", currentThread->getName(), machine->ReadRegister(34));
+    DEBUG('s', "Restore state for %s: register nextPC = %d\n", currentThread->getName(), machine->ReadRegister(35));
+    DEBUG('s', "Restore state for %s: register prevPC = %d\n", currentThread->getName(), machine->ReadRegister(36));
 }
