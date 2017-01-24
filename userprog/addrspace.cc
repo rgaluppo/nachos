@@ -18,7 +18,6 @@
 #include "copyright.h"
 #include "system.h"
 #include "addrspace.h"
-#include "noff.h"
 
 //----------------------------------------------------------------------
 // SwapHeader
@@ -42,6 +41,30 @@ SwapHeader (NoffHeader *noffH)
 	noffH->uninitData.inFileAddr = WordToHost(noffH->uninitData.inFileAddr);
 }
 
+//----------------------------------------------------------------------
+// AddrSpace:: loadSegmet
+//      Load the segment into the Nachos's main memory to can run the 
+//      excecutable user program
+//----------------------------------------------------------------------
+
+void
+AddrSpace:: LoadSegment (Segment* seg, int pageSize, OpenFile* excec, TranslationEntry* PageTable)
+{
+ 	int i = 0, j = 0, virt_addr = seg->virtualAddr, phys_addr = 0;
+	int file_off = seg->inFileAddr;
+
+	while (i <= seg->size){
+	      file_off += i;
+	      virt_addr += j;
+	      phys_addr = PageTable[virt_addr].physicalPage;
+	     
+	      excec -> ReadAt(&(machine->mainMemory[phys_addr]), pageSize, file_off);
+	   
+	      i += pageSize;
+	      j++;
+	}
+}
+	     		
 //----------------------------------------------------------------------
 // AddrSpace::AddrSpace
 // 	Create an address space to run a user program.
@@ -71,6 +94,8 @@ AddrSpace::AddrSpace(OpenFile *executable)
 // how big is address space?
     size = noffH.code.size + noffH.initData.size + noffH.uninitData.size 
 			+ UserStackSize;	// we need to increase the size
+						// to leave room for the stack
+						// to leave room for the stack
 						// to leave room for the stack
     numPages = divRoundUp(size, PageSize);
     size = numPages * PageSize;
@@ -107,7 +132,8 @@ AddrSpace::AddrSpace(OpenFile *executable)
 #ifdef USER_PROG
 	// zero out the entire address space, to zero the unitialized data segment 
 	// and the stack segment
-	bzero(firstFreePhySpace, PageSize);
+	bzero (&(machine -> mainMemory[firstFreePhySpace*PageSize]), PageSize);
+
 #endif
 }
     
@@ -119,24 +145,10 @@ AddrSpace::AddrSpace(OpenFile *executable)
     int memoryAddr = 0;
     
     if (noffH.code.size > 0) {
-	index = divRoundUp(noffH.code.size, PageSize); 
-	j = noffH.code.virtualAddr;
-	for(i=0; i < noffH.code.size; i = i + PageSize) {
-		memoryAddr = pageTable[j].physicalPage * PageSize;
-	        executable->ReadAt(&(machine->mainMemory[memoryAddr]),
-			noffH.code.size, noffH.code.inFileAddr + i);
-		j++;
-	}
+	this.LoadSeg(&noffH.code, PageSize, executable, &pageTable);
     }
     if (noffH.initData.size > 0) { //modificacion dudosa
-	index = divRoundUp(noffH.initData.size, PageSize);
-	j = noffH.initData.virtualAddr;
-	for(i=0; i < noffH.code.size; i = i + PageSize) {
-		memoryAddr = pageTable[j].physicalPage * PageSize;
-        	executable->ReadAt(&(machine->mainMemory[memoryAddr]),
-			noffH.initData.size, noffH.initData.inFileAddr + i);
-		j++;
-	}
+	this.LoadSeg(&noffH.initData, PageSize, executable, &pageTable);
     }
 
 	
@@ -241,6 +253,4 @@ void AddrSpace::RestoreState()
     machine->pageTable = pageTable;
     machine->pageTableSize = numPages;
     DEBUG('s', "Restore state for %s: register PC = %d\n", currentThread->getName(), machine->ReadRegister(34));
-    DEBUG('s', "Restore state for %s: register nextPC = %d\n", currentThread->getName(), machine->ReadRegister(35));
-    DEBUG('s', "Restore state for %s: register prevPC = %d\n", currentThread->getName(), machine->ReadRegister(36));
 }
