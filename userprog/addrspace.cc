@@ -47,13 +47,14 @@ SwapHeader (NoffHeader *noffH)
 //      excecutable user program
 //----------------------------------------------------------------------
 
-void
-AddrSpace:: LoadSegment (Segment* seg, int pageSize, OpenFile* excec, TranslationEntry* PageTable)
+int
+AddrSpace:: LoadSegment (Segment* seg, int readingSize, int pageSize, OpenFile* excec, TranslationEntry* PageTable, int initOffset)
 {
- 	int i = 0, j = 0, virt_addr = seg->virtualAddr, phys_addr = 0;
+ 	int i = initOffset, j = 0, phys_addr = 0;
+    int virt_addr = divRoundUp(seg->virtualAddr, pageSize);
 	int file_off = seg->inFileAddr;
 
-	while (i <= seg->size){
+	while (i <= readingSize){
 	      file_off += i;
 	      virt_addr += j;
 	      phys_addr = PageTable[virt_addr].physicalPage;
@@ -63,6 +64,7 @@ AddrSpace:: LoadSegment (Segment* seg, int pageSize, OpenFile* excec, Translatio
 	      i += pageSize;
 	      j++;
 	}
+    return i;
 }
 	     		
 //----------------------------------------------------------------------
@@ -142,13 +144,14 @@ AddrSpace::AddrSpace(OpenFile *executable)
 
 // then, copy in the code and data segments into memory
     unsigned int index, j;	
-    int memoryAddr = 0;
+    int memoryAddr = 0, offset = 0;
     
     if (noffH.code.size > 0) {
-	this.LoadSeg(&noffH.code, PageSize, executable, &pageTable);
+        offset = this.LoadSegment(&noffH.code, noffH.code.size, PageSize, executable, &pageTable, offset);
     }
+        
     if (noffH.initData.size > 0) { //modificacion dudosa
-	this.LoadSeg(&noffH.initData, PageSize, executable, &pageTable);
+        this.LoadSegment(&noffH.initData, (noffH.code.size + noffH.initData.size), PageSize, executable, &pageTable, offset);
     }
 
 	

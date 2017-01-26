@@ -43,11 +43,10 @@ void movingPC ()
      machine -> WriteRegister(PCReg, pc);
      pc += 4;
      machine -> WriteRegister(NextPCReg, pc);
-     DEBUG('e', "Finish moving PC\n");
 }
 
 void doExecution(void* arg) {
-	DEBUG ('e',"El currentThread es: %s\n", currentThread->getName());
+	DEBUG ('e',"doExecution: currentThread name=%s\t id=%d\n", currentThread->getName(), currentThread->getThreadId());
 	currentThread->space->InitRegisters();  //Inicialization for MIPS registers.
 	currentThread->space->RestoreState();   //Load page table register.
 
@@ -56,22 +55,16 @@ void doExecution(void* arg) {
     ASSERT(false);  //Machine->Run never returns.
 }
 
-void startProcess(char *filename) {
+void startProcess(int pid, OpenFile* executable, char* filename, int argc, char** argv) {
+	DEBUG ('e',"startProcess: pid=%d\t currenThread:%s y su id es %d\n", pid, currentThread->getName(), currentThread->getThreadId());
 
-    OpenFile *executable = fileSystem->Open(filename);
-    if(executable == NULL) {
-        printf("Can not open file %s\n", filename);
-     	machine->WriteRegister(2, -1);
-        return;
-    }
-    AddrSpace *execSpace = new AddrSpace(executable);  //Create space address for process.
-    Thread *execThread = new Thread(filename, 1, 0);    //Create thread executor.
+    Thread *execThread = new Thread("execThread", 1, 0);    //Creation of thread executor.
+    AddrSpace *execSpace = new AddrSpace(executable);  //Creation of space address for process.
     amountThread++;
     execThread->space = execSpace;
 
-    int processId = execThread->getThreadId();
-    machine->WriteRegister(2, processId);
     execThread->Fork(doExecution, NULL);   //Create process.
+    DEBUG('e', "Despues del FORK, result=%d\n", execThread->getThreadId());
 
     delete executable;  //Close file.
 }
@@ -113,7 +106,6 @@ ExceptionHandler(ExceptionType which)
     char name386[128];
 
     if (which == SyscallException) {
-	DEBUG('e', "Is a SyscallException");
     	switch(type) {
             case SC_Halt:
                 DEBUG('e', "Shutdown, initiated by user program.\n");
@@ -137,40 +129,49 @@ ExceptionHandler(ExceptionType which)
                     }
                     currentThread->Finish();
                 }
+                result = state;
                 break;
             }
             case SC_Exec:
             {
                 DEBUG('e', "Exec sysCall.\n");
                 readStrFromUsr(arguments[0], name386);
-                startProcess(name386);
-		movingPC();
+
+                OpenFile *executable = fileSystem->Open(name386);
+                if(executable == NULL) {
+                    printf("EXEC: Can not open file %s\n", name386);
+                    ASSERT(false);
+                }
+                int pid = currentThread->addFile(executable);
+                machine->WriteRegister(2, pid);
+                int argc = arguments[1];
+                char **argv = new char*[argc];
+                startProcess(pid, executable, name386, argc, argv);
+                movingPC();
                 return;
             }
             case SC_Join:
             {
                 DEBUG('e', "Join sysCall.\n");
-                int pid = arguments[0];
-		//TODO
+                //TODO
+                //int pid = arguments[0];
                 break;
             }
             case SC_Create:
                 DEBUG('e', "Create sysCall.\n");
                 readStrFromUsr(arguments[0], name386);
-                printf(" antes de Create: path=%s\n", name386);
+                DEBUG('e',"path=%s\t", name386);
                 result = fileSystem->Create(name386, 512);
-                printf(" despues de Create: result =\n");
                 break;
             case SC_Open:
                 DEBUG('e', "Open sysCall.\n");
                 readStrFromUsr(arguments[0], name386);
-                DEBUG('e', "file name=%s.\n", name386);
+                DEBUG('e', "file name=%s.\t", name386);
                 file = fileSystem->Open(name386);
                 result = -1;
                 if(file != NULL) {
                     result = currentThread->addFile(file);
                 }
-                DEBUG('e', "return=%d.\n", result);
                 break;
             case SC_Read:
             {
@@ -207,9 +208,10 @@ ExceptionHandler(ExceptionType which)
                     for(int j=0; j < size; j++) {
                         synchConsole->PutChar(bufferW[j]);
                     }
-                } else if(descriptor == -1) {
-			result = -1; 
-		} else {
+                } else if(descriptor == -1){
+                    DEBUG('e', "SysCALL Write: wrong descriptor\n");
+                    ASSERT(false);
+                } else {
                     file = currentThread->getFile(descriptor);
                     result = file->Write(bufferW, size);
                 }
@@ -223,7 +225,7 @@ ExceptionHandler(ExceptionType which)
                 if(file != NULL) {
                     file->~OpenFile();
                     currentThread->removeFile(descriptor);
-		    result = 0;
+                    result = 0;
                 } else {
                     printf("An error ocurrs on Close operation.");
                     result = -1;
@@ -236,38 +238,39 @@ ExceptionHandler(ExceptionType which)
     	}
     	movingPC();
         machine->WriteRegister(2, result);
+        DEBUG('e', "return=%d.\n", result);
     } else {
-	DEBUG('e', "Is not a SyscallException");
-	char *exception = "";
-	switch(which){
-		case NoException:
-			exception = "NoException";
-			break;
-		case SyscallException:
-			exception = "SyscallException";
-			break;
-	     	case PageFaultException:
-			exception = "PageFaultException";
-			break;
-	     	case ReadOnlyException: 
-			exception = "ReadOnlyException";
-			break;
-	     	case BusErrorException: 
-			exception = "BusErrorException";
-			break;
-	     	case AddressErrorException:
-			exception = "AddressErrorException";
-			break;
-	     	case OverflowException:
-			exception = "OverflowException";
-			break;
-	     	case IllegalInstrException:
-			exception = "IllegalInstrException";
-			break;
-		default:
-			printf("Unexpected user mode exception.");
-			ASSERT(false);
-	}
+        DEBUG('e', "Is not a SyscallException\n");
+        const char *exception = "";
+        switch(which){
+            case NoException:
+                exception = "NoException";
+                break;
+            case SyscallException:
+                exception = "SyscallException";
+                break;
+            case PageFaultException:
+                exception = "PageFaultException";
+                break;
+            case ReadOnlyException: 
+                exception = "ReadOnlyException";
+                break;
+            case BusErrorException: 
+                exception = "BusErrorException";
+                break;
+            case AddressErrorException:
+                exception = "AddressErrorException";
+                break;
+            case OverflowException:
+                exception = "OverflowException";
+                break;
+            case IllegalInstrException:
+                exception = "IllegalInstrException";
+                break;
+            default:
+                printf("Unexpected user mode exception.");
+                ASSERT(false);
+        }
         printf("Unexpected user mode exception:\t which=%s  type=%d\n", exception, type);
         ASSERT(false);
     }

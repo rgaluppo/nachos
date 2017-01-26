@@ -37,8 +37,8 @@ class AddrSpace {
 					// for now!
     unsigned int numPages;		// Number of pages in the virtual 
 					// address space
-    void LoadSegment (Segment* seg, int pageSize, OpenFile* excec, TranslationEntry* PageTable);
-
+    int LoadSegment (Segment* seg, int readingSize, int pageSize, OpenFile* excec, 
+            TranslationEntry* PageTable, int initOffset);
 };
 
 #endif // ADDRSPACE_H

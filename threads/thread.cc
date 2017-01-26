@@ -355,7 +355,7 @@ Thread::getFile(OpenFileId descriptor)
 OpenFileId
 Thread::addFile(OpenFile* file)
 {
-	int i = 2;
+	int i = 2;      //Reservo lugares para la entrada estandar, la salida estandar y la salida de errores.
 	while (i < (MAX_FILES_OPENED + 2) && currentThread->filesDescriptors[i] != NULL)
 		i++;
 	if(currentThread->filesDescriptors[i] == NULL) {
@@ -379,7 +379,7 @@ Thread::removeFile(OpenFileId descriptor)
 int
 Thread::CreateId()			//Crea un nuevo identificador, pensé que era mejor que fuera aleatorio
 {
-	return ++threadId;
+	return threadId++;
 }
 
 #endif
