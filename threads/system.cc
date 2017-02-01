@@ -8,6 +8,7 @@
 #include "copyright.h"
 #include "system.h"
 #include "preemptive.h"
+#include "processtable.h"
 
 // This defines *all* of the global data structures used by Nachos.
 // These are all initialized and de-allocated by this file.
@@ -19,10 +20,10 @@ Interrupt *interrupt;			// interrupt status
 Statistics *stats;			// performance metrics
 Timer *timer;				// the hardware timer device,
 					// for invoking context switches
-					
+
+
 // 2007, Jose Miguel Santos Espino
 PreemptiveScheduler* preemptiveScheduler = NULL;
-const long long DEFAULT_TIME_SLICE = 50000;
 
 #ifdef FILESYS_NEEDED
 FileSystem  *fileSystem;
@@ -35,6 +36,7 @@ SynchDisk   *synchDisk;
 #ifdef USER_PROGRAM	// requires either FILESYS or FILESYS_STUB
 Machine *machine;	// user program memory and registers
 SynchConsole* synchConsole;
+ProcessTable *processTable; 
 #define TIME_SLICE 2000000
 #endif
 
@@ -183,6 +185,8 @@ Initialize(int argc, char **argv)
 #ifdef USER_PROGRAM
     machine = new Machine(debugUserProg);	// this must come first
     synchConsole = new SynchConsole();
+    processTable = new ProcessTable(); 
+    processTable->addProcess(currentThread->getThreadId(), currentThread);
 #endif
 
 #ifdef FILESYS
@@ -217,6 +221,7 @@ Cleanup()
     
 #ifdef USER_PROGRAM
     delete machine;
+    delete processTable;
 #endif
 
 #ifdef FILESYS_NEEDED

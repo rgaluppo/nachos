@@ -22,5 +22,6 @@ main()
 	dummy++;
     Write("Hello world\n",12,o);
     Close(o);
+    Exit(0);
     /* not reached */
 }

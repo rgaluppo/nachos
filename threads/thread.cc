@@ -44,7 +44,7 @@ Thread::Thread(const char* threadName, int jFlag, int threadPriority)
     joinPort = new Puerto ("Join");
 
 #ifdef USER_PROGRAM
-    threadId = CreateId();
+    threadId = 0;
     space = NULL;
 #endif
 }
@@ -376,10 +376,10 @@ Thread::removeFile(OpenFileId descriptor)
 	ASSERT(false);
 }
 
-int
-Thread::CreateId()			//Crea un nuevo identificador, pensé que era mejor que fuera aleatorio
+void
+Thread::setThreadId(int pid)			//Crea un nuevo identificador, pensé que era mejor que fuera aleatorio
 {
-	return threadId++;
+    threadId = pid;
 }
 
 #endif

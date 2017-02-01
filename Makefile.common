@@ -83,6 +83,7 @@ USERPROG_H = ../userprog/addrspace.h\
 	../userprog/usrTranslate.h\
 	../userprog/syscall.h\
 	../userprog/synchConsole.h\
+	../userprog/processtable.h\
 
 USERPROG_C = ../userprog/addrspace.cc\
 	../userprog/bitmap.cc\
@@ -94,9 +95,10 @@ USERPROG_C = ../userprog/addrspace.cc\
 	../machine/translate.cc\
 	../userprog/usrTranslate.cc\
 	../userprog/synchConsole.cc\
+	../userprog/processtable.cc\
 
 USERPROG_O = addrspace.o bitmap.o exception.o progtest.o console.o machine.o \
-	mipssim.o translate.o usrTranslate.o synchConsole.o
+	mipssim.o translate.o usrTranslate.o synchConsole.o processtable.o
 
 VM_H = 
 VM_C = 

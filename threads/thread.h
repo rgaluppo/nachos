@@ -133,8 +133,8 @@ class Thread {
 
   public:
 
-    int CreateId ();			// Create a new identifier
-    int getThreadId () {return threadId;};
+    void setThreadId(int pid);
+    int getThreadId() {return threadId;};
 
     void SaveUserState();		// save user-level register state
     void RestoreUserState();		// restore user-level register state

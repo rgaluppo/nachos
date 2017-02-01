@@ -24,10 +24,13 @@
 #include <syscall.h>
 #include "usrTranslate.h"
 #include <stdlib.h>
+#include "processtable.h"
 
 #define File_length_MAX 64
 
 int amountThread = 1; //Only main thread exists. 
+
+extern ProcessTable *processTable; 
 
 //---------------------------------------------------------------------
 //movingPC
@@ -56,17 +59,22 @@ void doExecution(void* arg) {
 }
 
 void startProcess(int pid, OpenFile* executable, char* filename, int argc, char** argv) {
-	DEBUG ('e',"startProcess: pid=%d\t currenThread:%s y su id es %d\n", pid, currentThread->getName(), currentThread->getThreadId());
+	DEBUG ('e',"startProcess: currenThread:%s\t pid %d\t filename=%s\n", currentThread->getName(),
+            currentThread->getThreadId(), filename);
 
-    Thread *execThread = new Thread("execThread", 1, 0);    //Creation of thread executor.
+    Thread *execThread = new Thread(filename, 0, 0);    //Creation of thread executor.
+
+    execThread->setThreadId(pid);
+    processTable->addProcess(pid, execThread);
+
     AddrSpace *execSpace = new AddrSpace(executable);  //Creation of space address for process.
-    amountThread++;
     execThread->space = execSpace;
+    delete executable;
 
-    execThread->Fork(doExecution, NULL);   //Create process.
+    amountThread++;
+    execThread->Fork(doExecution, (void*) filename);   //Create process.
+
     DEBUG('e', "Despues del FORK, result=%d\n", execThread->getThreadId());
-
-    delete executable;  //Close file.
 }
 
 //----------------------------------------------------------------------
@@ -126,6 +134,8 @@ ExceptionHandler(ExceptionType which)
                 } else {
                     if(currentThread->space != NULL) {
                         currentThread->space->~AddrSpace();
+                        currentThread->space = NULL;
+                        processTable->freeSlot(currentThread->getThreadId());
                     }
                     currentThread->Finish();
                 }
@@ -139,13 +149,15 @@ ExceptionHandler(ExceptionType which)
 
                 OpenFile *executable = fileSystem->Open(name386);
                 if(executable == NULL) {
-                    printf("EXEC: Can not open file %s\n", name386);
+                    printf("EXEC: Can not open file %s\t currentThr=%s\n", 
+                            name386, currentThread->getName());
                     ASSERT(false);
                 }
-                int pid = currentThread->addFile(executable);
-                machine->WriteRegister(2, pid);
+                int pid = processTable->getFreshSlot();
                 int argc = arguments[1];
                 char **argv = new char*[argc];
+                processTable->addProcess(pid, currentThread);
+                machine->WriteRegister(2, pid);
                 startProcess(pid, executable, name386, argc, argv);
                 movingPC();
                 return;
@@ -166,11 +178,13 @@ ExceptionHandler(ExceptionType which)
             case SC_Open:
                 DEBUG('e', "Open sysCall.\n");
                 readStrFromUsr(arguments[0], name386);
-                DEBUG('e', "file name=%s.\t", name386);
                 file = fileSystem->Open(name386);
                 result = -1;
                 if(file != NULL) {
                     result = currentThread->addFile(file);
+                    DEBUG('e', "thread name=%s.\n", currentThread->getName());
+                } else {
+                    DEBUG('e', "OPEN: an error was ocurred: thread name=%s\t file name=%s\n", currentThread->getName(), name386);
                 }
                 break;
             case SC_Read:
@@ -209,7 +223,7 @@ ExceptionHandler(ExceptionType which)
                         synchConsole->PutChar(bufferW[j]);
                     }
                 } else if(descriptor == -1){
-                    DEBUG('e', "SysCALL Write: wrong descriptor\n");
+                    DEBUG('e', "SysCALL Write: wrong descriptor\t currentThr=%s\n", currentThread->getName());
                     ASSERT(false);
                 } else {
                     file = currentThread->getFile(descriptor);

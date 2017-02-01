@@ -28,6 +28,8 @@ extern Scheduler *scheduler;			// the ready list
 extern Interrupt *interrupt;			// interrupt status
 extern Statistics *stats;			// performance metrics
 extern Timer *timer;				// the hardware alarm clock
+const int MAX_EXEC_THREADS = 100;
+const long long DEFAULT_TIME_SLICE = 50000;
 
 #ifdef USER_PROGRAM
 #include "machine.h"
