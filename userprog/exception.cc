@@ -250,8 +250,8 @@ ExceptionHandler(ExceptionType which)
                 printf("Unexpected syscall exception %d %d\n", which, type);
                 ASSERT(false);
     	}
-    	movingPC();
         machine->WriteRegister(2, result);
+    	movingPC();
         DEBUG('e', "return=%d.\n", result);
     } else {
         DEBUG('e', "Is not a SyscallException\n");

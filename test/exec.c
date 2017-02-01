@@ -16,7 +16,8 @@ int
 main()
 {
 	int myProcess;
-	myProcess = Exec("../test/filetest");
+	//myProcess = Exec("../test/filetest");
+	myProcess = Exec("../test/create");
 	Exit(0);
     /* not reached */
 }

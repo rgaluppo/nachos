@@ -16,4 +16,7 @@ int
 main()
 {
     Create("test.txt");
+    OpenFileId o = Open("test.txt");  
+    Close(o);
+    Exit(0);
 }
