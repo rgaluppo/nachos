@@ -60,7 +60,7 @@ void doExecution(void* arg) {
 
 void startProcess(int pid, OpenFile* executable, char* filename, int argc, char** argv) {
 	DEBUG ('e',"startProcess: currenThread:%s\t pid %d\t filename=%s\n", currentThread->getName(),
-            currentThread->getThreadId(), filename);
+            pid, filename);
 
     Thread *execThread = new Thread(filename, 0, 0);    //Creation of thread executor.
 
@@ -117,6 +117,10 @@ ExceptionHandler(ExceptionType which)
     	switch(type) {
             case SC_Halt:
                 DEBUG('e', "Shutdown, initiated by user program.\n");
+                if(currentThread->space != NULL) {
+                    delete currentThread->space;
+                    currentThread->space = NULL;
+                }
                 interrupt->Halt();
                 break;
             case SC_Exit:
@@ -156,7 +160,6 @@ ExceptionHandler(ExceptionType which)
                 int pid = processTable->getFreshSlot();
                 int argc = arguments[1];
                 char **argv = new char*[argc];
-                processTable->addProcess(pid, currentThread);
                 machine->WriteRegister(2, pid);
                 startProcess(pid, executable, name386, argc, argv);
                 movingPC();
