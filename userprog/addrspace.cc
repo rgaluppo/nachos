@@ -102,29 +102,30 @@ AddrSpace::AddrSpace(OpenFile *executable)
     numPages = divRoundUp(size, PageSize);
     size = numPages * PageSize;
 
-    ASSERT(numPages <= (scheduler -> memoryMap -> NumClear()) );		// check we're not trying
+// check we're not trying to run something too big -.-
+    ASSERT(numPages <= (unsigned) scheduler->memoryMap->NumClear());
 
-    DEBUG('a', "Initializing address space, num pages %d, size %d\n", 
-					numPages, size);
+    DEBUG('a', "Initializing address space, num pages %d, size %d\n", numPages, size);
 // first, set up the translation 
     pageTable = new TranslationEntry[numPages];
     int firstFreePhySpace = -1;
     for (i = 0; i < numPages; i++) {
         firstFreePhySpace = scheduler -> memoryMap -> Find();
-	ASSERT(firstFreePhySpace != -1);	//Always found space in physical memory.
-	pageTable[i].virtualPage = i;
-	pageTable[i].physicalPage = firstFreePhySpace;
-	pageTable[i].valid = true;
-	pageTable[i].use = false;
-	pageTable[i].dirty = false;
-	pageTable[i].readOnly = false;  // if the code segment was entirely on 
-					// a separate page, we could set its 
-					// pages to be read-only
+        ASSERT(firstFreePhySpace != -1);	//Always found space in physical memory.
 
-	// zero out the entire address space, to zero the unitialized data segment 
-	// and the stack segment
-	bzero (&(machine -> mainMemory[firstFreePhySpace*PageSize]), PageSize);
-}
+        pageTable[i].virtualPage = i;
+        pageTable[i].physicalPage = firstFreePhySpace;
+        pageTable[i].valid = true;
+        pageTable[i].use = false;
+        pageTable[i].dirty = false;
+        pageTable[i].readOnly = false;  // if the code segment was entirely on 
+                                        // a separate page, we could set its 
+                                        // pages to be read-only
+
+        // zero out the entire address space, to zero the unitialized data segment 
+        // and the stack segment
+        bzero (&(machine -> mainMemory[firstFreePhySpace*PageSize]), PageSize);
+    }
     
 
 // then, copy in the code and data segments into memory
