@@ -52,6 +52,7 @@ void doExecution(void* arg) {
 	DEBUG ('e',"doExecution: currentThread name=%s\t id=%d\n", currentThread->getName(), currentThread->getThreadId());
 	currentThread->space->InitRegisters();  //Inicialization for MIPS registers.
 	currentThread->space->RestoreState();   //Load page table register.
+	currentThread->space->InitArguments();  //Load arguments.
 
  	machine->Run();	
 
@@ -67,7 +68,7 @@ void startProcess(int pid, OpenFile* executable, char* filename, int argc, char*
     execThread->setThreadId(pid);
     processTable->addProcess(pid, execThread);
 
-    AddrSpace *execSpace = new AddrSpace(executable);  //Creation of space address for process.
+    AddrSpace *execSpace = new AddrSpace(executable, argc, argv);  //Creation of space address for process.
     execThread->space = execSpace;
     delete executable;
 
@@ -160,6 +161,9 @@ ExceptionHandler(ExceptionType which)
                 int pid = processTable->getFreshSlot();
                 int argc = arguments[1];
                 char **argv = new char*[argc];
+                for(int index = 0; index < argc; index++) {
+                    readStrFromUsrSpecial(arguments[2], argv[index], ' ');
+                }
                 machine->WriteRegister(2, pid);
                 startProcess(pid, executable, name386, argc, argv);
                 movingPC();

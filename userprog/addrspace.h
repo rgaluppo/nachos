@@ -21,13 +21,15 @@
 
 class AddrSpace {
   public:
-    AddrSpace(OpenFile *executable);	// Create an address space,
+    AddrSpace(OpenFile *executable, int prg_argc, char** prg_argv);	// Create an address space,
 					// initializing it with the program
 					// stored in the file "executable"
     ~AddrSpace();			// De-allocate an address space
 
-    void InitRegisters();		// Initialize user-level CPU registers,
-					// before jumping to user code
+    void InitRegisters();	// Initialize user-level CPU registers,
+                            // before jumping to user code
+
+    void InitArguments();  // Initialize user program arguments.
 
     void SaveState();			// Save/restore address space-specific
     void RestoreState();		// info on a context switch 
@@ -39,6 +41,9 @@ class AddrSpace {
 					// address space
     int LoadSegment (Segment* seg, int readingSize, int pageSize, OpenFile* excec, 
             TranslationEntry* PageTable, int initOffset);
+
+    int argc;
+    char** argv;
 };
 
 #endif // ADDRSPACE_H

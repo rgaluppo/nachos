@@ -82,10 +82,13 @@ AddrSpace:: LoadSegment (Segment* seg, int readingSize, int pageSize, OpenFile* 
 //	"executable" is the file containing the object code to load into memory
 //----------------------------------------------------------------------
 
-AddrSpace::AddrSpace(OpenFile *executable)
+AddrSpace::AddrSpace(OpenFile *executable, int prg_argc, char** prg_argv);
 {
     NoffHeader noffH;
     unsigned int i, size;
+
+    int argc = prg_argc;
+    char** argv = prg_argv;
 
     executable->ReadAt((char *)&noffH, sizeof(noffH), 0);
     if ((noffH.noffMagic != NOFFMAGIC) && 
@@ -96,8 +99,6 @@ AddrSpace::AddrSpace(OpenFile *executable)
 // how big is address space?
     size = noffH.code.size + noffH.initData.size + noffH.uninitData.size 
 			+ UserStackSize;	// we need to increase the size
-						// to leave room for the stack
-						// to leave room for the stack
 						// to leave room for the stack
     numPages = divRoundUp(size, PageSize);
     size = numPages * PageSize;
@@ -129,12 +130,13 @@ AddrSpace::AddrSpace(OpenFile *executable)
     
 
 // then, copy in the code and data segments into memory
-    unsigned int j;
+    unsigned int j, k;
     if (noffH.code.size > 0){
         j = noffH.code.virtualAddr;
         j = divRoundUp(noffH.code.virtualAddr, PageSize);
         for (i = 0; i <= noffH.code.size ; i=i+PageSize ){
-            executable->ReadAt(&(machine->mainMemory[pageTable[j].physicalPage * PageSize]),PageSize, noffH.code.inFileAddr+i);
+            executable->ReadAt(&(machine->mainMemory[pageTable[j].physicalPage * PageSize]),
+                    PageSize, noffH.code.inFileAddr+i);
             j++;
         }
     }
@@ -147,6 +149,16 @@ AddrSpace::AddrSpace(OpenFile *executable)
             j++;
         }
     }                     
+    
+    if(argc > 0) {
+        ASSERT(argc * sizeof(char[64]) + 1 < UserStackSize);    // check overflow.
+        j = divRoundUp(UserStackSize, PageSize);
+        for(k = 0; k < argc; k++) {
+            executable->ReadAt(&(machine->mainMemory[pageTable[j].physicalPage * PageSize]),
+                    PageSize, 
+        }
+
+    }
 }
 
 //----------------------------------------------------------------------
@@ -159,6 +171,20 @@ AddrSpace::~AddrSpace()
    for(unsigned int i=0; i < numPages; i++)
        scheduler -> memoryMap -> Clear (pageTable[i].physicalPage);
    delete pageTable;
+}
+
+
+//----------------------------------------------------------------------
+// AddrSpace::InitArguments
+// 	Set the arguments values for the user program.
+//----------------------------------------------------------------------
+void
+InitArguments() {
+
+    // bla bla blaaahh
+
+    machine->WriteRegister(5,);
+    machine->WriteRegister(6,);
 }
 
 //----------------------------------------------------------------------

@@ -35,7 +35,7 @@ CPP = /lib/cpp
 INCDIR =-I../userprog -I../threads
 CFLAGS = -G 0 -c $(INCDIR) -mips1
 
-all: halt shell matmult sort filetest read testsyscall write exec join
+all: halt shell matmult sort filetest read testsyscall write exec join testConsole
 
 start.o: start.s ../userprog/syscall.h
 	$(CPP) $(CPPFLAGS) start.s > strt.s
@@ -102,6 +102,12 @@ join.o: join.c
 join: join.o start.o
 	$(LD) $(LDFLAGS) start.o join.o -o join.coff
 	../bin/coff2noff join.coff join
+
+testConsole.o: testConsole.c
+	$(CC) $(CFLAGS) -c testConsole.c
+testConsole: testConsole.o start.o
+	$(LD) $(LDFLAGS) start.o testConsole.o -o testConsole.coff
+	../bin/coff2noff testConsole.coff testConsole
 
 # Estas reglas sirven para compilar programas simples,
 # que consistan en un único fuente.
