@@ -168,8 +168,16 @@ ExceptionHandler(ExceptionType which)
             case SC_Join:
             {
                 DEBUG('e', "Join sysCall.\n");
-                //TODO
-                //int pid = arguments[0];
+                SpaceId pid = arguments[0];
+                Thread* thread = processTable->getProcess(pid);
+                if(thread == NULL) {
+                    printf("JOIN: Unknown process with id=%d\n", pid);
+                    result = -1;
+                } else {
+                    thread->setJoinFlag(1);
+                    currentThread->Join();
+                    result = 0;
+                }
                 break;
             }
             case SC_Create:

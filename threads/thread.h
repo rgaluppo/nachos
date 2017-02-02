@@ -135,11 +135,13 @@ class Thread {
 
     void setThreadId(int pid);
     int getThreadId() {return threadId;};
+    void setJoinFlag(int newFlag) { joinFlag = newFlag; };
 
     void SaveUserState();		// save user-level register state
     void RestoreUserState();		// restore user-level register state
 
     AddrSpace *space;			// User code this thread is running.
+
     OpenFile* getFile(OpenFileId descriptor);
     OpenFileId addFile(OpenFile* file);
     void removeFile(OpenFileId descriptor);
