@@ -24,13 +24,10 @@
 #include <syscall.h>
 #include "usrTranslate.h"
 #include <stdlib.h>
-#include "processtable.h"
 
 #define File_length_MAX 64
 
 int amountThread = 1; //Only main thread exists. 
-
-extern ProcessTable *processTable; 
 
 //---------------------------------------------------------------------
 //movingPC
@@ -46,13 +43,13 @@ void movingPC ()
      machine -> WriteRegister(PCReg, pc);
      pc += 4;
      machine -> WriteRegister(NextPCReg, pc);
+     DEBUG('e', "Get next instruction\n");
 }
 
 void doExecution(void* arg) {
 	DEBUG ('e',"doExecution: currentThread name=%s\t id=%d\n", currentThread->getName(), currentThread->getThreadId());
 	currentThread->space->InitRegisters();  //Inicialization for MIPS registers.
 	currentThread->space->RestoreState();   //Load page table register.
-	currentThread->space->InitArguments();  //Load arguments.
 
  	machine->Run();	
 
@@ -60,22 +57,18 @@ void doExecution(void* arg) {
 }
 
 void startProcess(int pid, OpenFile* executable, char* filename, int argc, char** argv) {
-	DEBUG ('e',"startProcess: currenThread:%s\t pid %d\t filename=%s\n", currentThread->getName(),
-            pid, filename);
+	DEBUG ('e',"startProcess: pid=%d\t currenThread:%s y su id es %d\n", pid, currentThread->getName(), currentThread->getThreadId());
 
-    Thread *execThread = new Thread(filename, 0, 0);    //Creation of thread executor.
-
-    execThread->setThreadId(pid);
-    processTable->addProcess(pid, execThread);
-
-    AddrSpace *execSpace = new AddrSpace(executable, argc, argv);  //Creation of space address for process.
-    execThread->space = execSpace;
-    delete executable;
-
+    Thread *execThread = new Thread("execThread", 0, 0);    //Creation of thread executor.
+    AddrSpace *execSpace = new AddrSpace(executable);  //Creation of space address for process.
     amountThread++;
-    execThread->Fork(doExecution, (void*) filename);   //Create process.
+    execThread->space = execSpace;
 
+    DEBUG('e', "Antes del FORK");
+    execThread->Fork(doExecution, NULL);   //Create process.
     DEBUG('e', "Despues del FORK, result=%d\n", execThread->getThreadId());
+
+    delete executable;  //Close file.
 }
 
 //----------------------------------------------------------------------
@@ -118,10 +111,6 @@ ExceptionHandler(ExceptionType which)
     	switch(type) {
             case SC_Halt:
                 DEBUG('e', "Shutdown, initiated by user program.\n");
-                if(currentThread->space != NULL) {
-                    delete currentThread->space;
-                    currentThread->space = NULL;
-                }
                 interrupt->Halt();
                 break;
             case SC_Exit:
@@ -139,8 +128,6 @@ ExceptionHandler(ExceptionType which)
                 } else {
                     if(currentThread->space != NULL) {
                         currentThread->space->~AddrSpace();
-                        currentThread->space = NULL;
-                        processTable->freeSlot(currentThread->getThreadId());
                     }
                     currentThread->Finish();
                 }
@@ -149,40 +136,27 @@ ExceptionHandler(ExceptionType which)
             }
             case SC_Exec:
             {
-                DEBUG('e', "Exec sysCall.\n");
+                DEBUG('e', "Exec sysCall by thread %s:\n", currentThread -> getName());
                 readStrFromUsr(arguments[0], name386);
-
+		printf("archivo a ejecutar: %s\n", name386);
                 OpenFile *executable = fileSystem->Open(name386);
                 if(executable == NULL) {
-                    printf("EXEC: Can not open file %s\t currentThr=%s\n", 
-                            name386, currentThread->getName());
+                    printf("EXEC: Can not open file %s\n", name386);
                     ASSERT(false);
                 }
-                int pid = processTable->getFreshSlot();
+                int pid = currentThread->addFile(executable);
                 int argc = arguments[1];
                 char **argv = new char*[argc];
-                for(int index = 0; index < argc; index++) {
-                    DEBUG('e', "funcion rara argc=%d.\n", argc);
-                    readStrFromUsrSpecial(arguments[2], argv[index], ' ');
-                }
-                machine->WriteRegister(2, pid);
                 startProcess(pid, executable, name386, argc, argv);
+                machine->WriteRegister(2, pid);
                 movingPC();
                 return;
             }
             case SC_Join:
             {
                 DEBUG('e', "Join sysCall.\n");
-                SpaceId pid = arguments[0];
-                Thread* thread = processTable->getProcess(pid);
-                if(thread == NULL) {
-                    printf("JOIN: Unknown process with id=%d\n", pid);
-                    result = -1;
-                } else {
-                    thread->setJoinFlag(1);
-                    currentThread->Join();
-                    result = 0;
-                }
+                //TODO
+                //int pid = arguments[0];
                 break;
             }
             case SC_Create:
@@ -192,15 +166,13 @@ ExceptionHandler(ExceptionType which)
                 result = fileSystem->Create(name386, 512);
                 break;
             case SC_Open:
-                DEBUG('e', "Open sysCall.\n");
+                DEBUG('e', "Open sysCall by thread: %d.\n", currentThread->getName());
                 readStrFromUsr(arguments[0], name386);
+                DEBUG('e', "file name=%s.\t", name386);
                 file = fileSystem->Open(name386);
                 result = -1;
                 if(file != NULL) {
                     result = currentThread->addFile(file);
-                    DEBUG('e', "thread name=%s.\n", currentThread->getName());
-                } else {
-                    DEBUG('e', "OPEN: an error was ocurred: thread name=%s\t file name=%s\n", currentThread->getName(), name386);
                 }
                 break;
             case SC_Read:
@@ -227,7 +199,7 @@ ExceptionHandler(ExceptionType which)
             }
             case SC_Write:
             {
-                DEBUG('e', "Write sysCall.\n");
+                DEBUG('e', "Write sysCall by thread: %d.\n", currentThread->getName());
                 int addr = arguments[0];
                 int size = arguments[1];
                 OpenFileId descriptor = arguments[2];
@@ -239,7 +211,7 @@ ExceptionHandler(ExceptionType which)
                         synchConsole->PutChar(bufferW[j]);
                     }
                 } else if(descriptor == -1){
-                    DEBUG('e', "SysCALL Write: wrong descriptor\t currentThr=%s\n", currentThread->getName());
+                    DEBUG('e', "SysCALL Write: wrong descriptor\n");
                     ASSERT(false);
                 } else {
                     file = currentThread->getFile(descriptor);
@@ -266,8 +238,8 @@ ExceptionHandler(ExceptionType which)
                 printf("Unexpected syscall exception %d %d\n", which, type);
                 ASSERT(false);
     	}
-        machine->WriteRegister(2, result);
     	movingPC();
+        machine->WriteRegister(2, result);
         DEBUG('e', "return=%d.\n", result);
     } else {
         DEBUG('e', "Is not a SyscallException\n");

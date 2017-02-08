@@ -82,13 +82,13 @@ AddrSpace:: LoadSegment (Segment* seg, int readingSize, int pageSize, OpenFile* 
 //	"executable" is the file containing the object code to load into memory
 //----------------------------------------------------------------------
 
-AddrSpace::AddrSpace(OpenFile *executable, int prg_argc, char** prg_argv);
+AddrSpace::AddrSpace(OpenFile *executable, int prg_argc, char** prg_argv)
 {
     NoffHeader noffH;
     unsigned int i, size;
 
-    int argc = prg_argc;
-    char** argv = prg_argv;
+    argc = prg_argc;
+    argv = prg_argv;
 
     executable->ReadAt((char *)&noffH, sizeof(noffH), 0);
     if ((noffH.noffMagic != NOFFMAGIC) && 
@@ -171,32 +171,52 @@ AddrSpace::~AddrSpace()
 // 	Set the arguments values for the user program.
 //----------------------------------------------------------------------
 void
-InitArguments() {
-
+AddrSpace::InitArguments() {
     int length;
     int SP;
+    int oldSP;
     int addrs[argc];
     int currentAddr;
     bool done;
-    // bla bla blaaahh
+
     if(argc > 0) {
-        for(int i=0; i < argc; i++) {
+	DEBUG('e', "Iniciando argumentos...\n");
+        oldSP = machine->ReadRegister(StackReg);
+        for(int i=argc; i > 0; i--) {
             length = strlen(argv[i]) + 1;
 
             SP = machine->ReadRegister(StackReg);
             currentAddr = SP - length;
 
             for(int k=0; k < length; k++) {
-                done = executable->WriteMem(currentAddr + j, 1, argv[i][k]);
+                done = machine->WriteMem(currentAddr + k, 1, argv[i][k]);
                 ASSERT(done);
             }
             
             machine->WriteRegister(StackReg, currentAddr);
             addrs[i] = currentAddr;
         }
+
+	DEBUG('e', "Argumentos iniciados...\n");
+        SP = machine->ReadRegister(StackReg);
+        done = machine->WriteMem(SP - 8, 4, oldSP);
+	ASSERT(done);
+	SP -= 12;
+	for(int j=argc-1; j > 0; j--) {
+	    done = machine->WriteMem(SP - 4, 4, addrs[j]);
+            ASSERT(done);
+	    SP -= 4;
+	}
+
+        done = machine->WriteMem(SP - 4, 4, SP);
+        ASSERT(done);
+        done = machine->WriteMem(SP - 8, 4, argc);
+        ASSERT(done);
+        machine->WriteRegister(StackReg, SP - 12);
     }
-    machine->WriteRegister(5,);
-    machine->WriteRegister(6,);
+
+    machine->WriteRegister(5, argc);
+    machine->WriteRegister(6, SP);
 }
 
 //----------------------------------------------------------------------
