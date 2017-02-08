@@ -150,15 +150,7 @@ AddrSpace::AddrSpace(OpenFile *executable, int prg_argc, char** prg_argv);
         }
     }                     
     
-    if(argc > 0) {
-        ASSERT(argc * sizeof(char[64]) + 1 < UserStackSize);    // check overflow.
-        j = divRoundUp(UserStackSize, PageSize);
-        for(k = 0; k < argc; k++) {
-            executable->ReadAt(&(machine->mainMemory[pageTable[j].physicalPage * PageSize]),
-                    PageSize, 
-        }
-
-    }
+    
 }
 
 //----------------------------------------------------------------------
@@ -181,8 +173,28 @@ AddrSpace::~AddrSpace()
 void
 InitArguments() {
 
+    int length;
+    int SP;
+    int addrs[argc];
+    int currentAddr;
+    bool done;
     // bla bla blaaahh
+    if(argc > 0) {
+        for(int i=0; i < argc; i++) {
+            length = strlen(argv[i]) + 1;
 
+            SP = machine->ReadRegister(StackReg);
+            currentAddr = SP - length;
+
+            for(int k=0; k < length; k++) {
+                done = executable->WriteMem(currentAddr + j, 1, argv[i][k]);
+                ASSERT(done);
+            }
+            
+            machine->WriteRegister(StackReg, currentAddr);
+            addrs[i] = currentAddr;
+        }
+    }
     machine->WriteRegister(5,);
     machine->WriteRegister(6,);
 }
