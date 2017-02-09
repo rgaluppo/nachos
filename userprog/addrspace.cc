@@ -180,9 +180,9 @@ AddrSpace::InitArguments() {
     bool done;
 
     if(argc > 0) {
-	DEBUG('e', "Iniciando argumentos...\n");
+        DEBUG('e', "Iniciando argumentos...\n");
         oldSP = machine->ReadRegister(StackReg);
-        for(int i=argc; i > 0; i--) {
+        for(int i=0; i > argc; i++) {
             length = strlen(argv[i]) + 1;
 
             SP = machine->ReadRegister(StackReg);
@@ -197,26 +197,24 @@ AddrSpace::InitArguments() {
             addrs[i] = currentAddr;
         }
 
-	DEBUG('e', "Argumentos iniciados...\n");
+        DEBUG('e', "Argumentos iniciados...\n");
         SP = machine->ReadRegister(StackReg);
-        done = machine->WriteMem(SP - 8, 4, oldSP);
-	ASSERT(done);
-	SP -= 12;
-	for(int j=argc-1; j > 0; j--) {
-	    done = machine->WriteMem(SP - 4, 4, addrs[j]);
-            ASSERT(done);
-	    SP -= 4;
-	}
+        machine->WriteRegister(StackReg, SP - (SP % 4));
 
-        done = machine->WriteMem(SP - 4, 4, SP);
-        ASSERT(done);
-        done = machine->WriteMem(SP - 8, 4, argc);
-        ASSERT(done);
-        machine->WriteRegister(StackReg, SP - 12);
+        for(int j=argc; j >= 0; j--) {
+            SP = machine->ReadRegister(StackReg);
+            done = machine->WriteMem(SP - 4, 4, addrs[j]);
+            ASSERT(done);
+            machine->WriteRegister(StackReg, SP - 4);
+        }
+
+        SP = machine->ReadRegister(StackReg);
+
+        machine->WriteRegister(StackReg, SP - 16);
+        machine->WriteRegister(4, argc);
+        machine->WriteRegister(5, SP);
     }
 
-    machine->WriteRegister(5, argc);
-    machine->WriteRegister(6, SP);
 }
 
 //----------------------------------------------------------------------

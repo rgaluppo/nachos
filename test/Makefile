@@ -35,7 +35,8 @@ CPP = /lib/cpp
 INCDIR =-I../userprog -I../threads
 CFLAGS = -G 0 -c $(INCDIR) -mips1
 
-all: halt shell matmult sort filetest read testsyscall write exec join testConsole
+all: halt shell matmult sort filetest exec join testConsole \
+	 cat
 
 start.o: start.s ../userprog/syscall.h
 	$(CPP) $(CPPFLAGS) start.s > strt.s
@@ -48,17 +49,11 @@ halt: halt.o start.o
 	$(LD) $(LDFLAGS) start.o halt.o -o halt.coff
 	../bin/coff2noff halt.coff halt
 
-read.o: read.c
-	$(CC) $(CFLAGS) -c read.c
-read: read.o start.o
-	$(LD) $(LDFLAGS) start.o read.o -o read.coff
-	../bin/coff2noff read.coff read
-
-testsyscall.o: testsyscall.c
-	$(CC) $(CFLAGS) -c testsyscall.c
-testsyscall: testsyscall.o start.o
-	$(LD) $(LDFLAGS) start.o testsyscall.o -o testsyscall.coff
-	../bin/coff2noff testsyscall.coff testsyscall
+cat.o: cat.c
+	$(CC) $(CFLAGS) -c cat.c
+cat: cat.o start.o
+	$(LD) $(LDFLAGS) start.o cat.o -o cat.coff
+	../bin/coff2noff cat.coff cat
 
 shell.o: shell.c
 	$(CC) $(CFLAGS) -c shell.c
@@ -84,12 +79,6 @@ filetest.o: filetest.c
 filetest: filetest.o start.o
 	$(LD) $(LDFLAGS) start.o filetest.o -o filetest.coff
 	../bin/coff2noff filetest.coff filetest
-
-write.o: write.c
-	$(CC) $(CFLAGS) -c write.c
-write: write.o start.o
-	$(LD) $(LDFLAGS) start.o write.o -o write.coff
-	../bin/coff2noff write.coff write
 
 exec.o: exec.c
 	$(CC) $(CFLAGS) -c exec.c
