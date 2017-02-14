@@ -117,7 +117,6 @@ ExceptionHandler(ExceptionType which)
     if (which == SyscallException) {
     	switch(type) {
             case SC_Halt:
-                DEBUG('e', "Shutdown, initiated by user program.\n");
                 if(currentThread->space != NULL) {
                     delete currentThread->space;
                     currentThread->space = NULL;
@@ -126,7 +125,6 @@ ExceptionHandler(ExceptionType which)
                 break;
             case SC_Exit:
             {
-                DEBUG('e', "Exit sysCall.\n");
                 amountThread--;
                 int state = arguments[0];
                 if(state == 0) {
@@ -151,19 +149,23 @@ ExceptionHandler(ExceptionType which)
             {
                 DEBUG('e', "Exec sysCall.\n");
                 readStrFromUsr(arguments[0], name386);
+                DEBUG('e', "filename=%s\n", name386);
 
                 OpenFile *executable = fileSystem->Open(name386);
                 if(executable == NULL) {
                     printf("EXEC: Can not open file %s\t currentThr=%s\n", 
                             name386, currentThread->getName());
-                    ASSERT(false);
+                    result = -1;
+                    break;
                 }
                 int pid = processTable->getFreshSlot();
                 int argc = arguments[1];
                 char **argv = new char*[argc];
+                int next_addr = arguments[2];
                 for(int index = 0; index < argc; index++) {
-                    DEBUG('e', "funcion rara argc=%d.\n", argc);
-                    readStrFromUsrSpecial(arguments[2], argv[index], ' ');
+                    argv[index] = new char[128];
+                    next_addr = readStrFromUsrSpecial(next_addr, argv[index], ' ');
+                    DEBUG('e', "funcion rara argv[%d]=%s \n", index, argv[index]);
                 }
                 machine->WriteRegister(2, pid);
                 startProcess(pid, executable, name386, argc, argv);
@@ -186,13 +188,11 @@ ExceptionHandler(ExceptionType which)
                 break;
             }
             case SC_Create:
-                DEBUG('e', "Create sysCall.\n");
                 readStrFromUsr(arguments[0], name386);
                 DEBUG('e',"path=%s\t", name386);
                 result = fileSystem->Create(name386, 512);
                 break;
             case SC_Open:
-                DEBUG('e', "Open sysCall.\n");
                 readStrFromUsr(arguments[0], name386);
                 file = fileSystem->Open(name386);
                 result = -1;
@@ -200,12 +200,11 @@ ExceptionHandler(ExceptionType which)
                     result = currentThread->addFile(file);
                     DEBUG('e', "thread name=%s.\n", currentThread->getName());
                 } else {
-                    DEBUG('e', "OPEN: an error was ocurred: thread name=%s\t file name=%s\n", currentThread->getName(), name386);
+                    printf("OPEN: an error was ocurred: thread name=%s\t file name=%s\n", currentThread->getName(), name386);
                 }
                 break;
             case SC_Read:
             {
-                DEBUG('e', "Read sysCall.\n");
                 int filename = arguments[0];
                 int size = arguments[1];
                 OpenFileId descriptor = arguments[2];
@@ -227,7 +226,6 @@ ExceptionHandler(ExceptionType which)
             }
             case SC_Write:
             {
-                DEBUG('e', "Write sysCall.\n");
                 int addr = arguments[0];
                 int size = arguments[1];
                 OpenFileId descriptor = arguments[2];
@@ -239,8 +237,8 @@ ExceptionHandler(ExceptionType which)
                         synchConsole->PutChar(bufferW[j]);
                     }
                 } else if(descriptor == -1){
-                    DEBUG('e', "SysCALL Write: wrong descriptor\t currentThr=%s\n", currentThread->getName());
-                    ASSERT(false);
+                    printf("SysCALL Write: wrong descriptor\t currentThr=%s\n", currentThread->getName());
+                    result = -1;
                 } else {
                     file = currentThread->getFile(descriptor);
                     result = file->Write(bufferW, size);
@@ -249,7 +247,6 @@ ExceptionHandler(ExceptionType which)
             }
             case SC_Close:
             {
-                DEBUG('e', "Close sysCall.\n");
             	OpenFileId descriptor = arguments[0];
                 file = currentThread->getFile(descriptor);
                 if(file != NULL) {
@@ -268,7 +265,6 @@ ExceptionHandler(ExceptionType which)
     	}
         machine->WriteRegister(2, result);
     	movingPC();
-        DEBUG('e', "return=%d.\n", result);
     } else {
         DEBUG('e', "Is not a SyscallException\n");
         const char *exception = "";

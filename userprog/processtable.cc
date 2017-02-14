@@ -56,6 +56,8 @@ ProcessTable::getFreshSlot()
 Thread*
 ProcessTable::getProcess(int pid)
 {
+    if(pid == -1)
+        return NULL;
     return table[pid];
 }
 //----------------------------------------------------------------------
