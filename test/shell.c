@@ -1,56 +1,64 @@
 #include "syscall.h"
 
+
 int main()
 {
     SpaceId newProc;
-    char prompt[12] = "our_shell> ";
-    char divideChar = ' ';
-    char filepath[32], argv[64];
-    int argc = 0, i, j;
-
-
+    OpenFileId input = ConsoleInput;
+    OpenFileId output = ConsoleOutput;
+    char *prompt ="Nachos_Shell> ";
+    char  ch, buffer[60],argv[60];
+    int i,t,join=0,argc=0;
+  
     while(1) {
-        Write(prompt, 12, ConsoleOutput);
+        Write(prompt, 14, output);
+                                                    
         i = 0;
-
-        do {
-            Read(&filepath[i], 1, ConsoleInput); 
-            if(filepath[i] == '\0') {
-                break;
-            } 
-            if(filepath[i] == '\n') {
-                filepath[i] = '\0';
-                break;
-            } 
-            if(filepath[i] == divideChar) {
-                // Arguments...
-                filepath[i] = '\0';
-                argc++;
-                j = 0;
-                do {
-                    Read(&argv[j], 1, ConsoleInput); 
-                    if(argv[j] == divideChar) {
-                        argc++;
-                    } else if(argv[j] == '\0') {
-                        break;
-                   
-                    } else if(argv[j] == '\n') {
-                        argv[j] = '\0';
-                        break;
-                    }
-                    j++;
-                } while(1);
+        
+        while(1) {
+            t = Read(&buffer[i], 1, input); 
+            Write(&buffer[i], t, output);
+                                                                                       
+            if(buffer[i] == '\0') {
                 break;
             }
-            i++;
-        } while(1);
+            if(buffer[0]=='q' && buffer[1]=='\0') {
+                Write("\nSaliendo del Shell\n", 21, output);
+                Exit(0);
+            }
+            if(buffer[i] == ' ') {
+           /*Argumentos */
+                buffer[i]='\0';
+                argc++;
+                i=0;
+                do {
+                    t = Read(&argv[i],1,input);
+                    if(argv[i] == ' ') {
+                        argc++;
+                    }
+                    if(argv[i] == '\0') {
+                        break;
+                    }
+                    i++;
+                } while(1);
 
-        if(argc > 0) {
-            newProc = Exec(filepath, argc, &argv);
-            Join(newProc);
-        } else {
-            newProc = Exec(filepath, 0, '\0');
-            Join(newProc);
+                break;
+            }
+
+            if(buffer[i] == '&'&& i==0) {
+                join = 1;
+            } else
+                i++;
+        } 
+
+        if( i > 0 && argc == 0) {
+            newProc = Exec(buffer, 0,"");
+            if(join == 0)
+                Join(newProc);
+        } else if(i>0 && argc > 0) {
+            newProc = Exec(buffer, argc, &argv);
+            if(join == 0)
+                Join(newProc);
         }
     }
 }

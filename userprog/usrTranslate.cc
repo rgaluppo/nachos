@@ -1,11 +1,19 @@
 #include "usrTranslate.h"
 
 void readStrFromUsr(int usrAddr, char *outStr) {
-    int value, count = 0;
-    while( machine->ReadMem(usrAddr, 1, &value) && (value != '\0') ) {
-        outStr[count] = value;
+    int value = 1;
+    int count = 0;
+    bool done;
+   
+    DEBUG('e', "usrAdd=%d\n", usrAddr);
+    done = machine->ReadMem(usrAddr, 1, &value);
+    ASSERT(done);
+                
+    while((char) value != '\0'){
+        outStr[count] = (char) value;    
         count++;
-        usrAddr++;
+        done = machine->ReadMem(usrAddr + count, 1, &value);
+        ASSERT(done);
     }
     outStr[count] = '\0';
 };
@@ -14,7 +22,7 @@ void readBuffFromUsr(int usrAddr, char *outBuff, int byteCount) {
     int value;
     for(int i=0; i < byteCount; i++) {
         machine->ReadMem(usrAddr+i, 1, &value);
-        outBuff[i] = value;
+        outBuff[i] = (char) value;
     }
 };
 
@@ -22,12 +30,11 @@ void writeStrToUsr(char *str, int usrAddr) {
    while(*str != '\0') {
        machine->WriteMem(usrAddr++, 1, *(str++));
     }
-    machine->WriteMem(usrAddr, 1, *str);
 };
 
 void writeBuffToUsr(char *str, int usrAddr, int byteCount) {
    for(int i=0; i < byteCount; i++) {
-        machine->WriteMem(usrAddr + i, 1, str[i]);
+        machine->WriteMem(usrAddr + i, 1, (int) str[i]);
     }
 };
 
@@ -36,21 +43,22 @@ readStrFromUsrSpecial(int usrAddr, char *outStr, char divide) {
     int value = 1;
     int size = 1;
     int i=0, nextAddr;
+    bool done;
                     
     if(!machine->ReadMem( usrAddr, size, &value))
         ASSERT(machine->ReadMem( usrAddr, size, &value));
     nextAddr = usrAddr+1;
 // limpio los caracteres separadores
     while((char)value == divide) {
-        if(!machine->ReadMem( nextAddr, size, &value));
-            ASSERT(machine->ReadMem( nextAddr, size, &value));
+        done = machine->ReadMem( nextAddr, size, &value);
+        ASSERT(done);
         nextAddr++;
     }
 
     while((char)value != '\0' and (char)value != divide) {
         outStr[i] = (char)value;    
-        if(!machine->ReadMem( nextAddr, size, &value));
-            ASSERT(machine->ReadMem( nextAddr, size, &value));
+        done = machine->ReadMem( nextAddr, size, &value);
+        ASSERT(done);
         i++;
         nextAddr++;
     }

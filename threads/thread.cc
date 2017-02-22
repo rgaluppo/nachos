@@ -33,15 +33,15 @@ const unsigned STACK_FENCEPOST = 0xdeadbeef;
 //	"threadName" is an arbitrary string, useful for debugging.
 //----------------------------------------------------------------------
 
-Thread::Thread(const char* threadName, int jFlag, int threadPriority)
+Thread::Thread(const char* threadName, int threadPriority)
 {
     name = threadName;
     stackTop = NULL;
     stack = NULL;
     status = JUST_CREATED;
-    joinFlag = jFlag;
+    joinFlag = 0;
     priority = threadPriority;
-    joinPort = new Puerto ("Join");
+    joinPort = new Puerto (name);
 
 #ifdef USER_PROGRAM
     threadId = 0;
@@ -88,10 +88,11 @@ Thread::~Thread()
 // 	
 //	"func" is the procedure to run concurrently.
 //	"arg" is a single argument to be passed to the procedure.
+//	"join" si es mayor que cero, se hace join.
 //----------------------------------------------------------------------
 
 void 
-Thread::Fork(VoidFunctionPtr func, void* arg)
+Thread::Fork(VoidFunctionPtr func, void* arg, int join)
 {
 #ifdef HOST_x86_64
     DEBUG('t', "Forking thread \"%s\" with func = 0x%lx, arg = %ld\n",
@@ -103,6 +104,8 @@ Thread::Fork(VoidFunctionPtr func, void* arg)
 #endif
 
     StackAllocate(func, arg);
+
+    joinFlag = join;
 
     IntStatus oldLevel = interrupt->SetLevel(IntOff);
     scheduler->ReadyToRun(this);	// ReadyToRun assumes that interrupts 
@@ -160,7 +163,7 @@ Thread::Finish ()
     threadToBeDestroyed = currentThread;
 
     if(joinFlag) {
-    currentThread -> joinPort -> Send(1);
+        joinPort->Send(1);
     }
 
     Sleep();					// invokes SWITCH
@@ -248,14 +251,10 @@ Thread::Sleep ()
 void
 Thread::Join()
 {
-    IntStatus oldLevel = interrupt->SetLevel(IntOff);
     if(joinFlag){
-        int * newInt = new int [1];
-	DEBUG('t', "Entre al JOIN-Sleep()######\n");
-        currentThread ->joinPort -> Receive(newInt);
-        scheduler -> ReadyToRun (currentThread);
+        int * msg = (int*) malloc (sizeof(int));
+        joinPort->Receive(msg);
     }
-    interrupt->SetLevel(oldLevel);
 }
 
 

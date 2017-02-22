@@ -61,8 +61,8 @@ SimpleThread(void* name)
 
     lock->Acquire();
     if(strcmp(currentThread->getName(), "first") == 0) {
-        newThread = new Thread ("second", 0, 2);
-        newThread->Fork (OtherFunction, (void*)"second");
+        newThread = new Thread ("second", 2);
+        newThread->Fork (OtherFunction, (void*)"second", 0);
         currentThread->Yield();
         puerto->Receive(casita);
     }
@@ -99,8 +99,8 @@ ThreadTest()
     timeOut2.tv_sec = 3;
     timeOut2.tv_nsec = 0; 
 
-    newThread = new Thread ("first", 0, 1);
-    newThread->Fork (SimpleThread, (void*)"first");
+    newThread = new Thread ("first", 1);
+    newThread->Fork (SimpleThread, (void*)"first", 0);
     currentThread->Yield();
 
     for(i=0; i < 4; i++) {
@@ -113,8 +113,8 @@ ThreadTest()
         aux += str;
 
         strcpy(threadname, aux.c_str());
-        newThread = new Thread (threadname, (i%2), i);
-        newThread->Fork (SimpleThread, (void*)threadname);
+        newThread = new Thread (threadname, i);
+        newThread->Fork (SimpleThread, (void*)threadname, i%2);
     }
 }
 

@@ -62,8 +62,11 @@ void doExecution(void* arg) {
 void startProcess(int pid, OpenFile* executable, char* filename, int argc, char** argv) {
 	DEBUG ('e',"startProcess: currenThread:%s\t pid %d\t filename=%s\n", currentThread->getName(),
             pid, filename);
+    DEBUG('e', "argc=%d \t", argc);
+    for(int i=0; i<argc; i++)
+        DEBUG('e',"argv[%d]=%s\n", i, argv[i]);
 
-    Thread *execThread = new Thread(filename, 0, 0);    //Creation of thread executor.
+    Thread *execThread = new Thread(filename, 0);    //Creation of thread executor.
 
     execThread->setThreadId(pid);
     processTable->addProcess(pid, execThread);
@@ -73,7 +76,7 @@ void startProcess(int pid, OpenFile* executable, char* filename, int argc, char*
     delete executable;
 
     amountThread++;
-    execThread->Fork(doExecution, (void*) filename);   //Create process.
+    execThread->Fork(doExecution, (void*) filename, 1);   //Create process.
 
     DEBUG('e', "Despues del FORK, result=%d\n", execThread->getThreadId());
 }
@@ -148,6 +151,11 @@ ExceptionHandler(ExceptionType which)
             case SC_Exec:
             {
                 DEBUG('e', "Exec sysCall.\n");
+                int pid;
+                int argc = arguments[1];
+                char **argv = new char *[argc];
+                int next_addr = arguments[2];
+
                 readStrFromUsr(arguments[0], name386);
                 DEBUG('e', "filename=%s\n", name386);
 
@@ -158,10 +166,8 @@ ExceptionHandler(ExceptionType which)
                     result = -1;
                     break;
                 }
-                int pid = processTable->getFreshSlot();
-                int argc = arguments[1];
-                char **argv = new char*[argc];
-                int next_addr = arguments[2];
+
+                pid = processTable->getFreshSlot();
                 for(int index = 0; index < argc; index++) {
                     argv[index] = new char[128];
                     next_addr = readStrFromUsrSpecial(next_addr, argv[index], ' ');
@@ -176,13 +182,13 @@ ExceptionHandler(ExceptionType which)
             {
                 DEBUG('e', "Join sysCall.\n");
                 SpaceId pid = arguments[0];
-                Thread* thread = processTable->getProcess(pid);
-                if(thread == NULL) {
+                Thread* child = processTable->getProcess(pid);
+                if(child == NULL) {
                     printf("JOIN: Unknown process with id=%d\n", pid);
                     result = -1;
                 } else {
-                    thread->setJoinFlag(1);
-                    currentThread->Join();
+                    //child->setJoinFlag(1);
+                    child->Join();
                     result = 0;
                 }
                 break;
@@ -193,7 +199,9 @@ ExceptionHandler(ExceptionType which)
                 result = fileSystem->Create(name386, 512);
                 break;
             case SC_Open:
+                DEBUG('e', "SC_Open starts\n");
                 readStrFromUsr(arguments[0], name386);
+                DEBUG('e', "filename: %s\n", name386);
                 file = fileSystem->Open(name386);
                 result = -1;
                 if(file != NULL) {
@@ -207,20 +215,28 @@ ExceptionHandler(ExceptionType which)
             {
                 int filename = arguments[0];
                 int size = arguments[1];
+                int bytes = 0;
                 OpenFileId descriptor = arguments[2];
-                char bufferR[size];
+                char buffer[size];
 
-                readStrFromUsr(filename, name386);
                 if(descriptor == ConsoleInput) {
-                    int i;
-                    for(i=0; i < size; i++) {
-                        bufferR[i] = synchConsole->GetChar();
+                    for(int i=0; i < size; i++, bytes++) {
+                        buffer[i] = synchConsole->GetChar();
+                        if(buffer[i] == '\n')
+                            break;
                     }
-                    result = i;
-                    writeBuffToUsr(bufferR, filename, size);
+                    result = bytes;
+                    writeBuffToUsr(buffer, filename, bytes);
                 } else {
                     file = currentThread->getFile(descriptor);
-                    result = file->Read(bufferR, size); 
+                    if(file != NULL) {
+                        result = file->Read(buffer, size); 
+
+                        writeBuffToUsr(buffer, filename, result);
+                    } else {
+                        printf("SC_OPEN: Wrong descriptor for thread= %s\n", currentThread->getName());
+                        result = -1;
+                    }
                 }
                 break;
             }
@@ -229,19 +245,25 @@ ExceptionHandler(ExceptionType which)
                 int addr = arguments[0];
                 int size = arguments[1];
                 OpenFileId descriptor = arguments[2];
-                char bufferW[size];
+                char buffer[size];
 
-                readBuffFromUsr(addr, bufferW, size);
+                readBuffFromUsr(addr, buffer, size);
+
                 if(descriptor == ConsoleOutput) {
-                    for(int j=0; j < size; j++) {
-                        synchConsole->PutChar(bufferW[j]);
-                    }
+                    for(int j=0; j < size; j++) 
+                        synchConsole->PutChar(buffer[j]);
                 } else if(descriptor == -1){
                     printf("SysCALL Write: wrong descriptor\t currentThr=%s\n", currentThread->getName());
                     result = -1;
                 } else {
                     file = currentThread->getFile(descriptor);
-                    result = file->Write(bufferW, size);
+                    if(file != NULL) {
+                        result = file->Write(buffer, size);
+                    } else {
+                        printf("SC_OPEN: Wrong descriptor: value=%d\t thread=%s\n", descriptor,
+                                currentThread->getName());
+                        result = -1;
+                    }
                 }
                 break;
             }
@@ -295,9 +317,8 @@ ExceptionHandler(ExceptionType which)
                 break;
             default:
                 printf("Unexpected user mode exception.");
-                ASSERT(false);
         }
         printf("Unexpected user mode exception:\t which=%s  type=%d\n", exception, type);
-        ASSERT(false);
+        machine->WriteRegister(2, -1);
     }
   }

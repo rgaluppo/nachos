@@ -83,7 +83,7 @@ class Thread {
     HostMemoryAddress machineState[MachineStateSize];	// all registers except for stackTop
 
   public:
-    Thread(const char* debugName, int jFlag, int priority);	// initialize a Thread 
+    Thread(const char* debugName, int priority);	// initialize a Thread 
     ~Thread(); 					// deallocate a Thread
 						// NOTE -- thread being deleted
 						// must not be running when delete 
@@ -91,7 +91,7 @@ class Thread {
 
     // basic thread operations
 
-    void Fork(VoidFunctionPtr func, void* arg);	// Make thread run (*func)(arg)
+    void Fork(VoidFunctionPtr func, void* arg, int join);	// Make thread run (*func)(arg)
     void Yield();  				// Relinquish the CPU if any 
 						// other thread is runnable
     void Sleep();  				// Put the thread to sleep and 
