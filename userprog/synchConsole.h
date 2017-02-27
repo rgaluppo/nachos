@@ -1,25 +1,20 @@
-#include <console.h>
-#include <synch.h>
+#include "console.h"
+#include "synch.h"
 
-#define MAX_OPERATION 0
 
-class SynchConsole {
-    public:
-        SynchConsole();
-        ~SynchConsole();
+class SynchConsole{
 
-        void PutChar(char ch);	// Write "ch" to the console display, 
-		    		// and return immediately.  "writeHandler" 
-		    		// is called when the I/O completes. 
-
-        char GetChar();	   	// Poll the console input.  If a char is 
-		    		// available, return it.  Otherwise, return EOF.
-    		        // "readHandler" is called whenever there is 
-				    // a char to be gotten
-
-        Semaphore *read;
-        Semaphore *write;
-    private:
-        Console *console;
-	Lock* canWrite;
+public:
+	SynchConsole(const char *readFile, const char *writeFile);
+	~SynchConsole();
+	
+	void writeConsole(char c);
+	char readConsole();
+	void RequestWrite();	
+	void RequestRead();	
+	
+private: 
+	Console *consola;
+	Semaphore *cread, *cwrite;
+	Lock *wLock, *rLock;
 };

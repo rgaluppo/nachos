@@ -1,24 +1,32 @@
-/* cat.c
- *	Simple program to test whether running a user program works.
- */
-
 #include "syscall.h"
 
-int
-main(int argc, char** argv)
-{
-    char buffer[1];
-    int ok = 1;
+int main( int argc, char ** argv){
 
-    OpenFileId descriptor = Open(argv[0]);  
+    //OpenFileId output = ConsoleOutput;
+	/*if (argv[0] == ""){
+		Write("Ingrese archivo", 20, output);	
+	}*/
+	
+	int id = Open(argv[0]);
+	const int size = 1;
+	char buffer[size];
 
-    Write('\n', 1, ConsoleOutput);
-    while(ok > 0){
-        ok = Read(&buffer[0], 1, descriptor);
-        Write(&buffer[0], 1, ConsoleOutput);
-    }
-    Write('\n', 1, ConsoleOutput);
 
-    Close(descriptor);
-    Exit(0);
+	//Read(&buffer, size, id);
+	//Write(&buffer, size, ConsoleOutput);
+	int i = 1;
+	Write("shdfgb", 6, 1);
+	while(i > 0)
+	{
+		i=Read(&buffer[0], 1, id); 
+		
+		Write(&buffer[0], 1, 1);
+		
+		
+	}
+	
+	
+	Exit(0);
+	
+	return 0;
 }

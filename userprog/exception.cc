@@ -221,7 +221,7 @@ ExceptionHandler(ExceptionType which)
 
                 if(descriptor == ConsoleInput) {
                     for(int i=0; i < size; i++, bytes++) {
-                        buffer[i] = synchConsole->GetChar();
+                        buffer[i] = synchConsole->readConsole();
                         if(buffer[i] == '\n')
                             break;
                     }
@@ -251,7 +251,7 @@ ExceptionHandler(ExceptionType which)
 
                 if(descriptor == ConsoleOutput) {
                     for(int j=0; j < size; j++) 
-                        synchConsole->PutChar(buffer[j]);
+                        synchConsole->writeConsole(buffer[j]);
                 } else if(descriptor == -1){
                     printf("SysCALL Write: wrong descriptor\t currentThr=%s\n", currentThread->getName());
                     result = -1;

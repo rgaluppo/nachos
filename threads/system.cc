@@ -184,7 +184,7 @@ Initialize(int argc, char **argv)
     
 #ifdef USER_PROGRAM
     machine = new Machine(debugUserProg);	// this must come first
-    synchConsole = new SynchConsole();
+    synchConsole = new SynchConsole(NULL, NULL);
     processTable = new ProcessTable(); 
     processTable->addProcess(currentThread->getThreadId(), currentThread);
 #endif
