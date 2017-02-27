@@ -6,7 +6,7 @@ int main() {
     OpenFileId output = ConsoleOutput;
     char *prompt ="Nachos_Shell> ";
     char  ch, buffer[60],argv[60];
-    int i,j,t,join=0,argc=0;
+    int i,j,t,join=0,argc=0, bufferSize=0;
 
 	while(1) {
 
@@ -23,6 +23,7 @@ int main() {
 			/*Argumentos */
 				buffer[i]='\0';
 				argc++;
+				bufferSize = i;
 				i=0;
 				do {
 					t = Read(&argv[i],1,input);
@@ -43,22 +44,26 @@ int main() {
 		}
 	
 		if(buffer[0]=='q'){
-			Write("\nSaliendo del Shell\n", 21, output);
+			Write("\nSaliendo del Shell\n", 20, output);
 			break;
 		}
 
 		if( i > 0 && argc == 0) {
+			Write(buffer, bufferSize, output);
 			newProc =Exec(buffer, argc, argv);
 			if(join==0)
 				Join(newProc);
 		} else if(i>0 && argc > 0){
-			Write(buffer, 15, output);	
+			Write(buffer, bufferSize, output);	
 			newProc = Exec(buffer, argc, argv);
 			if(join==0)
 				Join(newProc);	
 		}
-		for (j=0; j < i ; j++)
+		for (j=0; j < 60 ; j++){
 			buffer[j]='\0';
+			argv[j]='\0';
+		}
+		argc = 0;
 	}
 	Exit(0);
 }

@@ -11,6 +11,9 @@ int main( int argc, char ** argv){
 		i=Read(&buffer[0], 1, id); 
 		Write(&buffer[0], 1, ConsoleOutput);		
 	}
+	Write("\n", 1, ConsoleOutput);
+	Close(id);
 	
 	Exit(0);
+	return 0;
 }

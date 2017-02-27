@@ -131,7 +131,7 @@ ExceptionHandler(ExceptionType which)
                 amountThread--;
                 int state = arguments[0];
                 if(state == 0) {
-                    printf("The program finish without problems.\n");
+                    DEBUG('e',"The program finish without problems.\n");
                 } else {
                     printf("The program finish with problems.\n");
                 }

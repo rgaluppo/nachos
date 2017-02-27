@@ -36,7 +36,7 @@ INCDIR =-I../userprog -I../threads
 CFLAGS = -G 0 -c $(INCDIR) -mips1
 
 all: halt shell matmult sort filetest exec join testConsole \
-	 cat
+	 cat cp clear
 
 start.o: start.s ../userprog/syscall.h
 	$(CPP) $(CPPFLAGS) start.s > strt.s
@@ -54,6 +54,18 @@ cat.o: cat.c
 cat: cat.o start.o
 	$(LD) $(LDFLAGS) start.o cat.o -o cat.coff
 	../bin/coff2noff cat.coff cat
+
+cp.o: cp.c
+	$(CC) $(CFLAGS) -c cp.c
+cp: cp.o start.o
+	$(LD) $(LDFLAGS) start.o cp.o -o cp.coff
+	../bin/coff2noff cp.coff cp
+
+clear.o: clear.c
+	$(CC) $(CFLAGS) -c clear.c
+clear: clear.o start.o
+	$(LD) $(LDFLAGS) start.o clear.o -o clear.coff
+	../bin/coff2noff clear.coff clear
 
 shell.o: shell.c
 	$(CC) $(CFLAGS) -c shell.c

@@ -5,7 +5,7 @@ int main( int argc, char ** argv){
 	char *destino = argv[1];
 	char buffer[1];
 	int i = 1;
-	int descOr, descDest;
+	OpenFileId descOr, descDest;
 
 	
 	Create(destino);
@@ -16,6 +16,10 @@ int main( int argc, char ** argv){
 		i=Read(&buffer[0], 1, descOr); 
 		Write(&buffer[0], 1, descDest);		
 	}
+
+	Close(descOr);
+	Close(descDest);
 	
 	Exit(0);
+	return 0;
 }
