@@ -21,11 +21,6 @@
 #include "copyright.h"
 #include "scheduler.h"
 #include "system.h"
-#include <stdexcept>
- 
-static void ThreadPrint(Thread*);
-static void ListThreadPrint (List<Thread*>* xs);
-
 
 //----------------------------------------------------------------------
 // Scheduler::Scheduler
@@ -34,9 +29,13 @@ static void ListThreadPrint (List<Thread*>* xs);
 
 Scheduler::Scheduler()
 { 
-    readyList = new List< List<Thread*> *>; 
-    int memorySize = MemorySize;
-    memoryMap = new BitMap(memorySize);
+    int i ;
+	MaxPriority = 3;
+	
+	readyListP = new List<Thread*>*[MaxPriority];
+	for ( i = 0; i < MaxPriority ; i++){ 
+		readyListP[i] = new List<Thread*>; 
+	}
 }	 
 
 //----------------------------------------------------------------------
@@ -46,13 +45,7 @@ Scheduler::Scheduler()
 
 Scheduler::~Scheduler()
 { 
-    List< Thread*>* actualList = new List<Thread*>;
-    while (!(readyList -> IsEmpty())){
-	    actualList = readyList -> Remove();
-	    if(!actualList ->IsEmpty())
-	        delete actualList;
-    }
-    delete readyList;
+    delete *readyListP;
 } 
 
 //----------------------------------------------------------------------
@@ -66,56 +59,12 @@ Scheduler::~Scheduler()
 void
 Scheduler::ReadyToRun (Thread *thread)
 {
-    DEBUG('t', "Putting thread %s on ready list. My priority is %d.\n", thread->getName(), thread->getPriority());
-    
-    if(thread->getPriority() > MAX_PRIORITY && thread->getPriority() < 0) {
-       throw std::invalid_argument( "Prioridad incorrecta. Es superior a la prioridad maxima o menor que cero" ); 
-    }
+    DEBUG('p', "Putting thread %s on ready list.\n", thread->getName());
+
     thread->setStatus(READY);
-    int actualKey = -1;
-    List< List<Thread*>* > *temp = new List<List<Thread*>*>;
-    List<Thread*> *actualPriorityList = new List<Thread*>;
-
-    actualPriorityList = readyList->SortedRemove(&actualKey);
-
-    if(actualPriorityList == NULL) { // readyList es vacia.
-        DEBUG('t', "ACTUAL PRIORITY LIST es NULL\n");
-	    List<Thread*> *newPL = new List <Thread*>;
-	    newPL -> Append(thread);
-	    readyList -> SortedInsert(newPL, MAX_PRIORITY - thread->getPriority());
-    } else { // Busco la lista cuya prioridad es la que busco. Lo hago hasta que la encuentre o hasta vaciar readyList.
-        DEBUG('t',"\t actualKey = %d\n", actualKey);
-        while(actualKey != thread->getPriority()) {
-            DEBUG('t', "Buscando la lista con la prioridad %d\n", actualKey);  
-            temp -> SortedInsert(actualPriorityList, actualKey);
-            if( readyList -> IsEmpty() ) {
-                DEBUG('t',"\t readyList == []\n");
-                break;  // Vacie readyList.
-            }
-            actualPriorityList = readyList->SortedRemove(&actualKey);
-        }
-
-        if(readyList -> IsEmpty()) { // Es verdadero cuando no encontro una lista cuya prioridad es igual a thread->getPriority().
-            DEBUG('t',"IF\n");
-            List<Thread*> *newPL = new List <Thread*>;
-            newPL -> Append(thread);
-            readyList -> SortedInsert(newPL, MAX_PRIORITY - thread->getPriority());
-        } else { // Sino, se encontro la lista. 
-            DEBUG('t',"ELSE\n");
-            actualPriorityList -> Append(thread);
-            readyList -> SortedInsert(actualPriorityList, actualKey);
-        }
-
-        List<Thread*>* tempList = new List<Thread*>;
-        int tempPriority;
-        while(!temp -> IsEmpty()){ // Paso las listas que estan en la lista temp hacia readyList/
-            DEBUG('t', "Vaciando TEMP\n");
-            tempList = temp->SortedRemove(&tempPriority);
-            readyList -> SortedInsert(tempList, tempPriority); 
-        }
-    }
-    //Print();
-    DEBUG('t', "Fin readyToRun\n\n");
+    int pi = thread->getPriority();
+    DEBUG('p', "priority,%d\n",pi);
+    readyListP[pi]->Append(thread);
 }
 
 //----------------------------------------------------------------------
@@ -127,31 +76,17 @@ Scheduler::ReadyToRun (Thread *thread)
 //----------------------------------------------------------------------
 
 Thread *
-Scheduler::FindNextToRun ()
+Scheduler::FindNextToRun()
 {
-    DEBUG('t', "Finding next thread  to run.\n");
+	DEBUG('t', "next to run \n");
+	int p = MaxPriority-1;
+	//Print();
+	DEBUG('t', "Priodidad maxima, %d \n", p);
+	while (p > 0 && (readyListP[p])->IsEmpty()){		//Cambiar 3 por Length de readyListP
+	     p--;
+	}
 
-    
-   
-    int k,j;
-    k = j = MAX_PRIORITY;
-    List<Thread*> *actualList = new List<Thread*>;
-    Thread* nextT = NULL;
-    while(k != 0) {
-        actualList= readyList->SortedRemove(&k);
-    	if (actualList != NULL) {
-	        nextT = actualList -> Remove();
-	        readyList -> SortedInsert (actualList, j);
-	        break;
-	    }
-        j--;
-        k = j;
-    }
-    if(k == 0){
-        return NULL;
-    }
-    return nextT;
-    
+	return readyListP[p]->Remove();
 }
 
 //----------------------------------------------------------------------
@@ -173,10 +108,12 @@ Scheduler::Run (Thread *nextThread)
 {
     Thread *oldThread = currentThread;
     
+#ifdef USER_PROGRAM			// ignore until running user programs 
     if (currentThread->space != NULL) {	// if this thread is a user program,
         currentThread->SaveUserState(); // save the user's CPU registers
-        currentThread->space->SaveState();
+		currentThread->space->SaveState();
     }
+#endif
     
     oldThread->CheckOverflow();		    // check if the old thread
 					    // had an undetected stack overflow
@@ -205,10 +142,12 @@ Scheduler::Run (Thread *nextThread)
 	threadToBeDestroyed = NULL;
     }
     
+#ifdef USER_PROGRAM
     if (currentThread->space != NULL) {		// if there is an address space
         currentThread->RestoreUserState();     // to restore, do it.
-        currentThread->space->RestoreState();
+		currentThread->space->RestoreState();
     }
+#endif
 }
 
 //----------------------------------------------------------------------
@@ -222,15 +161,49 @@ ThreadPrint (Thread* t) {
     t->Print();
 }
 
-static void 
-ListThreadPrint (List<Thread*>* xs) {
-    xs->Apply(ThreadPrint);
-}
-
 void
 Scheduler::Print()
 {
-    printf("\nReady list contents:\n");
-    readyList->Apply(ListThreadPrint);
-    printf("\n");
+	int i ;
+	for ( i = 0; i < MaxPriority ; i++){ 				//Cambiar 3 por Length de readyListP
+		printf("\nPRIORITY%d - Ready list contents:\n",  i);
+		(readyListP[i])->Apply(ThreadPrint);
+	}
+	
+}
+void 
+Scheduler:: ChangeQueuePriority(Thread *th, int priority)
+{	
+	DEBUG('p',"Estre a change \n");
+ 	int i = th->getPriority();
+ 	DEBUG('p',"Prioridad del thread, %d \n", i);
+ 	DEBUG('p',"Nueva prioridad del thread, %d \n", priority);
+	DEBUG('p',"Antes de CAMBIAR \n");
+	Print();
+	Thread *thread1;
+	Thread *threadh;
+	threadh = (readyListP[i])->Remove();
+	DEBUG('p',"Nombre: %s \n",threadh->getName());	
+	if(threadh == th)
+	{
+		 DEBUG('p', "Soy la cabeza ,%d, %d \n", i, priority);
+		readyListP[priority]->Prepend(th);
+	}
+	else
+		{
+			readyListP[i]->Append(threadh);
+			while((thread1 = readyListP[i]->Remove())!= threadh)
+			{
+				if(thread1 == th)
+				{	DEBUG('p', "No soy la cabeza ,%d, %d \n", i, priority);
+					readyListP[priority]->Prepend(th);
+				}
+				else
+				 	readyListP[i]->Append(thread1);
+			}
+		
+	}
+	DEBUG('p',"Despues de CAMBIAR \n");
+	Print();
+
 }

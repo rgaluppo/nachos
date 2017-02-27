@@ -21,9 +21,11 @@ Statistics *stats;			// performance metrics
 Timer *timer;				// the hardware timer device,
 					// for invoking context switches
 
+ProcessTable *processTable;
 
 // 2007, Jose Miguel Santos Espino
 PreemptiveScheduler* preemptiveScheduler = NULL;
+const long long DEFAULT_TIME_SLICE = 50000;
 
 #ifdef FILESYS_NEEDED
 FileSystem  *fileSystem;
@@ -35,9 +37,8 @@ SynchDisk   *synchDisk;
 
 #ifdef USER_PROGRAM	// requires either FILESYS or FILESYS_STUB
 Machine *machine;	// user program memory and registers
+BitMap* memoryMap;
 SynchConsole* synchConsole;
-ProcessTable *processTable; 
-#define TIME_SLICE 2000000
 #endif
 
 #ifdef NETWORK
@@ -96,6 +97,8 @@ Initialize(int argc, char **argv)
 // 2007, Jose Miguel Santos Espino
     bool preemptiveScheduling = false;
     long long timeSlice;
+
+	processTable = new ProcessTable();
     
 #ifdef USER_PROGRAM
     bool debugUserProg = false;	// single step user program
@@ -159,9 +162,12 @@ Initialize(int argc, char **argv)
     stats = new Statistics();			// collect statistics
     interrupt = new Interrupt;			// start up interrupt handling
     scheduler = new Scheduler();		// initialize the ready queue
-    timer = new Timer(TimerInterruptHandler, 0, randomYield);
-#ifdef USER_PROGRAM
-    timer -> SetTimeSlice(TIME_SLICE);
+    
+#ifndef USER_PROGRAM
+	if(randomYield)
+		timer = new Timer(TimerInterruptHandler, 0, randomYield);
+#else
+	timer = new Timer(TimerInterruptHandler, 0, false);
 #endif
 
     threadToBeDestroyed = NULL;
@@ -171,6 +177,7 @@ Initialize(int argc, char **argv)
     // object to save its state. 
     currentThread = new Thread("main", 0);		
     currentThread->setStatus(RUNNING);
+	processTable->addProcess(currentThread->getThreadId(), currentThread);
 
     interrupt->Enable();
     CallOnUserAbort(Cleanup);			// if user hits ctl-C
@@ -185,8 +192,7 @@ Initialize(int argc, char **argv)
 #ifdef USER_PROGRAM
     machine = new Machine(debugUserProg);	// this must come first
     synchConsole = new SynchConsole(NULL, NULL);
-    processTable = new ProcessTable(); 
-    processTable->addProcess(currentThread->getThreadId(), currentThread);
+	memoryMap = new BitMap(NumPhysPages);
 #endif
 
 #ifdef FILESYS
@@ -221,7 +227,8 @@ Cleanup()
     
 #ifdef USER_PROGRAM
     delete machine;
-    delete processTable;
+    delete synchConsole;
+	delete memoryMap;
 #endif
 
 #ifdef FILESYS_NEEDED
@@ -235,6 +242,7 @@ Cleanup()
     delete timer;
     delete scheduler;
     delete interrupt;
+	delete processTable;
     
     Exit(0);
 }

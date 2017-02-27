@@ -14,8 +14,6 @@
 #include "thread.h"
 #include <bitmap.h>
 
-#define MAX_PRIORITY 10
-
 // The following class defines the scheduler/dispatcher abstraction -- 
 // the data structures and operations needed to keep track of which 
 // thread is running, and which threads are ready but not running.
@@ -30,10 +28,13 @@ class Scheduler {
 					// list, if any, and return thread.
     void Run(Thread* nextThread);	// Cause nextThread to start running
     void Print();			// Print contents of ready list
-    
-    BitMap* memoryMap;
+
+		// Intercambio de Cola de Prioridad
+    void ChangeQueuePriority(Thread *th, int priority);
+
   private:
-    List< List<Thread*> *> *readyList;  // queue of threads that are ready to run,
+    List<Thread*> **readyListP; 	// Priority queue of threads that are ready to run,
+	int MaxPriority;    					// but not running
 };
 
 #endif // SCHEDULER_H

@@ -66,12 +66,12 @@ Semaphore::P()
 {
     IntStatus oldLevel = interrupt->SetLevel(IntOff);	// disable interrupts
     
-    while (value == 0) { 			// semaphore not available
-	queue->SortedInsert(currentThread, MAX_PRIORITY - currentThread->getPriority());		// so go to sleep
-	currentThread->Sleep();
+    while (value == 0) { 				// semaphore not available
+		queue->Append(currentThread);	// so go to sleep
+		currentThread->Sleep();
     } 
-    value--; 					// semaphore available, 
-						// consume its value
+    value--; 							// semaphore available, 
+										// consume its value
     
     interrupt->SetLevel(oldLevel);		// re-enable interrupts
 }
@@ -101,65 +101,93 @@ Semaphore::V()
 // Note -- without a correct implementation of Condition::Wait(), 
 // the test case in the network assignment won't work!
 Lock::Lock(const char* debugName) {
-    name    = debugName;
-    isLock  = false;
-    s       = new Semaphore(debugName, 1);
-    blocker = NULL; 
+	name = debugName;
+	sem = new Semaphore(name, 1);	
+	semInvP = new Semaphore("AccCambioPrio",1);
+	thname = NULL;
+	
+
 }
 
 Lock::~Lock() {
-    s->~Semaphore();
+	delete sem;
+	delete semInvP;
 }
-
 void Lock::Acquire() {
-    ASSERT(isHeldByCurrentThread() == false)
-
-    if(blocker != NULL && currentThread->getPriority() > blocker->getPriority()) {
-        blocker->setPriority(currentThread->getPriority()); 
-    }
-
-    s->P();
-    isLock  = true;
-    blocker = currentThread;
+	
+	if(!isHeldByCurrentThread())
+	{	semInvP -> P();
+		if(thname != NULL)
+		{
+			int thpriority, pcurrent;
+			thpriority = thname->getPriority();
+			pcurrent = currentThread->getPriority();
+			DEBUG('p', "Prioridades ,%d, %d \n", pcurrent, thpriority);
+			if(thpriority < pcurrent) 
+			{
+				DEBUG('p', "Prioridades ,%s, %d \n",thname->getName(), pcurrent);
+				
+				scheduler->ChangeQueuePriority(thname,pcurrent);
+				thname->setPriority(pcurrent);
+				thpriority= pcurrent;
+			}
+		}	
+		
+		semInvP -> V();
+		
+		DEBUG('p', "Prioridades  \n");
+		sem -> P();
+		DEBUG('p', "Sale de P \n");
+		thname = currentThread;
+	}
+	else
+	DEBUG('p', "No pude hacer Acquire  \n");
 }
 
+bool Lock::isHeldByCurrentThread(){
+	return (thname == currentThread);
+}	
+	
 void Lock::Release() {
-    ASSERT(isHeldByCurrentThread())
-
-    isLock  = false;
-    blocker = NULL;
-    s->V();
+	ASSERT(thname == currentThread);
+	if (isHeldByCurrentThread()){
+		thname = NULL;
+		sem -> V();
+	}
 }
 
-bool Lock::isHeldByCurrentThread() {
-    if(blocker == NULL) {
-        return false;
-    }
-    return blocker->getName() == currentThread->getName() ;
+Condition::Condition(const char* debugName, Lock* conditionLock) { 
+		name = debugName;
+		lock = conditionLock;
+		semList = new List<Semaphore*> ;
 }
 
-Condition::Condition(const char* debugName, Lock* conditionLock){ 
-    cola = new List<Thread*>;
-	name = debugName;
-	l = conditionLock;
+Condition::~Condition() { 
+		delete lock;
+		delete semList;
 }
 
-Condition::~Condition(){
-	l->~Lock();
-}
-    
 void Condition::Wait() { 
-	cola -> Append(currentThread);
-	l -> Release();
+	ASSERT(lock->isHeldByCurrentThread());
+	Semaphore * sem = new Semaphore(name, 0) ;
+	semList -> Append(sem);
+	lock -> Release();
+	sem -> P();
+	lock -> Acquire();	
 }
 
-void Condition::Signal() {
-	Thread* t = cola ->Remove();
-	if (t == NULL)
-	  l -> Acquire();
+void Condition::Signal() { 
+	ASSERT(lock->isHeldByCurrentThread());
+	Semaphore * sem;
+	if ( !(semList -> IsEmpty())){
+		sem = semList -> Remove(); 
+		sem -> V();
+	}
+	//lock -> Release();
 }
+
 void Condition::Broadcast() {
-	Thread* t = cola -> Remove();
-	while(t != NULL)
-        l -> Acquire();
+	ASSERT(lock->isHeldByCurrentThread());
+	while ( !(semList -> IsEmpty()))
+		Signal();
 }

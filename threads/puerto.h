@@ -16,17 +16,17 @@ class Puerto {
     public:
         Puerto(const char* name);
         ~Puerto();
-        const char* getName() { return portname; }	// para depuraci�n
+        const char* getName() { return pname; }	// para depuraci�n
 
         void Send(int mensaje);
 
         void Receive(int* correo);
 
     private:
-       const char* portname;
-       Condition* enviando;   // Variable de condicion para los emisores.
-       Condition* recibiendo; // Variable de condicion para los receptores.
-       Lock* lockPort;	// Usamos el mismo candado para las dos variables de condicion.
-       int* buffer;     // Apunta al buffer que nos da un receptor donde se guardan los mensajes.
-       int lengthEnv;	// Nos sirve para indicar si hay emisores que enviaron un mensaje.
+       private:
+		const char * pname;
+		Lock * plock;
+		Condition * pcondS, *pcondR;
+		int  buffer;	
+		bool access;
 };

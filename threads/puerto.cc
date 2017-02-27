@@ -1,52 +1,45 @@
 #include "puerto.h"
 
-Puerto::Puerto(const char* name) {
-    portname = name;
-    lockPort = new Lock("lockPort");
-    enviando = new Condition("env", lockPort);
-    recibiendo = new Condition("rev", lockPort);
-    buffer = NULL;
-    lengthEnv = 0;
+Puerto::Puerto(const char * debugName){
+	access = true;
+	
+	pname = debugName;
+	plock = new Lock(pname);
+	pcondS = new Condition(pname, plock);
+	pcondR = new Condition(pname, plock);
+	DEBUG('p', "Se crea el puerto: \"%s\"\n", pname);
 }
 
-Puerto:: ~Puerto(){
-    lockPort->~Lock();
-    enviando->~Condition();
-    recibiendo->~Condition();
-    delete buffer;
+Puerto::~Puerto(){
+	delete plock;
+	delete pcondS;
+	delete pcondR;
+}  
+		
+void Puerto::Send(int msg){
+	plock -> Acquire();
+	while (!access){
+		printf("esperando buffer vacio: \"%s\"\n", pname);
+		pcondS-> Wait();
+	}
+	printf("grabando buffer con: \"%i\"\n", msg);
+	buffer = msg;
+	access = false;
+	pcondR -> Signal();
+	plock -> Release();
+	
 }
-
-void Puerto::Send(int mensaje){
-   
-    lengthEnv++;
-    printf("<<<<<Envie un  mensaje>>>>>\n");
-   
-    if(buffer == NULL) {//Si el buffer es nulo es porque no hay receptores. En este caso, esperamos.
-        lockPort -> Acquire();
-        enviando->Wait();
-    }
-
-    buffer = &mensaje;
-    lengthEnv--;
-    if(lockPort->isHeldByCurrentThread()) {//Este caso se da cuando recibimos un enviando->Signal(). 
-	    lockPort->Release();           //Se da porque hay un receptor que me esta esperando.
-    }
-
-    recibiendo->Signal();
-}
-
-void Puerto::Receive(int* correo){
-    printf("<<<<<Recibi un  mensaje>>>>>\n");
-    if(lengthEnv == 0) { // Esta variable es nula cuando no hay remitentes esperando.
-        if(!lockPort->isHeldByCurrentThread()) { //Verifico que no tengo adquirido el lock
-            lockPort -> Acquire();               //(producto de un lockPort->Signal() ).
-        }
-
-        recibiendo->Wait(); // En ambos casos, espero.
-    }
-
-    lockPort -> Acquire();
-    buffer = correo;
-    lockPort->Release();
-    enviando->Signal();
+	
+void Puerto::Receive(int* buf){
+	plock -> Acquire();
+	while (access){		
+		printf("esperando buffer con datos: \"%s\"\n", pname);
+		pcondR-> Wait();
+	}
+	*buf = buffer;
+	printf("recibi el mensaje: \"%d\"\n", *buf);
+	
+	access = true;
+	pcondS-> Signal();
+	plock -> Release();
 }

@@ -104,14 +104,14 @@ AddrSpace::AddrSpace(OpenFile *executable, int prg_argc, char** prg_argv)
     size = numPages * PageSize;
 
 // check we're not trying to run something too big -.-
-    ASSERT(numPages <= (unsigned) scheduler->memoryMap->NumClear());
+    ASSERT(numPages <= (unsigned) memoryMap->NumClear());
 
     DEBUG('a', "Initializing address space, num pages %d, size %d\n", numPages, size);
 // first, set up the translation 
     pageTable = new TranslationEntry[numPages];
     int firstFreePhySpace = -1;
     for (i = 0; i < numPages; i++) {
-        firstFreePhySpace = scheduler -> memoryMap -> Find();
+        firstFreePhySpace = memoryMap -> Find();
         ASSERT(firstFreePhySpace != -1);	//Always found space in physical memory.
 
         pageTable[i].virtualPage = i;
@@ -161,7 +161,7 @@ AddrSpace::AddrSpace(OpenFile *executable, int prg_argc, char** prg_argv)
 AddrSpace::~AddrSpace()
 {
    for(unsigned int i=0; i < numPages; i++)
-       scheduler -> memoryMap -> Clear (pageTable[i].physicalPage);
+       memoryMap -> Clear (pageTable[i].physicalPage);
    delete pageTable;
 }
 
