@@ -300,8 +300,11 @@ ExceptionHandler(ExceptionType which)
             case PageFaultException:
 			{
                 int failVirtAddr = machine -> ReadRegister(BadVAddrReg);
+
+                DEBUG('v',"\n Antes de actualizar la TLB: failVAddr=%d \n", failVirtAddr);
+                stats->numPageFaults++;
 				currentThread->space->UpdateTLB(failVirtAddr / PageSize);
-                break;
+                return;
 			}
             case ReadOnlyException: 
                 exception = "ReadOnlyException";
@@ -311,6 +314,7 @@ ExceptionHandler(ExceptionType which)
                 break;
             case AddressErrorException:
                 exception = "AddressErrorException";
+                ASSERT(false);
                 break;
             case OverflowException:
                 exception = "OverflowException";
@@ -320,8 +324,9 @@ ExceptionHandler(ExceptionType which)
                 break;
             default:
                 printf("Unexpected user mode exception.");
+                ASSERT(false);
         }
         printf("Unexpected user mode exception:\t which=%s  type=%d\n", exception, type);
-        machine->WriteRegister(2, -1);
+        ASSERT(false);
     }
   }

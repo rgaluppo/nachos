@@ -307,12 +307,13 @@ void AddrSpace::RestoreState()
 void AddrSpace::UpdateTLB(int position)
 {
     int freeSlot = -1;
-	TranslationEntry *page = &(pageTable[position]);
+    TranslationEntry page = pageTable[position];
 
     //Busco un lugar disponible en la TLB.
     for (int i = 0; i < TLBSize; i++){
-        if(tlb[i].valid == false){
+        if(machine->tlb[i].valid == false){
             freeSlot = i;
+            DEBUG('v',"Found space in TLB: freeSlot=%d\n", freeSlot);
             break;
         }
     }
@@ -321,6 +322,7 @@ void AddrSpace::UpdateTLB(int position)
         freeSlot = Random() % TLBSize;
     }
 	
-    page->valid = true;
+    page.valid = true;
     machine->tlb[freeSlot] = page;
+    DEBUG('v',"Finish updateTLB\n");
 }
