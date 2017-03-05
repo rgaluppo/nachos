@@ -267,11 +267,13 @@ AddrSpace::InitRegisters()
 
 void AddrSpace::SaveState() 
 { 
-    pageTable = machine->pageTable;
-    numPages = machine->pageTableSize;
-    DEBUG('s', "Save state for %s: register PC = %d\n", currentThread->getName(), machine->ReadRegister(34));
-    DEBUG('s', "Save state for %s: register nextPC = %d\n", currentThread->getName(), machine->ReadRegister(35));
-    DEBUG('s', "Save state for %s: register prevPC = %d\n", currentThread->getName(), machine->ReadRegister(36));
+#ifdef USE_TLB
+    for(int i=0; i < TLBSize; i++){
+        if(machine->tlb[i].valid){
+            pageTable[machine->tlb[i].virtualPage] = machine->tlb[i];
+        }
+    }
+#endif
 }
 
 //----------------------------------------------------------------------
@@ -284,7 +286,41 @@ void AddrSpace::SaveState()
 
 void AddrSpace::RestoreState() 
 {
+#ifdef USE_TLB
+    for(int i=0 ; i < TLBSize ; i++)
+        machine->tlb[i].valid = false;
+#else
     machine->pageTable = pageTable;
     machine->pageTableSize = numPages;
     DEBUG('s', "Restore state for %s: register PC = %d\n", currentThread->getName(), machine->ReadRegister(34));
+#endif
+}
+//----------------------------------------------------------------------
+// AddrSpace::UpdateTLB
+// Cuando una entrada no figura en la TLB se dispara un
+// PageFaultException, permitiendo de esta forma, agregar dicha pagina
+// en la TLB.
+//
+// position indica el indice de la pagina en la pageTable.
+//----------------------------------------------------------------------
+
+void AddrSpace::UpdateTLB(int position)
+{
+    int freeSlot = -1;
+	TranslationEntry *page = &(pageTable[position]);
+
+    //Busco un lugar disponible en la TLB.
+    for (int i = 0; i < TLBSize; i++){
+        if(tlb[i].valid == false){
+            freeSlot = i;
+            break;
+        }
+    }
+    if(freeSlot == -1){
+        // No hay espacio libre en la TLB, elijo uno aleatoreamente.
+        freeSlot = Random() % TLBSize;
+    }
+	
+    page->valid = true;
+    machine->tlb[freeSlot] = page;
 }

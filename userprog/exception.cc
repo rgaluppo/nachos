@@ -298,8 +298,11 @@ ExceptionHandler(ExceptionType which)
                 exception = "SyscallException";
                 break;
             case PageFaultException:
-                exception = "PageFaultException";
+			{
+                int failVirtAddr = machine -> ReadRegister(BadVAddrReg);
+				currentThread->space->UpdateTLB(failVirtAddr / PageSize);
                 break;
+			}
             case ReadOnlyException: 
                 exception = "ReadOnlyException";
                 break;
