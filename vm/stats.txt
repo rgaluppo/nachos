@@ -1,0 +1,26 @@
+The program finish with problems.
+Machine halting!
+
+Ticks bug fixed 0 times!
+WARNING: The next statistics may be invalid...
+
+Ticks: total 18983875, idle 0, system 1898390, user 17085485
+Disk I/O: reads 0, writes 0
+Console I/O: reads 0, writes 0
+Paging: faults 39, hits 21817385
+Network I/O: packets received 0, sent 0
+
+Cleaning up...
+The program finish with problems.
+Machine halting!
+
+Ticks bug fixed 0 times!
+WARNING: The next statistics may be invalid...
+
+Ticks: total 664886, idle 0, system 66490, user 598396
+Disk I/O: reads 0, writes 0
+Console I/O: reads 0, writes 0
+Paging: faults 46, hits 726197
+Network I/O: packets received 0, sent 0
+
+Cleaning up...
