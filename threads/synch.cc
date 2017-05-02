@@ -97,24 +97,36 @@ Semaphore::V()
     interrupt->SetLevel(oldLevel);
 }
 
-// Dummy functions -- so we can compile our later assignments 
-// Note -- without a correct implementation of Condition::Wait(), 
-// the test case in the network assignment won't work!
-Lock::Lock(const char* debugName) {
+//----------------------------------------------------------------------
+// Lock::Lock
+// 	Constructor for a lock.
+// debugName Name of lock for debugging proposes.
+//----------------------------------------------------------------------
+Lock::Lock(const char* debugName)
+{
 	name = debugName;
 	sem = new Semaphore(name, 1);	
 	semInvP = new Semaphore("AccCambioPrio",1);
 	thname = NULL;
-	
-
 }
 
-Lock::~Lock() {
+//----------------------------------------------------------------------
+// Lock::~Lock
+// 	Destructor for a lock.
+//----------------------------------------------------------------------
+Lock::~Lock()
+{
 	delete sem;
 	delete semInvP;
 }
-void Lock::Acquire() {
-	
+
+//----------------------------------------------------------------------
+// Lock::Acquire
+// 	Wait for the lock to be free and mark it as taken.
+//----------------------------------------------------------------------
+void
+Lock::Acquire()
+{
 	if(!isHeldByCurrentThread())
 	{	semInvP -> P();
 		if(thname != NULL)
@@ -140,15 +152,25 @@ void Lock::Acquire() {
 		DEBUG('p', "Sale de P \n");
 		thname = currentThread;
 	}
-	else
-	DEBUG('p', "No pude hacer Acquire  \n");
 }
 
-bool Lock::isHeldByCurrentThread(){
+//----------------------------------------------------------------------
+// Lock::isHeldByCurrentThread
+// Return 'true' if the currentThread holds the lock.
+//----------------------------------------------------------------------
+bool
+Lock::isHeldByCurrentThread()
+{
 	return (thname == currentThread);
 }	
-	
-void Lock::Release() {
+
+//----------------------------------------------------------------------
+// Lock::Release
+// Marks the lock as free, waking up some other thread that was locked
+// in an Acquire
+//----------------------------------------------------------------------
+void Lock::Release()
+{
 	ASSERT(thname == currentThread);
 	if (isHeldByCurrentThread()){
 		thname = NULL;
