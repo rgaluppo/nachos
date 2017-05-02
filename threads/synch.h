@@ -87,10 +87,10 @@ class Lock {
 
   private:
 
-    Thread *thname;
+    Thread *blocker;
     const char* name;	
-    Semaphore *sem;		// para depuraci�n
-	Semaphore *semInvP; //Semaforo para control de prioridades
+    Semaphore *semLock;		// para depuraci�n
+    Semaphore *invPrController; //Semaforo para control de prioridades
     // a�adir aqu� otros campos que sean necesarios
 };
 

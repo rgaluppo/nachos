@@ -1,0 +1,54 @@
+\chapter{Resolución de la Práctica N\grad2}
+\section{Implementación de locks y variables de condición}
+\subsection*{Intro}
+Un cerrojo provee una exclusión mutua para utilizar ciertos recursos. Puede tener dos estados: libre y ocupado. Además, sólo se permiten dos operaciones:
+\begin{itemize}
+	\item \textbf{Acquire :} Si el cerrojo está libre, lo obtiene y lo marca como ocupado.
+	\item \textbf{Realese :} Libera el cerrojo.
+\end{itemize}
+Cabe aclarar que nadie excepto el hilo que tiene adquirido el cerrojo puede liberarlo.\\
+
+\begin{lstlisting}[style=C]
+class Lock {
+  public:
+  // Constructor: inicia el cerrojo como libre
+  Lock(const char* debugName);
+
+  ~Lock();          // destructor
+  const char* getName() { return name; }	// para depuracion
+
+  // Operaciones sobre el cerrojo. Ambas deben ser *atomicas*
+  void Acquire(); 
+  void Release();
+
+  // devuelve 'true' si el hilo actual es quien posee el cerrojo.
+  // util para comprobaciones en el Release() y en las variables condicion
+  bool isHeldByCurrentThread();	
+
+  private:
+    Thread *blocker; 	// thread que adquirio el cerrojo.
+    const char* name;	// nombre del cerrojo.
+    Semaphore *s;		// para depuracion
+	Semaphore *semInvP; //Semaforo para control de prioridades
+};
+\end{lstlisting}
+\subsection*{Implementación de cerrojo}
+Para implementar los métodos, lo primero que se hizo es el método $Lock::isHeldByCurrentThread$
+\begin{lstlisting}[style=C]
+bool Lock::isHeldByCurrentThread(){
+    return (blocker == currentThread);
+}
+\end{lstlisting}
+Para implementar $Lock::Acquire$ se realizaron los siguientes pasos:
+\begin{enumerate}
+	\item Preguntar si el cerrojo esta libre, utilizando $isHeldByCurrentThread$.
+	\item Decrementar el semáforo $s$.
+	\item Asignar $currentThread$ a la variable $blocker$, para indicar que el thread $currentThread$ obtuvo el cerrojo.
+\end{enumerate}
+En cambio, para implementar $Lock::Release$ se realizaron los siguientes pasos:
+\begin{enumerate}
+	\item Hay que asegurar, mediante un ASSERT, que el thread actual es el que había obtenido el cerrojo. Para ello, se tiene que cumplir $isHeldByCurrentThread$.
+	\item Incrementar el semáforo $s$.
+	\item Liberar la variable $blocker$, para indicar que se liberó el cerrojo.
+\end{enumerate}
+\subsection*{Implementación de variables de condición}

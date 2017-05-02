@@ -1,0 +1,67 @@
+% ------ Clase de documento ------
+\documentclass[a4paper, 11pt]{article}
+
+% ----------- Preámbulo ----------
+
+% Paquetes
+\usepackage[T1]{fontenc}      % Codificación de salida
+\usepackage[spanish]{babel}
+\usepackage{color}
+\usepackage[utf8]{inputenc}
+\usepackage{mathptmx}         % Selección de la fuente (tipo de letra)
+
+\usepackage{color}
+\definecolor{gray97}{gray}{.97}
+\definecolor{gray75}{gray}{.75}
+\definecolor{gray45}{gray}{.45}
+
+\usepackage{listings}
+\lstset{ frame=Ltb,
+framerule=0pt,
+aboveskip=0.5cm,
+framextopmargin=3pt,
+framexbottommargin=3pt,
+framexleftmargin=0.4cm,
+framesep=0pt,
+rulesep=.4pt,
+backgroundcolor=\color{gray97},
+rulesepcolor=\color{black},
+%
+stringstyle=\ttfamily,
+showstringspaces = false,
+basicstyle=\small\ttfamily,
+commentstyle=\color{gray45},
+keywordstyle=\bfseries,
+%
+numbers=left,
+numbersep=15pt,
+numberstyle=\tiny,
+numberfirstline = false,
+breaklines=true,
+}
+
+% minimizar fragmentado de listados
+\lstnewenvironment{listing}[1][]
+{\lstset{#1}\pagebreak[0]}{\pagebreak[0]}
+
+\lstdefinestyle{consola}
+{basicstyle=\scriptsize\bf\ttfamily,
+backgroundcolor=\color{gray75},
+}
+
+\lstdefinestyle{C}
+{language=C++,
+}
+
+% Configuración (para artículo)
+\title{Resolución Práctica 2 de Nachos}
+\author{Galuppo, Raúl I. Graf, Andrea}
+\date{\today}
+
+% ----- Cuerpo del documento -----
+\begin{document}
+\maketitle
+En principio, creemos que la razón por la que no se puede hacer lo mismo con los semáforos es porque
+estos no controlan regiones críticas exclusivas, ya que varios procesos pueden acceder a la RG al 
+mismo tiempo.
+\end{document}

@@ -105,9 +105,11 @@ Semaphore::V()
 Lock::Lock(const char* debugName)
 {
 	name = debugName;
-	sem = new Semaphore(name, 1);	
-	semInvP = new Semaphore("AccCambioPrio",1);
-	thname = NULL;
+    semLock = new Semaphore(name, 1);
+    invPrController = new Semaphore("AccCambioPrio",1);
+    blocker = NULL;
+
+
 }
 
 //----------------------------------------------------------------------
@@ -116,8 +118,10 @@ Lock::Lock(const char* debugName)
 //----------------------------------------------------------------------
 Lock::~Lock()
 {
-	delete sem;
-	delete semInvP;
+    delete semLock;
+    delete invPrController;
+    name = NULL;
+    blocker = NULL;
 }
 
 //----------------------------------------------------------------------
@@ -128,29 +132,29 @@ void
 Lock::Acquire()
 {
 	if(!isHeldByCurrentThread())
-	{	semInvP -> P();
-		if(thname != NULL)
+    {	invPrController -> P();
+        if(blocker != NULL)
 		{
 			int thpriority, pcurrent;
-			thpriority = thname->getPriority();
+            thpriority = blocker->getPriority();
 			pcurrent = currentThread->getPriority();
 			DEBUG('p', "Prioridades ,%d, %d \n", pcurrent, thpriority);
 			if(thpriority < pcurrent) 
 			{
-				DEBUG('p', "Prioridades ,%s, %d \n",thname->getName(), pcurrent);
+                DEBUG('p', "Prioridades ,%s, %d \n",blocker->getName(), pcurrent);
 				
-				scheduler->ChangeQueuePriority(thname,pcurrent);
-				thname->setPriority(pcurrent);
+                scheduler->ChangeQueuePriority(blocker,pcurrent);
+                blocker->setPriority(pcurrent);
 				thpriority= pcurrent;
 			}
 		}	
 		
-		semInvP -> V();
+        invPrController -> V();
 		
 		DEBUG('p', "Prioridades  \n");
-		sem -> P();
+        semLock -> P();
 		DEBUG('p', "Sale de P \n");
-		thname = currentThread;
+        blocker = currentThread;
 	}
 }
 
@@ -161,7 +165,7 @@ Lock::Acquire()
 bool
 Lock::isHeldByCurrentThread()
 {
-	return (thname == currentThread);
+    return (blocker == currentThread);
 }	
 
 //----------------------------------------------------------------------
@@ -171,10 +175,10 @@ Lock::isHeldByCurrentThread()
 //----------------------------------------------------------------------
 void Lock::Release()
 {
-	ASSERT(thname == currentThread);
+    ASSERT(blocker == currentThread);
 	if (isHeldByCurrentThread()){
-		thname = NULL;
-		sem -> V();
+        blocker = NULL;
+        semLock -> V();
 	}
 }
 
