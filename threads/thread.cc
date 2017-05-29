@@ -41,7 +41,7 @@ Thread::Thread(const char* threadName, int threadPriority)
     status = JUST_CREATED;
     joinFlag = 0;
     priority = threadPriority;
-    joinPort = new Puerto (name);
+    joinPort = new Puerto (threadName);
 
 #ifdef USER_PROGRAM
     threadId = 0;
@@ -64,6 +64,8 @@ Thread::Thread(const char* threadName, int threadPriority)
 Thread::~Thread()
 {
     DEBUG('t', "Deleting thread \"%s\"\n", name);
+
+    delete joinPort;
 
     ASSERT(this != currentThread);
     if (stack != NULL)
@@ -165,7 +167,6 @@ Thread::Finish ()
     if(joinFlag) {
         joinPort->Send(1);
     }
-
     Sleep();					// invokes SWITCH
     // not reached
 }
@@ -245,7 +246,7 @@ Thread::Sleep ()
 
 //----------------------------------------------------------------------
 // Thread::Join
-// bloquea al llamante hasta que el hilo en cuestion termine.
+//  Bloquea al llamante hasta que el hilo en cuestion termine.
 //----------------------------------------------------------------------
 
 void

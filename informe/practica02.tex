@@ -1,54 +1,253 @@
 \chapter{Resolución de la Práctica N\grad2}
-\section{Implementación de locks y variables de condición}
-\subsection*{Intro}
-Un cerrojo provee una exclusión mutua para utilizar ciertos recursos. Puede tener dos estados: libre y ocupado. Además, sólo se permiten dos operaciones:
+\section{Implementación de cerrojo y variables de condición}
+\subsection*{Cerrojo}
+\textsf{\underline{Marco teórico}}\\
+Un cerrojo provee una exclusión mutua para utilizar ciertos recursos. Puede tener dos estados: libre y ocupado. Cabe aclarar que nadie excepto el hilo que tiene adquirido el cerrojo puede liberarlo. Además, sólo se permiten dos operaciones:
 \begin{itemize}
 	\item \textbf{Acquire :} Si el cerrojo está libre, lo obtiene y lo marca como ocupado.
 	\item \textbf{Realese :} Libera el cerrojo.
 \end{itemize}
-Cabe aclarar que nadie excepto el hilo que tiene adquirido el cerrojo puede liberarlo.\\
-
 \begin{lstlisting}[style=C]
 class Lock {
   public:
-  // Constructor: inicia el cerrojo como libre
-  Lock(const char* debugName);
+	// Constructor: inicia el cerrojo como libre
+  	Lock(const char* debugName);
 
-  ~Lock();          // destructor
-  const char* getName() { return name; }	// para depuracion
+  	~Lock();          // destructor
+  	const char* getName() { return name; }	// para depuracion
 
-  // Operaciones sobre el cerrojo. Ambas deben ser *atomicas*
-  void Acquire(); 
-  void Release();
+  	// Operaciones sobre el cerrojo. Ambas deben ser *atomicas*
+  	void Acquire(); 
+  	void Release();
 
-  // devuelve 'true' si el hilo actual es quien posee el cerrojo.
-  // util para comprobaciones en el Release() y en las variables condicion
-  bool isHeldByCurrentThread();	
-
+  	// devuelve 'true' si el hilo actual es quien posee
+  	// el cerrojo. Util para comprobaciones en el Release()
+  	// y en las variables condicion.
+  	bool isHeldByCurrentThread();
   private:
     Thread *blocker; 	// thread que adquirio el cerrojo.
     const char* name;	// nombre del cerrojo.
-    Semaphore *s;		// para depuracion
-	Semaphore *semInvP; //Semaforo para control de prioridades
+    Semaphore *semLock;     // Semaforo para aislar la zona compartida
 };
 \end{lstlisting}
-\subsection*{Implementación de cerrojo}
-Para implementar los métodos, lo primero que se hizo es el método $Lock::isHeldByCurrentThread$
+\textsf{\underline{Implementación}}\\
+Para implementar los métodos, lo primero que se hizo es el método \texttt{Lock::isHeldByCurrentThread}
 \begin{lstlisting}[style=C]
 bool Lock::isHeldByCurrentThread(){
     return (blocker == currentThread);
 }
 \end{lstlisting}
-Para implementar $Lock::Acquire$ se realizaron los siguientes pasos:
+En el constructor, se crea un semáforo \texttt{semLock} cuyo valor inicial es \texttt{1}.\\
+Para implementar \texttt{Lock::Acquire} se realizaron los siguientes pasos:
 \begin{enumerate}
-	\item Preguntar si el cerrojo esta libre, utilizando $isHeldByCurrentThread$.
-	\item Decrementar el semáforo $s$.
-	\item Asignar $currentThread$ a la variable $blocker$, para indicar que el thread $currentThread$ obtuvo el cerrojo.
+	\item Preguntar si el cerrojo esta libre, utilizando \texttt{isHeldByCurrentThread}.
+	\item Decremento el semáforo \texttt{semLock}.
+	\item Asignar \texttt{currentThread} a la variable \texttt{blocker}, para indicar que dicho thread obtuvo el cerrojo.
 \end{enumerate}
-En cambio, para implementar $Lock::Release$ se realizaron los siguientes pasos:
+En cambio, para implementar \texttt{Lock::Release} se realizaron los siguientes pasos:
 \begin{enumerate}
-	\item Hay que asegurar, mediante un ASSERT, que el thread actual es el que había obtenido el cerrojo. Para ello, se tiene que cumplir $isHeldByCurrentThread$.
-	\item Incrementar el semáforo $s$.
-	\item Liberar la variable $blocker$, para indicar que se liberó el cerrojo.
+	\item Hay que asegurar, mediante un ASSERT, que el thread actual es el que había obtenido el cerrojo. Para ello, se tiene que cumplir \texttt{isHeldByCurrentThread}.
+	\item Incrementar el semáforo \texttt{semLock}.
+	\item Liberar la variable \texttt{blocker}, para indicar que se liberó el cerrojo.
 \end{enumerate}
-\subsection*{Implementación de variables de condición}
+\subsection*{Variables de condición}
+\textsf{\underline{Marco teórico}}\\
+ Las variables de condición usadas en conjunto con cerrojo permiten a un hilo esperar por la ocurrencia de una condición arbitraria. Se utilizan para encolar hilos que esperan (\texttt{Wait}) a que otro hilo les avise (\texttt{Signal}) cuando se cumpla dicha condición.\\
+Se definen tres operaciones sobre una variable condición:
+\begin{itemize}
+	\item \textbf{Wait: } Libera el cerrojo y expulsa al hilo de la CPU. El hilo se espera hasta que alguien le hace un \texttt{Signal}.
+	\item \textbf{Signal: } Si hay alguien esperando en la variable, despierta a uno de los hilos. Si no hay nadie esperando, no ocurre nada.
+	\item \textbf{Broadcast: } Despierta a todos los hilos que están esperando.
+\end{itemize}
+Todas las operaciones sobre una variable condición deben ser realizadas adquiriendo previamente el cerrojo. Esto significa que las operaciones sobre variables condición han de ejecutarse en exclusión mutua.
+\newpage
+\begin{lstlisting}[style=C]
+class Condition {
+  public:
+    // Constructor: se le indica cual es el cerrojo al que pertenece
+    // la variable condicion
+	Condition(const char* debugName, Lock* conditionLock);	
+
+    // libera el objeto
+    ~Condition();	
+    const char* getName() { return (name); };
+
+    // Las tres operaciones sobre variables condicion.
+    // El hilo que invoque a cualquiera de estas operaciones debe tener
+    // adquirido el cerrojo correspondiente; de lo contrario se debe
+    // producir un error.
+    void Wait(); 	
+    void Signal();   
+    void Broadcast();
+
+  private:
+    const char* name; // Nombre de la v.c.
+    Lock* lock;	// Cerrojo vinculado a la v.c.
+    List<Semaphore*> * semList; // Lista de semaforos correspondiente a los
+                                // hilos que se fueron bloqueando.
+};
+\end{lstlisting}
+\textsf{\underline{Detalles de la implementación}}\\
+En el constructor, se inicializa a \texttt{semList} con una lista vacía; se guardan el nombre del semáforo y el cerrojo vinculado, en las variables correspondientes.\\
+Para implementar \texttt{Condition::Wait} se realizaron los siguientes pasos:
+\begin{enumerate}
+	\item Hay que asegurar, mediante un ASSERT, que el thread actual es el que había obtenido el cerrojo. Para ello, se tiene que cumplir \texttt{isHeldByCurrentThread}.
+	\item Se crea un semáforo llamado \texttt{sem}, cuyo valor inicial es \texttt{0}.
+	\item Se lo agrega al final de la lista \texttt{semList}.
+	\item Se libera el \texttt{lock}.
+	\item Se decrementa el semáforo \texttt{sem}, logrando que se bloquee el thread que esta ejecutándose (\texttt{currentThread}).
+	\item Se obtiene el \texttt{lock}.
+\end{enumerate}
+Para implementar \texttt{Condition::Signal} se realizaron los siguientes pasos:
+\begin{enumerate}
+	\item Hay que asegurar, mediante un \texttt{ASSERT}, que el thread actual es el que había obtenido el cerrojo. Para ello, se tiene que cumplir \texttt{isHeldByCurrentThread}.
+	\item Si hay algún semáforo en la lista \texttt{semList}, se quita el primero y se lo incrementa. De esta forma, logramos que se libere el thread bloqueado, para que se agregue a la lista de threads listos para ejecutarse.
+\end{enumerate}
+Finalmente, para implementar \texttt{Condition::Broadcast} se realizaron los siguientes pasos:
+\begin{enumerate}
+	\item Hay que asegurar, mediante un ASSERT, que el thread actual es el que había obtenido el cerrojo. Para ello, se tiene que cumplir \texttt{isHeldByCurrentThread}.
+	\item Mientras haya algún semáforo en la lista \texttt{semList}, se invoca a \texttt{Signal}. De esta forma, logramos que se liberen todos los threads que se encontraban bloqueados.
+\end{enumerate}
+\section{Implementación de puertos}
+\textsf{\underline{Introcción}}\\
+La siguiente clase implementa un sistema de mensajes entre hilos, el cual permite que los emisores se
+sincronicen con los receptores mediante un buffer.\\
+Se definen dos operaciones: \textbf{\texttt{Send}} y \textbf{\texttt{Receive}}. La primera espera a que esté libre el buffer e inserta un mensaje en él. La segunda, se encarga de la recepción de un mensaje, bloqueándose mientras no llegue ninguno.
+\begin{lstlisting}[style=C]
+class Puerto {
+    public:
+        Puerto(const char* name);
+        ~Puerto();
+        const char* getName() { return portname; }	// para depuracion
+
+        void Send(int message);
+        void Receive(int* postbox);
+    private:
+	const char* portname; // nombre del puerto.
+        Lock* lockPort; 	// cerrojo asociado a las v.c.
+        Condition* sending; // v.c. que contralan el acceso
+        Condition* receiving; // sincronizado al buffer.
+        int  buffer; 	// buffer de comunicacion
+        bool access;	// indica si el buffer esta libre.
+}
+\end{lstlisting}
+\textsf{\underline{Detalles de la implementación}}\\
+En el constructor, se crean el cerrojo y las variables de configuración. Además, se inicializa el nombre del puerto y se indica que el buffer está libre.\\
+Para implementar \texttt{Puerto::Send}, se realizaron los siguientes pasos:
+\begin{enumerate}
+	\item Se obtiene el cerrojo \texttt{lockPort}.
+	\item Mientras el buffer esté ocupado, se invoca al método \texttt{Condition::Wait}, correspondiente a la v.c $sending$.
+	\item Se guarda el mensaje recibido en \texttt{buffer}.
+	\item Se indica que el buffer está ocupado, seteando \texttt{access} en \texttt{false}.
+	\item Se libera el cerrojo \texttt{lockPort}.
+\end{enumerate}
+Finalmente, para implementar \texttt{Puerto::Receive}, se realizaron los siguientes pasos:
+\begin{enumerate}
+	\item Se obtiene el cerrojo \texttt{lockPort}.
+	\item Mientras el buffer esté libre, se invoca al método \texttt{Condition::Wait}, correspondiente a la v.c \texttt{receiving}.
+	\item Se copia \texttt{buffer} en el argumento.
+	\item Se indica que el buffer está libre, seteando \texttt{access} en \texttt{true}.
+	\item Se libera el cerrojo \texttt{lockPort}.
+\end{enumerate}
+\section{Implementación del método $Thread::Join$}
+El método \texttt{Thread::Join} permite al thread que la invoca esperar la finalización de otro proceso antes de continuar con su ejecución.\\
+Para implementarlo, se agregó lo siguiente a la clase \texttt{Thread}:
+\begin{lstlisting}[style=C]
+class Thread {
+public:
+	...
+	void Join(); //  Bloquea al llamante hasta que el hilo en cuestion termine.
+private:
+	int joinFlag; // Indica si se tiene que realizar el join.
+	Puerto* joinPort; // Sirve para sincronizar los dos threads.
+}
+\end{lstlisting}
+En el constructor, se inicializaron las variables agregadas; en el destructor, se libera el miembro \texttt{joinPort}.\\
+Luego, se implementó el método \texttt{Thread::Join}:
+\begin{lstlisting}
+void
+Thread::Join()
+{
+    if(joinFlag){
+        int * msg = (int*) malloc (sizeof(int));
+        joinPort->Receive(msg);
+    }
+}
+\end{lstlisting}
+Además, se modificaron los siguientes métodos:
+\begin{itemize}
+	\item \textbf{\texttt{Thread::Fork}} Se le agregó un argumento para setear la bandera \texttt{joinFlag} al momento de crear un hijo. Si el parámetro viene con un número mayor a cero, significa que el padre espera a que este nuevo hijo termine.
+	\item \textbf{\texttt{Thread::Finish}} Si está activada la bandera \texttt{joinFlag}, se envía un mensaje a través del puerto \texttt{joinPort}, indicando de esta forma que finalicé. Por lo tanto, puedo desbloquear el otro thread.
+\end{itemize}
+Finalmente, mostraremos la secuencia de ejecución para utilizar esta característica:
+\begin{enumerate}
+    \item El thread \texttt{Padre} ejecuta unas tareas.
+    \item \texttt{Padre} crea un thread \texttt{Hijo} indicando que quiere hacer \texttt{join}:
+        \begin{lstlisting}
+            Thread *hijo = new Thread("Hijo");
+            hijo->Fork(childFunction, (*void) 1, 1); //Al ser el 3er argumento mayor que 0, indica que quiero hacer join.
+         \end{lstlisting}
+    \item El padre se queda esperando a que el hijo termine mediante:
+        \begin{lstlisting}
+            hijo->Join();
+        \end{lstlisting}
+    \item Cuando el thread \texttt{Hijo} termina, su padre continua su ejecución.
+\end{enumerate}
+\section{Implementación de multicolas con prioridad}
+\subsection*{Implementación de la propiedad prioridad en los Threads}
+A cada proceso se le determinará, mediante un criterio, su prioridad. Para ello, se agregó una propiedad a los Threads llamada \texttt{priority}, que indica cuál es la prioridad de dicho Thread.\\
+Todos los threads tienen una prioridad positiva, siendo 0 la prioridad de menor importancia.\\
+Se realizaron los siguientes cambios en el archivo \textbf{\texttt{thread.h}}:
+\begin{lstlisting}
+  public:
+    ...
+    int getPriority(){ return priority; } //Retorna la prioridad.
+    void setPriority(int p){ priority = p; } // Asigna la prioridad.
+  private:
+    ...
+    int priority; // Indica la prioridad.
+\end{lstlisting}
+Al constructor de \texttt{Threads} se le agregó un parámetro para indicar la prioridad de un thread.
+\subsection*{Modificaciones al Scheduler para que utilice Multicolas}
+\textsf{\underline{Esquema de planificación Múltiples colas de prioridad}}\\
+Se definen la cantidad de colas que se encuentran en el sistema. Su número determina cuántas prioridades distintas se tienen para clasificar los procesos.\\
+Cuando un proceso tenga su estado en listo, será colocado en la cola correspondiente a su prioridad. Una aclaración importante es que cada cola puede manejar un algoritmo de planificación diferente a las demás.\\
+Se modificó el archivo \textbf{\texttt{scheduler.h}} de la siguiente manera:
+\begin{lstlisting}
+class Scheduler {
+    public:
+    ...
+    
+    private:
+        List<Thread*> **readyList;  // Priority queue of threads
+                                    // that are ready to run,
+                                    // but not running
+        int max_priority;    // Cantidad de colas.
+}
+\end{lstlisting}
+\textsf{\underline{Implementación}}\\
+Para desarrollar las colas de prioridad múltiple, se modificó \textbf{\texttt{scheduler.cc}}:
+\begin{itemize}
+    \item \textbf{Constructor de la clase} Se indica la cantidad de colas. Además, se inicializan las colas.
+    \item \textbf{Destructor de la clase} Se eliminan las colas.
+    \item \textbf{\texttt{Scheduler::ReadyToRun}} Agrega al thread al final de la cola correspondiente a su prioridad.
+    \item \textbf{\texttt{Scheduler::FindNextToRun}} Empezando por las colas de mayor prioridad, obtiene un thread para ejecutarse. Si la cola superior está vacía, sigue con la cola de prioridad inmediatamente menor. Y así sucesivamente hasta encotrar un thread.
+\end{itemize}
+\subsection*{Inversión de prioridades}
+\textsf{\underline{Descripción del problema}}\\
+Sean dos procesos A,B que comparten un recurso. Supongamos que se da la siguiente situación:
+\begin{itemize}
+    \item El proceso A, de prioridad baja, pide el recurso compartido y es interrumpido luego de obtenerlo.
+    \item El proceso B, de prioridad alta, pide el recurso compartido.
+\end{itemize}
+Esta situación hace que queden invertidas las prioridades relativas entre ambos, ya que el proceso B tiene que esperar a que el proceso A libere el recurso compartido. Como consecuencia, el proceso de mayor prioridad se ejecutará luego del proceso de menor prioridad.\\
+\\\textsf{\underline{Detalles de la implementación de la solución}}\\
+Para solucionar el problema de inversión de prioridades, aplicamos una técnica llamada \emph{Herencia de Prioridades}: dados dos procesos que comparten un recurso, tales que tengan distintas prioridades. Supongamos que el proceso de menor prioridad esté bloqueando el recurso compartido. Entonces procedemos a cambiar la prioridad de dicho proceso, asignándole la prioridad del otro.\\
+En NachOS, este problema puede ocurrir cuando dos threads comparten un cerrojo o una variable de condición. Para solucionar este problema, se modificaron las siguientes clases:
+\begin{itemize}
+    \item \texttt{synch.h} y \texttt{synch.cc}: Se agregó un cerrojo llamado \texttt{invPrController}, cuya función es controlar el cambio de prioridades.
+    \item \texttt{scheduler.h} y \texttt{scheduler.cc}: Se agregó un método llamado \texttt{Scheduller::ChangePriorityQueue} cuya función es cambiar de cola a un thread. Para ello, recibe dos argumentos: un thread y una prioridad.
+    \item \texttt{Lock::Acquire}: Se modificó este método de modo tal que si un thread \texttt{T2} quiere adquirir el cerrojo pero éste está en manos de otro thread \texttt{T1} cuya prioridad es menor que la de \texttt{T2}, se proceda a asignarle a \texttt{T1} la misma prioridad que \texttt{T2}. Para ello, se invoca al método \texttt{Scheduller::ChangePriorityQueue}.
+\end{itemize}
+¿Por qué no se puede aplicar herencia de prioridades en semáforos?\\
+Notemos que la clase \texttt{Semaphore} guarda una cola con los threads bloqueados pero se olvida del thread que lo bloquea. Por lo tanto, no sabemos a cuál thread cambiar la prioridad.

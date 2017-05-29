@@ -16,17 +16,15 @@ class Puerto {
     public:
         Puerto(const char* name);
         ~Puerto();
-        const char* getName() { return pname; }	// para depuraci�n
+        const char* getName() { return portname; }	// para depuraci�n
 
-        void Send(int mensaje);
-
-        void Receive(int* correo);
-
+        void Send(int message);
+        void Receive(int* postbox);
     private:
-       private:
-		const char * pname;
-		Lock * plock;
-		Condition * pcondS, *pcondR;
-		int  buffer;	
-		bool access;
+        const char* portname; // nombre del puerto.
+        Lock* lockPort; 	// cerrojo asociado a las v.c.
+        Condition* sending; // v.c. que contralan el acceso
+        Condition* receiving; // sincronizado al buffer.
+        int  buffer; 	// buffer de comunicacion
+        bool access;	// indica si el buffer esta libre.
 };

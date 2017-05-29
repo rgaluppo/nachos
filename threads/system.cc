@@ -8,7 +8,6 @@
 #include "copyright.h"
 #include "system.h"
 #include "preemptive.h"
-#include "processtable.h"
 
 // This defines *all* of the global data structures used by Nachos.
 // These are all initialized and de-allocated by this file.
@@ -21,7 +20,7 @@ Statistics *stats;			// performance metrics
 Timer *timer;				// the hardware timer device,
 					// for invoking context switches
 
-ProcessTable *processTable;
+
 
 // 2007, Jose Miguel Santos Espino
 PreemptiveScheduler* preemptiveScheduler = NULL;
@@ -36,6 +35,7 @@ SynchDisk   *synchDisk;
 #endif
 
 #ifdef USER_PROGRAM	// requires either FILESYS or FILESYS_STUB
+ProcessTable *processTable;
 Machine *machine;	// user program memory and registers
 BitMap* memoryMap;
 SynchConsole* synchConsole;
@@ -98,9 +98,10 @@ Initialize(int argc, char **argv)
     bool preemptiveScheduling = false;
     long long timeSlice;
 
-	processTable = new ProcessTable();
+
     
 #ifdef USER_PROGRAM
+    processTable = new ProcessTable();
     bool debugUserProg = false;	// single step user program
 #endif
 #ifdef FILESYS_NEEDED
@@ -177,7 +178,7 @@ Initialize(int argc, char **argv)
     // object to save its state. 
     currentThread = new Thread("main", 0);		
     currentThread->setStatus(RUNNING);
-	processTable->addProcess(currentThread->getThreadId(), currentThread);
+
 
     interrupt->Enable();
     CallOnUserAbort(Cleanup);			// if user hits ctl-C
@@ -190,6 +191,7 @@ Initialize(int argc, char **argv)
 
     
 #ifdef USER_PROGRAM
+    processTable->addProcess(currentThread->getThreadId(), currentThread);
     machine = new Machine(debugUserProg);	// this must come first
     synchConsole = new SynchConsole(NULL, NULL);
 	memoryMap = new BitMap(NumPhysPages);
@@ -226,6 +228,7 @@ Cleanup()
 #endif
     
 #ifdef USER_PROGRAM
+    delete processTable;
     delete machine;
     delete synchConsole;
 	delete memoryMap;
@@ -242,7 +245,6 @@ Cleanup()
     delete timer;
     delete scheduler;
     delete interrupt;
-	delete processTable;
     
     Exit(0);
 }

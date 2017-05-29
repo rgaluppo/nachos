@@ -1,45 +1,69 @@
 #include "puerto.h"
 
+//----------------------------------------------------------------------
+// Puerto::Puerto
+//  Allows issuers to synchronize with receivers using a buffer
+//
+// debugName Name of port, for debuggin proposes.
+// sending, receiving Condition variables who controls the
+//                    sincronization
+// lockPort Lock linked to the condition variables.
+// access Indicates if the buffer is free.
+//----------------------------------------------------------------------
 Puerto::Puerto(const char * debugName){
-	access = true;
-	
-	pname = debugName;
-	plock = new Lock(pname);
-	pcondS = new Condition(pname, plock);
-	pcondR = new Condition(pname, plock);
-	DEBUG('p', "Se crea el puerto: \"%s\"\n", pname);
+    portname = debugName;
+    lockPort = new Lock(debugName);
+    sending = new Condition(debugName, lockPort);
+    receiving = new Condition(debugName, lockPort);
+    access = true;
 }
 
+//----------------------------------------------------------------------
+// Puerto::~Puerto
+//  Destructor for a port.
+//----------------------------------------------------------------------
 Puerto::~Puerto(){
-	delete plock;
-	delete pcondS;
-	delete pcondR;
+    delete sending;
+    delete receiving;
+    delete lockPort;
 }  
-		
-void Puerto::Send(int msg){
-	plock -> Acquire();
-	while (!access){
-		DEBUG('p',"esperando buffer vacio: \"%s\"\n", pname);
-		pcondS-> Wait();
+
+//----------------------------------------------------------------------
+// Puerto::Send
+//  Send a message. If the buffer is busy, it blocks and wait
+//  until was free.
+//
+// message A message to send.
+//----------------------------------------------------------------------
+void Puerto::Send(int message){
+    lockPort->Acquire();
+    while (!access){
+        sending->Wait();
 	}
-	DEBUG('p',"grabando buffer con: \"%i\"\n", msg);
-	buffer = msg;
+
+    DEBUG('p', "Envie el mensaje: <<%i>>\n", message);
+    buffer = message;
 	access = false;
-	pcondR -> Signal();
-	plock -> Release();
-	
+    receiving->Signal();
+    lockPort->Release();
 }
-	
-void Puerto::Receive(int* buf){
-	plock -> Acquire();
+
+//----------------------------------------------------------------------
+// Puerto::Receive
+//  Receive a message. If the buffer is free, it blocks and wait
+//  until was busy.
+//
+// postbox A buffer to save the messages.
+//----------------------------------------------------------------------
+void Puerto::Receive(int* postbox){
+    lockPort->Acquire();
 	while (access){		
-		DEBUG('p',"esperando buffer con datos: \"%s\"\n", pname);
-		pcondR-> Wait();
+        receiving->Wait();
 	}
-	*buf = buffer;
-	DEBUG('p',"recibi el mensaje: \"%d\"\n", *buf);
-	
+
+    DEBUG('p', "Recibi un mensaje: <<%s>>\n", buffer);
+    *postbox = buffer;	
 	access = true;
-	pcondS-> Signal();
-	plock -> Release();
+    sending->Signal();
+    lockPort->Release();
 }

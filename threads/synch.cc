@@ -99,7 +99,10 @@ Semaphore::V()
 
 //----------------------------------------------------------------------
 // Lock::Lock
-// 	Constructor for a lock.
+//  A lock provides a mutual exclusion to use certain resources. It may
+// have two states: Free and Busy.
+// This is the constructor for a lock.
+//
 // debugName Name of lock for debugging proposes.
 //----------------------------------------------------------------------
 Lock::Lock(const char* debugName)
@@ -108,8 +111,6 @@ Lock::Lock(const char* debugName)
     semLock = new Semaphore(name, 1);
     invPrController = new Semaphore("AccCambioPrio",1);
     blocker = NULL;
-
-
 }
 
 //----------------------------------------------------------------------
@@ -120,8 +121,6 @@ Lock::~Lock()
 {
     delete semLock;
     delete invPrController;
-    name = NULL;
-    blocker = NULL;
 }
 
 //----------------------------------------------------------------------
@@ -132,7 +131,7 @@ void
 Lock::Acquire()
 {
 	if(!isHeldByCurrentThread())
-    {	invPrController -> P();
+    {	invPrController->P();
         if(blocker != NULL)
 		{
 			int thpriority, pcurrent;
@@ -141,26 +140,23 @@ Lock::Acquire()
 			DEBUG('p', "Prioridades ,%d, %d \n", pcurrent, thpriority);
 			if(thpriority < pcurrent) 
 			{
-                DEBUG('p', "Prioridades ,%s, %d \n",blocker->getName(), pcurrent);
+                DEBUG('p', "Prioridades ,%s, %d \n", blocker->getName(), pcurrent);
 				
-                scheduler->ChangeQueuePriority(blocker,pcurrent);
+                scheduler->ChangePriorityQueue(blocker, pcurrent);
                 blocker->setPriority(pcurrent);
 				thpriority= pcurrent;
 			}
 		}	
 		
-        invPrController -> V();
-		
-		DEBUG('p', "Prioridades  \n");
-        semLock -> P();
-		DEBUG('p', "Sale de P \n");
+        invPrController->V();
+        semLock->P();
         blocker = currentThread;
 	}
 }
 
 //----------------------------------------------------------------------
 // Lock::isHeldByCurrentThread
-// Return 'true' if the currentThread holds the lock.
+//  Return 'true' if the currentThread holds the lock.
 //----------------------------------------------------------------------
 bool
 Lock::isHeldByCurrentThread()
@@ -170,7 +166,7 @@ Lock::isHeldByCurrentThread()
 
 //----------------------------------------------------------------------
 // Lock::Release
-// Marks the lock as free, waking up some other thread that was locked
+//  Marks the lock as free, waking up some other thread that was locked
 // in an Acquire
 //----------------------------------------------------------------------
 void Lock::Release()
@@ -182,17 +178,37 @@ void Lock::Release()
 	}
 }
 
-Condition::Condition(const char* debugName, Lock* conditionLock) { 
-		name = debugName;
-		lock = conditionLock;
-		semList = new List<Semaphore*> ;
+//----------------------------------------------------------------------
+// Condition::Condition
+//  A condition variable has no value. It is used to queueing threads
+// that wait (Wait) for another thread to warn them (Signal).
+//
+// debugName Name of condition variable, for debuggin proposes.
+// conditionLock Every condition variable is linked to a lock.
+// semList List of semaphores corresponding to the threads that were
+//         blocked.
+//----------------------------------------------------------------------
+Condition::Condition(const char* debugName, Lock* conditionLock)
+{
+    name = debugName;
+    lock = conditionLock;
+    semList = new List<Semaphore*> ;
 }
 
-Condition::~Condition() { 
-		delete lock;
-		delete semList;
+//----------------------------------------------------------------------
+// Condition::~Condition
+//  Destructor for a condition variable.
+//----------------------------------------------------------------------
+Condition::~Condition()
+{
+    delete semList;
 }
 
+//----------------------------------------------------------------------
+// Condition::Wait
+//  Release lock and put thread to sleep until condition is signaled.
+// When thread wakes up again, re-acquire lock before returning.
+//----------------------------------------------------------------------
 void Condition::Wait() { 
 	ASSERT(lock->isHeldByCurrentThread());
 	Semaphore * sem = new Semaphore(name, 0) ;
@@ -202,6 +218,12 @@ void Condition::Wait() {
 	lock -> Acquire();	
 }
 
+//----------------------------------------------------------------------
+// Condition::Signal
+//  If any threads are waiting on condition, wake up one of them. Caller
+// must hold lock, which must be the same as the lock used in the wait
+// call.
+//----------------------------------------------------------------------
 void Condition::Signal() { 
 	ASSERT(lock->isHeldByCurrentThread());
 	Semaphore * sem;
@@ -209,9 +231,12 @@ void Condition::Signal() {
 		sem = semList -> Remove(); 
 		sem -> V();
 	}
-	//lock -> Release();
 }
 
+//----------------------------------------------------------------------
+// Condition::Broadcast
+//  Same as Signal, except wake up all waiting threads.
+//----------------------------------------------------------------------
 void Condition::Broadcast() {
 	ASSERT(lock->isHeldByCurrentThread());
 	while ( !(semList -> IsEmpty()))

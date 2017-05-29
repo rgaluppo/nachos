@@ -71,27 +71,25 @@ class Semaphore {
 
 class Lock {
   public:
-  // Constructor: inicia el cerrojo como libre
-  Lock(const char* debugName);
+    // Constructor: inicia el cerrojo como libre
+    Lock(const char* debugName);
 
-  ~Lock();          // destructor
-  const char* getName() { return name; }	// para depuraci�n
+    ~Lock();          // destructor
+    const char* getName() { return name; }	// para depuraci�n
 
-  // Operaciones sobre el cerrojo. Ambas deben ser *at�micas*
-  void Acquire(); 
-  void Release();
+    // Operaciones sobre el cerrojo. Ambas deben ser *at�micas*
+    void Acquire();
+    void Release();
 
-  // devuelve 'true' si el hilo actual es quien posee el cerrojo.
-  // �til para comprobaciones en el Release() y en las variables condici�n
-  bool isHeldByCurrentThread();	
+    // devuelve 'true' si el hilo actual es quien posee el cerrojo.
+    // �til para comprobaciones en el Release() y en las variables condici�n
+    bool isHeldByCurrentThread();
 
   private:
-
-    Thread *blocker;
-    const char* name;	
-    Semaphore *semLock;		// para depuraci�n
-    Semaphore *invPrController; //Semaforo para control de prioridades
-    // a�adir aqu� otros campos que sean necesarios
+    Thread *blocker; 	// thread que adquirio el cerrojo.
+    const char* name;	// nombre del cerrojo.
+    Semaphore *semLock;     // Semaforo para aislar la zona compartida
+    Semaphore *invPrController; // Semaforo para control de prioridades
 };
 
 //  La siguiente clase define una "variable condici�n". Una variable condici�n
@@ -146,9 +144,10 @@ class Condition {
     void Broadcast();
 
   private:
-    const char* name;
-    Lock* lock;
-    List<Semaphore*> * semList;
+    const char* name; // Nombre de la v.c.
+    Lock* lock;	// Mutex vinculado a la v.c.
+    List<Semaphore*> * semList; // Lista de semaforos correspondiente a los
+                                // hilos que se fueron bloqueando.
 };
 
 

@@ -100,12 +100,12 @@ class Thread {
     
     void CheckOverflow();   			// Check if thread has 
 						// overflowed its stack
-    void Join();   			//  bloquea al llamante hasta que  el hilo en cuestion termine.
+    void Join();   	//  bloquea al llamante hasta que  el hilo en cuestion termine.
     void setStatus(ThreadStatus st) { status = st; }
     const char* getName() { return (name); }
-    void Print() { printf("%s - PR=%d, ", name, priority); }
-    int getPriority() { return priority; };
-    void setPriority(int p) { priority = p; };
+    void Print() { printf("%s - PR=%d, ", name, priority); } // Para debuggiar.
+    int getPriority() { return priority; } //Retorna la prioridad.
+    void setPriority(int p) { priority = p; } // Asigna la prioridad.
 
   private:
     // some of the private data for this class is listed above
@@ -115,9 +115,10 @@ class Thread {
 					// (If NULL, don't deallocate stack)
     ThreadStatus status;		// ready, running or blocked
     const char* name;
-    int joinFlag;
-    int priority;
-    Puerto* joinPort;
+    int joinFlag; // Indica si se tiene que realizar el join.
+    Puerto* joinPort; // Puerto para sincronizar los dos threads.
+    int priority; // Indica la prioridad.
+
     void StackAllocate(VoidFunctionPtr func, void* arg);
     					// Allocate a stack for thread.
 					// Used internally by Fork()

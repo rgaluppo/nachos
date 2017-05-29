@@ -12,7 +12,7 @@
 #include "copyright.h"
 #include "list.h"
 #include "thread.h"
-#include <bitmap.h>
+
 
 // The following class defines the scheduler/dispatcher abstraction -- 
 // the data structures and operations needed to keep track of which 
@@ -29,12 +29,12 @@ class Scheduler {
     void Run(Thread* nextThread);	// Cause nextThread to start running
     void Print();			// Print contents of ready list
 
-		// Intercambio de Cola de Prioridad
-    void ChangeQueuePriority(Thread *th, int priority);
-
+    void ChangePriorityQueue(Thread *th, int priority); // Intercambia un thread
+                                                        // a la cola indicada.
   private:
-    List<Thread*> **readyListP; 	// Priority queue of threads that are ready to run,
-	int MaxPriority;    					// but not running
+    List<Thread*> **readyList; 	// Priority queue of threads that are ready to run,
+                                // but not running
+    int max_priority;    // Cantidad de colas.
 };
 
 #endif // SCHEDULER_H
