@@ -1,15 +1,8 @@
-// threadtest.cc
 //	Simple test case for the threads assignment.
 //
 //	Create several threads, and have them context switch
 //	back and forth between themselves by calling Thread::Yield,
 //	to illustrate the inner workings of the thread system.
-//
-// Copyright (c) 1992-1993 The Regents of the University of California.
-// All rights reserved.  See copyright.h for copyright notice and limitation
-// of liability and disclaimer of warranty provisions.
-//
-// Parts from Copyright (c) 2007-2009 Universidad de Las Palmas de Gran Canaria
 //
 
 #include "copyright.h"
@@ -20,61 +13,9 @@
 #include <sstream>
 using namespace std;
 
-
-
-int cuenta;
-//----------------------------------------------------------------------
-// Molinete_1
-//----------------------------------------------------------------------
-void
-Molinete_1(void* name) {
-    int i;
-    for(i=0; i<20; i++) {
-        cuenta = cuenta + 1;
-    }
-}
-//----------------------------------------------------------------------
-// Molinete_2
-//----------------------------------------------------------------------
-void
-Molinete_2(void* name) {
-    int i;
-    for(i=0; i<20; i++) {
-        cuenta = cuenta + 1;
-    }
-}
-//----------------------------------------------------------------------
-// Jardin_Ornamental
-//----------------------------------------------------------------------
-void
-Jardin_Ornamental() {
-    Thread* molinete_1 = new Thread("Molinente 1", 0);
-    Thread* molinete_2 = new Thread("Molinente 2", 0);
-
-    cuenta = 0;
-    /* Lanzar ambos procesos concurrentemente*/
-    molinete_1->Fork(Molinete_1, NULL, 1);
-    molinete_2->Fork(Molinete_2, NULL, 1);
-
-    /* Esperar a que ambos finalicen */
-    molinete_1->Join();
-    molinete_2->Join();
-
-    /* La cuenta nos tedria que dar 40... */
-    printf("Cuenta: %d\n", cuenta);
-}
-
-
-
-
-
-
-
-// Ower Semaphore...
-//Semaphore* sem = new Semaphore("casita", 3);
-//Lock* lock = new Lock("casita");
+struct timespec timeOut, timeOut2, remains, remains2;
 Puerto* puerto = new Puerto("rosario");
-int* casita = new int[128];
+
 //----------------------------------------------------------------------
 // SimpleThread
 // 	Loop 10 times, yielding the CPU to another ready thread
@@ -90,12 +31,177 @@ SimpleThread(void* name)
     DEBUG('t', "Entering SimpleTest\n");
     currentThread-> Yield();
     char* threadName = (char*)name;
-    puerto->Receive(casita);
     for (int num = 0; num < 10; num++) {
         printf("*** thread %s looped %d times\n", threadName, num);
     }
-    puerto->Send(321);
+    currentThread-> Yield();
     printf(">>> Thread %s has finished\n", threadName);
+}
+
+//----------------------------------------------------------------------
+// AuxLockFun
+//----------------------------------------------------------------------
+void
+AuxLockFun(void* name)
+{
+    printf("Thread %s is entering to AuxLockFun\n", currentThread->getName());
+
+    timeOut.tv_sec = 3;
+    timeOut.tv_nsec = 0;
+    char* threadName = (char*)name;
+    Lock* lock = new Lock("miCerrojo");
+    lock->Acquire();
+    nanosleep(&timeOut, &remains);
+    for (int num = 0; num < 3; num++) {
+        printf("*** thread %s width priority %d.\n", threadName, currentThread->getPriority());
+        currentThread-> Yield();
+    }
+    lock->Release();
+    printf(">>> Thread %s has finished\n", threadName);
+}
+
+//----------------------------------------------------------------------
+// OtherFunction
+//----------------------------------------------------------------------
+void
+OtherFunction(void* name)
+{
+    printf("Thread %s is entering OtherFunction\n", currentThread->getName());
+
+    timeOut.tv_sec = 5;
+    timeOut.tv_nsec = 0;
+    nanosleep(&timeOut, &remains);
+    puerto->Send(2);
+}
+
+//----------------------------------------------------------------------
+// JoinTest
+//----------------------------------------------------------------------
+void
+JoinTest()
+{
+    DEBUG('z', "Entering JoinTest\n");
+    int i;
+    Thread* newThread;
+
+    for(i=0; i < 9; i++) {
+        char *threadname = new char[128];
+        stringstream ss;
+        string aux("Hilo ");
+
+        ss << i;
+        string str = ss.str();
+        aux += str;
+
+        strcpy(threadname, aux.c_str());
+        DEBUG('z', "Value of i: %d \n", i);
+        newThread = new Thread (threadname, 0);
+        newThread->Fork (SimpleThread, (void*)threadname, i%3);
+        newThread->Join();
+    }
+}
+
+//----------------------------------------------------------------------
+// Lock_and_PriorityTest
+//----------------------------------------------------------------------
+void
+Lock_and_PriorityTest()
+{
+    DEBUG('z', "Test lock and thread priorities\n");
+
+    int i;
+    char *threadname;
+    Thread* newThread;
+
+    timeOut2.tv_sec = 2;
+    timeOut2.tv_nsec = 0;
+
+    newThread = new Thread ("first", 0);
+    newThread->Fork (AuxLockFun, (void*)"first", 1);
+    currentThread->Yield();
+    newThread = new Thread ("second", 0);
+    newThread->Fork (AuxLockFun, (void*)"second", 2);
+    currentThread->Yield();
+
+    for(i=0; i < 4; i++) {
+        threadname = new char[128];
+
+        stringstream ss;
+        string aux("Hilo ");
+        ss << i;
+        string str = ss.str();
+        aux += str;
+
+        strcpy(threadname, aux.c_str());
+        newThread = new Thread (threadname, (i%2));
+        newThread->Fork (AuxLockFun, (void*)threadname, i);
+    }
+}
+
+//----------------------------------------------------------------------
+// AuxPortFunction
+//----------------------------------------------------------------------
+void
+AuxPortFunction(void* name)
+{
+    printf("Thread %s is entering AuxPortFunction\n", currentThread->getName());
+
+    Thread* newThread;
+    char* threadName = (char*) name;
+    Lock* lock = new Lock("miCerrojo");
+    int* mailBox = new int[128];
+    timeOut.tv_sec = 3;
+    timeOut.tv_nsec = 0;
+
+    lock->Acquire();
+
+    if( strcmp(currentThread->getName(), "first") == 0 ) {
+        newThread = new Thread ("second", 2);
+        newThread->Fork (OtherFunction, (void*)"second", 0);
+        currentThread->Yield();
+        puerto->Receive(mailBox);
+    }
+    for (int num = 0; num < 3; num++) {
+        printf("*** thread %s width priority %d.\n", threadName, currentThread->getPriority());
+        currentThread-> Yield();
+    }
+
+    lock->Release();
+
+    printf(">>> Thread %s has finished\n", threadName);
+}
+
+//----------------------------------------------------------------------
+// PortTest
+//----------------------------------------------------------------------
+void
+PortTest()
+{
+    DEBUG('z', "Entering PortTest\n");
+
+    int i;
+    char *threadname;
+    Thread* newThread;
+    timeOut2.tv_sec = 3;
+    timeOut2.tv_nsec = 0;
+
+    newThread = new Thread ("first", 1);
+    newThread->Fork (SimpleThread, (void*)"first", 0);
+    currentThread->Yield();
+
+    for(i=0; i < 4; i++) {
+        threadname = new char[128];
+
+        stringstream ss;
+        string aux("Hilo ");
+        ss << i;
+        string str = ss.str();
+        aux += str;
+
+        strcpy(threadname, aux.c_str());
+        newThread = new Thread (threadname, i);
+        newThread->Fork (SimpleThread, (void*)threadname, i%2);
+    }
 }
 
 //----------------------------------------------------------------------
@@ -108,26 +214,7 @@ SimpleThread(void* name)
 void
 ThreadTest()
 {
-    DEBUG('t', "Entering ThreadTest\n");
-    Jardin_Ornamental();
-    int i = 0;
-    Thread* newThread;
-
-    for(i=0; i < 4; i++) {
-        char *threadname = new char[128];
-        stringstream ss;
-        string aux("Hilo ");
-
-        ss << i;
-        string str = ss.str();
-        aux += str;
-
-        strcpy(threadname, aux.c_str());
-        printf("<<< %d%%2= %d\n", i, i%2);
-        newThread = new Thread (threadname, i);
-        newThread->Fork (SimpleThread, (void*)threadname, 1);
-        newThread->Join();
-        printf("casita");
-    }
+    JoinTest();
+    Lock_and_PriorityTest();
+    PortTest();
 }
-

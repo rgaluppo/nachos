@@ -33,6 +33,7 @@ Scheduler::Scheduler()
 	
     readyList = new List<Thread*>*[max_priority];
     for ( i = 0; i < max_priority ; i++){
+        DEBUG('p', "Inicializo la cola de prioridad: %d\n", i);
         readyList[i] = new List<Thread*>;
 	}
 }	 

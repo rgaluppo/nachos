@@ -65,7 +65,7 @@ Thread::~Thread()
 {
     DEBUG('t', "Deleting thread \"%s\"\n", name);
 
-    delete joinPort;
+    //delete joinPort;
 
     ASSERT(this != currentThread);
     if (stack != NULL)
