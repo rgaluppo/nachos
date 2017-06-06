@@ -1,6 +1,14 @@
 #include "usertranslate.h"
 
-void readStrFromUsr(int usrAddr, char *outStr) {
+//----------------------------------------------------------------------
+// readStrFromUsr
+//  Read a string from user memory space.
+//
+// usrAddr memory address from user space.
+// outStr string where is the result of translation.
+//----------------------------------------------------------------------
+void
+readStrFromUsr(int usrAddr, char *outStr) {
     int value = 1;
     int count = 0;
     bool done;
@@ -16,28 +24,66 @@ void readStrFromUsr(int usrAddr, char *outStr) {
         ASSERT(done);
     }
     outStr[count] = '\0';
-};
+}
 
-void readBuffFromUsr(int usrAddr, char *outBuff, int byteCount) {
+//----------------------------------------------------------------------
+// readBuffFromUsr
+//  Read a buffer from user memory space.
+//
+// usrAddr memory address from user space.
+// outBuff array where is the result of translation.
+// byteCount amount of bytes reads.
+//----------------------------------------------------------------------
+void
+readBuffFromUsr(int usrAddr, char *outBuff, int byteCount) {
     int value;
     for(int i=0; i < byteCount; i++) {
         machine->ReadMem(usrAddr+i, 1, &value);
         outBuff[i] = (char) value;
     }
-};
+}
 
-void writeStrToUsr(char *str, int usrAddr) {
+//----------------------------------------------------------------------
+// writeStrToUsr
+//  Translate a string to user memory space.
+//
+// str string where that will be translated.
+// usrAddr memory address to user space where will be located
+//         the beginig of tralated string.
+//----------------------------------------------------------------------
+void
+writeStrToUsr(char *str, int usrAddr) {
    while(*str != '\0') {
        machine->WriteMem(usrAddr++, 1, *(str++));
     }
-};
+}
 
-void writeBuffToUsr(char *str, int usrAddr, int byteCount) {
+//----------------------------------------------------------------------
+// writeBuffToUsr
+//  Translate an array to user memory space.
+//
+// str string where that will be translated.
+// usrAddr memory address to user space where will be located
+//         the beginig of tralated array.
+// byteCount amount of bytes reads.
+//----------------------------------------------------------------------
+void
+writeBuffToUsr(char *str, int usrAddr, int byteCount) {
    for(int i=0; i < byteCount; i++) {
         machine->WriteMem(usrAddr + i, 1, (int) str[i]);
     }
-};
+}
 
+
+//----------------------------------------------------------------------
+// writeBuffToUsr
+//  Translate an array to user memory space.
+//
+// usrAddr memory address from user space.
+// outBuff array where is the result of translation.
+// divide
+// returns
+//----------------------------------------------------------------------
 int
 readStrFromUsrSpecial(int usrAddr, char *outStr, char divide) {
     int value = 1;
