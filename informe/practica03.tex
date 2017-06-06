@@ -97,7 +97,88 @@ writeBuffToUsr(char *str, int usrAddr, int byteCount) {
 }
 \end{lstlisting}
 \section{Implementación de las llamadas de sistema y la administración de interrupciones}
+Los programas de usuario invocan llamadas al sistema ejecutando la instrucción \texttt{syscall} de \textbf{\textit{MIPS}}, la cuál genera una trampa de hardware en el kernel de \textbf{\textit{NachOS}}. El simulador \textbf{\textit{NachOS/MIPS}} implementa trampas invocando al método \texttt{RaiseException}, pasándole argumentos que indican la causa exacta de la trampa. \texttt{RaiseException}, a su vez, llama a \texttt{ExceptionHandler} para que se ocupe del problema específico.\\
+Por convención, los programas de usuario colocan el código que indica la llamada de sistema deseada en el registro \texttt{R2} antes de ejecutar la instrucción \texttt{syscall}. Mientras que los argumentos adicionales se encuentran en los registros \texttt{R4 a R7}. Se espera que los valores de retorno de la función (y de la llamada del sistema) estén en el registro \texttt{R2} al regresar.\\
+Para poder implementarla las llamadas de sistema, se crearon las siguientes funciones y estructuras auxiliares:
+\begin{itemize}
+    \item \texttt{type}: en esta variable se guarda el tipo de llamada.
+    \item \texttt{arguments}: aquí se guardan las direcciones de los argumentos.
+    \item \texttt{result}: en esta variable se guarda el resultado de procesar la llamada. Luego, se escribirá dicho valor en el registro \texttt{R2}.
+    \item \texttt{movingPC}: este método actualiza el PC para mantener el correcto funcionamiento del stack de registros. Se invoca al finalizar el procesamiento de una llamada a sistema.
+        \begin{lstlisting}[style=C]
+void
+movingPC()
+{
+     int pc = machine->ReadRegister(PCReg);
+     machine->WriteRegister(PrevPCReg, pc);
+     pc = machine->ReadRegister(NextPCReg);
+     machine->WriteRegister(PCReg, pc);
+     pc += 4;
+     machine->WriteRegister(NextPCReg, pc);
+}
+        \end{lstlisting}
+\end{itemize}
+El procesamiento de las llamadas a sistema quedó de la siguiente manera:
+\begin{lstlisting}[style=C]
+void
+ExceptionHandler(ExceptionType which)
+{
+    int type = machine->ReadRegister(2);
+    int arguments[4];
+    arguments[0] = machine->ReadRegister(4);
+    arguments[1] = machine->ReadRegister(5);
+    arguments[2] = machine->ReadRegister(6);
+    arguments[3] = machine->ReadRegister(7);
+    int result;
+    OpenFile* file;
+    char name386[128];
 
+    if (which == SyscallException) {
+    	switch(type) {
+            case SC_Halt:
+                ...
+                break;
+            case SC_Exit:
+                break;
+            case SC_Exec:
+                break;
+            case SC_Join:
+                break;
+            case SC_Create:
+                break;
+            case SC_Open:
+                break;
+            case SC_Read:
+                break;
+            case SC_Write:
+                break;
+            case SC_Close:
+                break;
+            default: 
+                printf("Unexpected syscall exception %d %d\n", which, type);
+                ASSERT(false);
+    	}
+        machine->WriteRegister(2, result);
+    	movingPC();
+    } else {
+        DEBUG('e', "Is not a SyscallException\n");
+        printf("Unexpected user mode exception:\t which=%s  type=%d\n", exception, type);
+        ASSERT(false);
+    }
+  }
+\end{lstlisting}
+
+En las próximas subsecciones se muestra cómo se desarrollaron las llamadas de sistema. Las mismas fueron implementadas en el orden propuesto por la cátedra.\\
+
+
+\subsection*{Create}
+\subsection*{Read}
+\subsection*{Write}
+\subsection*{Open}
+\subsection*{Close}
+\subsection*{Exit}
+\subsection*{Join}
+\subsection*{Exec}
 \section{}
 \section{}
 \section{}

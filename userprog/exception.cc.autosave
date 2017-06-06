@@ -106,7 +106,6 @@ startProcess(int pid, OpenFile* executable, char* filename, int argc, char** arg
 //	"which" is the kind of exception.  The list of possible exceptions 
 //	are in machine.h.
 //----------------------------------------------------------------------
-
 void
 ExceptionHandler(ExceptionType which)
 {
