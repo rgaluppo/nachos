@@ -10,7 +10,7 @@ void readBuffFromUsr(int usrAddr, char *outBuff, int byteCount);
 // Traduce una string hacia la memoria de usuario.
 void writeStrToUsr(char *str, int usrAddr);
 
-// Trace un array hacia la memoria de usuario.
+// Traduce un array hacia la memoria de usuario.
 void writeBuffToUsr(char *str, int usrAddr, int byteCount);
 
 int readStrFromUsrSpecial(int usrAddr, char *outStr, char divide);

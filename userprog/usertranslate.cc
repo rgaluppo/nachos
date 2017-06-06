@@ -9,16 +9,15 @@
 //----------------------------------------------------------------------
 void
 readStrFromUsr(int usrAddr, char *outStr) {
-    int value = 1;
+    int value;
     int count = 0;
     bool done;
    
-    DEBUG('e', "usrAdd=%d\n", usrAddr);
     done = machine->ReadMem(usrAddr, 1, &value);
     ASSERT(done);
                 
     while((char) value != '\0'){
-        outStr[count] = (char) value;    
+        outStr[count] = (char) value;
         count++;
         done = machine->ReadMem(usrAddr + count, 1, &value);
         ASSERT(done);
@@ -37,8 +36,10 @@ readStrFromUsr(int usrAddr, char *outStr) {
 void
 readBuffFromUsr(int usrAddr, char *outBuff, int byteCount) {
     int value;
+    bool done;
     for(int i=0; i < byteCount; i++) {
-        machine->ReadMem(usrAddr+i, 1, &value);
+        done = machine->ReadMem(usrAddr+i, 1, &value);
+        ASSERT(done);
         outBuff[i] = (char) value;
     }
 }
@@ -53,8 +54,12 @@ readBuffFromUsr(int usrAddr, char *outBuff, int byteCount) {
 //----------------------------------------------------------------------
 void
 writeStrToUsr(char *str, int usrAddr) {
-   while(*str != '\0') {
-       machine->WriteMem(usrAddr++, 1, *(str++));
+    bool done;
+    while(*str != '\0') {
+        done = machine->WriteMem(usrAddr, 1, *(str));
+        ASSERT(done);
+        usrAddr++;
+        str++;
     }
 }
 
@@ -69,14 +74,15 @@ writeStrToUsr(char *str, int usrAddr) {
 //----------------------------------------------------------------------
 void
 writeBuffToUsr(char *str, int usrAddr, int byteCount) {
-   for(int i=0; i < byteCount; i++) {
-        machine->WriteMem(usrAddr + i, 1, (int) str[i]);
+    bool done;
+    for(int i=0; i < byteCount; i++) {
+        done = machine->WriteMem(usrAddr + i, 1, (int) str[i]);
+        ASSERT(done);
     }
 }
 
-
 //----------------------------------------------------------------------
-// writeBuffToUsr
+// readStrFromUsrSpecial
 //  Translate an array to user memory space.
 //
 // usrAddr memory address from user space.
@@ -86,24 +92,26 @@ writeBuffToUsr(char *str, int usrAddr, int byteCount) {
 //----------------------------------------------------------------------
 int
 readStrFromUsrSpecial(int usrAddr, char *outStr, char divide) {
-    int value = 1;
-    int size = 1;
-    int i=0, nextAddr;
+    int value = 1,
+        size = 1,
+        i = 0,
+        nextAddr = 0;
     bool done;
-                    
-    if(!machine->ReadMem( usrAddr, size, &value))
-        ASSERT(machine->ReadMem( usrAddr, size, &value));
-    nextAddr = usrAddr+1;
-// limpio los caracteres separadores
-    while((char)value == divide) {
-        done = machine->ReadMem( nextAddr, size, &value);
+
+    done = machine->ReadMem(usrAddr, size, &value);
+    ASSERT(done);
+    nextAddr = usrAddr + 1;
+
+    // limpio los caracteres separadores
+    while( (char) value == divide ) {
+        done = machine->ReadMem(nextAddr, size, &value);
         ASSERT(done);
         nextAddr++;
     }
 
-    while((char)value != '\0' and (char)value != divide) {
-        outStr[i] = (char)value;    
-        done = machine->ReadMem( nextAddr, size, &value);
+    while( (char)value != '\0' and (char)value != divide) {
+        outStr[i] = (char) value;
+        done = machine->ReadMem(nextAddr, size, &value);
         ASSERT(done);
         i++;
         nextAddr++;

@@ -7,6 +7,10 @@
 \contentsline {section}{\numberline {2.4}Implementaci\IeC {\'o}n de multicolas con prioridad}{8}{section.2.4}
 \contentsline {chapter}{\numberline {3}Resoluci\IeC {\'o}n de la Pr\IeC {\'a}ctica N$^{\circ }$3: Programas de usuario y Multi-Programaci\IeC {\'o}n}{11}{chapter.3}
 \contentsline {section}{\numberline {3.1}Desarrollo del API para copiar datos desde el n\IeC {\'u}cleo al espacio de memoria del usuario y viceversa}{11}{section.3.1}
-\contentsline {chapter}{\numberline {4}Resoluci\IeC {\'o}n de la Pr\IeC {\'a}ctica N$^{\circ }$4}{12}{chapter.4}
-\contentsline {section}{\numberline {4.1}}{12}{section.4.1}
-\contentsline {section}{\numberline {4.2}}{13}{section.4.2}
+\contentsline {section}{\numberline {3.2}Implementaci\IeC {\'o}n de las llamadas de sistema y la administraci\IeC {\'o}n de interrupciones}{13}{section.3.2}
+\contentsline {section}{\numberline {3.3}}{13}{section.3.3}
+\contentsline {section}{\numberline {3.4}}{13}{section.3.4}
+\contentsline {section}{\numberline {3.5}}{13}{section.3.5}
+\contentsline {chapter}{\numberline {4}Resoluci\IeC {\'o}n de la Pr\IeC {\'a}ctica N$^{\circ }$4}{14}{chapter.4}
+\contentsline {section}{\numberline {4.1}}{14}{section.4.1}
+\contentsline {section}{\numberline {4.2}}{15}{section.4.2}
