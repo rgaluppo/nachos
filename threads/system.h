@@ -35,8 +35,10 @@ extern Machine* machine;	// user program memory and registers
 
 #include "bitmap.h"
 extern BitMap* memoryMap;
-#include "synchConsole.h"
+#include "synchconsole.h"
 extern SynchConsole* synchConsole;
+#include "processtable.h"
+extern ProcessTable *processTable;
 #endif
 
 #ifdef FILESYS_NEEDED 		// FILESYS or FILESYS_STUB 

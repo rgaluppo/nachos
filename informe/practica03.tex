@@ -1,1 +1,13 @@
-\chapter{Resolución de la Práctica N\grad3}
+\chapter{Resolución de la Práctica N\grad3: Programas de usuario y Multi-Programación}
+\section{Desarrollo del API para copiar datos desde el núcleo al espacio de memoria del usuario y viceversa}
+La interfaz \texttt{usertranslate.h} contiene las funciones que integran la API para traducir \texttt{Strings} y \texttt{Arrays}. La API contiene las siguientes funciones:
+\begin{lstlisting}[style=C]
+    // Lee una string desde la memoria de usuario.
+    void readStrFromUsr(int usrAddr, char *outStr);
+    // Lee un array desde la memoria del usuario.
+    void readBuffFromUsr(int usrAddr, char *outBuff, int byteCount);
+    // Traduce una string hacia la memoria de usuario.
+    void writeStrToUsr(char *str, int usrAddr);
+    // Trace un array hacia la memoria de usuario.
+    void writeBuffToUsr(char *str, int usrAddr, int byteCount);
+\end{lstlisting}

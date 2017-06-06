@@ -22,9 +22,8 @@
 // of liability and disclaimer of warranty provisions.
 
 #include <syscall.h>
-#include "usrTranslate.h"
+#include "usertranslate.h"
 #include <stdlib.h>
-#include "processtable.h"
 
 #define File_length_MAX 64
 
