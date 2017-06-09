@@ -138,13 +138,13 @@ ExceptionHandler(ExceptionType which)
             case SC_Halt:
                 ...
                 break;
+            case SC_Create:
+                break;
             case SC_Exit:
                 break;
             case SC_Exec:
                 break;
             case SC_Join:
-                break;
-            case SC_Create:
                 break;
             case SC_Open:
                 break;
@@ -169,16 +169,70 @@ ExceptionHandler(ExceptionType which)
 \end{lstlisting}
 
 En las próximas subsecciones se muestra cómo se desarrollaron las llamadas de sistema. Las mismas fueron implementadas en el orden propuesto por la cátedra.\\
-
-
-\subsection*{Create}
+\subsection*{SC\_Create}
+\begin{lstlisting}[style=C]
+void Create(char *name);
+\end{lstlisting}
+Su función es crear un archivo. Recibe un parámetro, el cual es la dirección de memoria donde se aloja un string para indicar el nombre del archivo. Lo traduce mediante \texttt{readStrFromUsr} e invoca a \texttt{FileSystem::Create}.\\
+A través de \texttt{R2}, devuelve \texttt{0} en caso de crear el archivo; sino devuelve \texttt{-1}.
+\subsection*{Consola sincrónica}
+Se crea la clase \texttt{SynchConsole}, la cual provee una abstracción de acceso sincronizado a la consola. Un requisito que cumple es que un hilo queriendo escribir no bloquea a un hilo queriendo leer.
+\begin{lstlisting}[style=C]
+class SynchConsole {
+public:
+	SynchConsole(const char *readFile, const char *writeFile);
+	~SynchConsole();
+	
+    void WriteConsole(char c); // Write a char into console.
+    char ReadConsole(); // Read a char from console.
+    void RequestWrite();    // Provides sync access for reading
+                            //the console.
+    void RequestRead();     // Provides sync access for writing
+                            //the console.
+private: 
+    Console *console;   // NacOS console.
+    Semaphore *readAvail,   // For reader console handler.
+              *writeDone;   // For writer console handler.
+    Lock *writer,   // For sync writing access.
+         *reader;   // For sync reading access.
+};
+\end{lstlisting}
+Para desarrollarla, se tuvieron en cuenta las clases \texttt{progtest.cc} y \texttt{synchdisc.cc}.\\
+Los semáforos \texttt{cread} y \texttt{cwrite}, permiten el acceso sincronizado a la lectura y escritura de la consola.\\
+Cuando se levanta el hilo principal de \textbf{\textit{NachOS}}, se crea una consola de acceso sincronizado. Ademas, se reservan dos descriptores para representar la entrada y la salida estándar. Dichos descriptores son el \texttt{0} y el \texttt{1}. En \texttt{syscall.h} se definen dos constantes que modelan lo mencionado anteriormente:
+\begin{lstlisting}
+#define ConsoleInput	0
+#define ConsoleOutput	1
+\end{lstlisting}
 \subsection*{Read}
+\begin{lstlisting}[style=C]
+int Read(char *buffer, int size, OpenFileId id);
+\end{lstlisting}
+Dado un descriptor de un archivo \texttt{id}, lee \texttt{size} bytes y los guarda en el array \texttt{buffer}. Devuelve la cantidad de bytes leídos.
 \subsection*{Write}
+\begin{lstlisting}[style=C]
+void Write(char *buffer, int size, OpenFileId id);
+\end{lstlisting}
 \subsection*{Open}
+\begin{lstlisting}[style=C]
+OpenFileId Open(char *name);
+\end{lstlisting}
 \subsection*{Close}
+\begin{lstlisting}[style=C]
+void Close(OpenFileId id);
+\end{lstlisting}
 \subsection*{Exit}
+\begin{lstlisting}[style=C]
+void Exit(int status);
+\end{lstlisting}
 \subsection*{Join}
+\begin{lstlisting}[style=C]
+int Join(SpaceId id);
+\end{lstlisting}
 \subsection*{Exec}
+\begin{lstlisting}[style=C]
+SpaceId Exec(char *name, int argc, char** argv);
+\end{lstlisting}
 \section{}
 \section{}
 \section{}

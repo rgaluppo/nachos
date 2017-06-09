@@ -106,7 +106,6 @@ startProcess(int pid, OpenFile* executable, char* filename, int argc, char** arg
 //	"which" is the kind of exception.  The list of possible exceptions 
 //	are in machine.h.
 //----------------------------------------------------------------------
-
 void
 ExceptionHandler(ExceptionType which)
 {
@@ -129,6 +128,21 @@ ExceptionHandler(ExceptionType which)
                 }
                 interrupt->Halt();
                 break;
+            case SC_Create:
+            {
+                bool done;
+                readStrFromUsr(arguments[0], name386);
+                DEBUG('e',"SC_Create: path = %s\n", name386);
+                done = fileSystem->Create(name386, 512);
+                if(done){
+                    DEBUG('e',"Sucessful creation of file!\n");
+                    result = 0;
+                } else {
+                    DEBUG('e',"An error was ocurred on creation of file!\n");
+                    result = -1;
+                }
+                break;
+            }
             case SC_Exit:
             {
                 amountThread--;
@@ -196,11 +210,6 @@ ExceptionHandler(ExceptionType which)
                 }
                 break;
             }
-            case SC_Create:
-                readStrFromUsr(arguments[0], name386);
-                DEBUG('e',"path=%s\t", name386);
-                result = fileSystem->Create(name386, 512);
-                break;
             case SC_Open:
                 DEBUG('e', "SC_Open starts\n");
                 readStrFromUsr(arguments[0], name386);
@@ -224,7 +233,7 @@ ExceptionHandler(ExceptionType which)
 
                 if(descriptor == ConsoleInput) {
                     for(int i=0; i < size; i++, bytes++) {
-                        buffer[i] = synchConsole->readConsole();
+                        buffer[i] = synchConsole->ReadConsole();
                         if(buffer[i] == '\n')
                             break;
                     }
@@ -254,7 +263,7 @@ ExceptionHandler(ExceptionType which)
 
                 if(descriptor == ConsoleOutput) {
                     for(int j=0; j < size; j++) 
-                        synchConsole->writeConsole(buffer[j]);
+                        synchConsole->WriteConsole(buffer[j]);
                 } else if(descriptor == -1){
                     printf("SysCALL Write: wrong descriptor\t currentThr=%s\n", currentThread->getName());
                     result = -1;
