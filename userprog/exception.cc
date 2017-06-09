@@ -138,9 +138,40 @@ ExceptionHandler(ExceptionType which)
                     DEBUG('e',"Sucessful creation of file!\n");
                     result = 0;
                 } else {
-                    DEBUG('e',"An error was ocurred on creation of file!\n");
+                    printf("An error was ocurred on creation of file!\n");
                     result = -1;
                 }
+                break;
+            }
+            case SC_Read:
+            {
+                int buffer_address = arguments[0];
+                int size = arguments[1];
+                OpenFileId descriptor = arguments[2];
+                int bytes = 0;
+                char buffer[size];
+
+                DEBUG('e',"SC_Read: descriptor= %d\t size= %d\n", descriptor, size);
+
+                if(descriptor == ConsoleInput) {
+                    for(int i=0; i < size; i++) {
+                        buffer[i] = synchConsole->ReadConsole();
+                        bytes++;
+                        if(buffer[i] == '\n')
+                            break;
+                    }
+                    result = bytes;
+                } else {
+                    file = currentThread->getFile(descriptor);
+                    if(file != NULL) {
+                        result = file->Read(buffer, size);
+                        bytes = size;
+                    } else {
+                        printf("SC_OPEN: Wrong descriptor for thread= %s\n", currentThread->getName());
+                        result = -1;
+                    }
+                }
+                writeBuffToUsr(buffer, buffer_address, bytes);
                 break;
             }
             case SC_Exit:
@@ -223,35 +254,7 @@ ExceptionHandler(ExceptionType which)
                     printf("OPEN: an error was ocurred: thread name=%s\t file name=%s\n", currentThread->getName(), name386);
                 }
                 break;
-            case SC_Read:
-            {
-                int filename = arguments[0];
-                int size = arguments[1];
-                int bytes = 0;
-                OpenFileId descriptor = arguments[2];
-                char buffer[size];
 
-                if(descriptor == ConsoleInput) {
-                    for(int i=0; i < size; i++, bytes++) {
-                        buffer[i] = synchConsole->ReadConsole();
-                        if(buffer[i] == '\n')
-                            break;
-                    }
-                    result = bytes;
-                    writeBuffToUsr(buffer, filename, bytes);
-                } else {
-                    file = currentThread->getFile(descriptor);
-                    if(file != NULL) {
-                        result = file->Read(buffer, size); 
-
-                        writeBuffToUsr(buffer, filename, result);
-                    } else {
-                        printf("SC_OPEN: Wrong descriptor for thread= %s\n", currentThread->getName());
-                        result = -1;
-                    }
-                }
-                break;
-            }
             case SC_Write:
             {
                 int addr = arguments[0];
