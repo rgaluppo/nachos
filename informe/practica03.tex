@@ -201,18 +201,28 @@ Para desarrollarla, se tuvieron en cuenta las clases \texttt{progtest.cc} y \tex
 Los semáforos \texttt{cread} y \texttt{cwrite}, permiten el acceso sincronizado a la lectura y escritura de la consola.\\
 Cuando se levanta el hilo principal de \textbf{\textit{NachOS}}, se crea una consola de acceso sincronizado. Ademas, se reservan dos descriptores para representar la entrada y la salida estándar. Dichos descriptores son el \texttt{0} y el \texttt{1}. En \texttt{syscall.h} se definen dos constantes que modelan lo mencionado anteriormente:
 \begin{lstlisting}
-#define ConsoleInput	0
-#define ConsoleOutput	1
+#define CONSOLE_INPUT	0
+#define CONSOLE_OUTPUT	1
 \end{lstlisting}
 \subsection*{Read}
+Dado un descriptor de un archivo \texttt{id}, lee \texttt{size} bytes y los guarda en el array \texttt{buffer}. Devuelve la cantidad de bytes leídos.
 \begin{lstlisting}[style=C]
 int Read(char *buffer, int size, OpenFileId id);
 \end{lstlisting}
-Dado un descriptor de un archivo \texttt{id}, lee \texttt{size} bytes y los guarda en el array \texttt{buffer}. Devuelve la cantidad de bytes leídos.
+Si el descriptor es \texttt{CONSOLE\_INPUT}, lee de la consola \texttt{size} caracteres o hasta que aparezca el caracter de salto de linea('\texttt{\textbackslash{n}}'). Para leerlos, se invoca a \texttt{synchConsole->ReadConsole}.\\
+En caso de que el descriptor corresponde a un archivo previamente abierto por el usuario, se leen de dicho archivo \texttt{size} caracteres. Para leer desde un archivo, se invoca a \texttt{OpenFile::Read}.\\
+En cambio, si el descriptor \texttt{id} no corresponde a ningún archivo abierto por el usuario, se imprime un mensaje de error y devuelve \texttt{-1}.\\
+Una vez que es leído exitosamente, se invoca a la función \texttt{writeBuffToUsr} para traducir el resultado de la lectura a una dirección en el espacio de direcciones indicado por el usuario en el primer argumento(\texttt{R4}).
 \subsection*{Write}
+Dado un array \texttt{buffer}, escribe \texttt{size} bytes en el archivo cuyo descriptor es \texttt{id}. Devuelve la cantidad de bytes leídos.\\
 \begin{lstlisting}[style=C]
 void Write(char *buffer, int size, OpenFileId id);
 \end{lstlisting}
+Es similar a la llamada \texttt{SC\_Read}. Se puede escribir en la consola sincrónica o en un archivo.\\
+Al principio, se lee una dirección del espacio de memoria del usuario, la cual contiene la información a escribir. Para ello, se traduce el primer argumento invocando a \texttt{readBuffFromUsr} y guardándolo en la variable \texttt{buffer}.\\
+Si el descriptor es \texttt{CONSOLE\_OUTPUT}, escribe en la consola \texttt{size} caracteres. Para ello, invoca a \texttt{synchConsole->WriteConsole}.\\
+En caso de que el descriptor corresponde a un archivo previamente abierto por el usuario, se escribe en dicho archivo \texttt{size} caracteres, almacenados en \texttt{buffer}. Para escribir en un archivo, se invoca a \texttt{OpenFile::Write}.\\
+En cambio, si el descriptor \texttt{id} no corresponde a ningún archivo abierto por el usuario, se imprime un mensaje de error y devuelve \texttt{-1}.\\
 \subsection*{Open}
 \begin{lstlisting}[style=C]
 OpenFileId Open(char *name);

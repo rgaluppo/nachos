@@ -50,7 +50,8 @@ movingPC()
 void
 doExecution(void* arg)
 {
-	DEBUG ('e',"doExecution: currentThread name=%s\t id=%d\n", currentThread->getName(), currentThread->getThreadId());
+    DEBUG ('e',"doExecution: currentThread name=%s\t id=%d\n", currentThread->getName(),
+           currentThread->getThreadId());
 	currentThread->space->InitRegisters();  //Inicialization for MIPS registers.
 	currentThread->space->RestoreState();   //Load page table register.
 	currentThread->space->InitArguments();  //Load arguments.
@@ -63,8 +64,8 @@ doExecution(void* arg)
 void
 startProcess(int pid, OpenFile* executable, char* filename, int argc, char** argv)
 {
-	DEBUG ('e',"startProcess: currenThread:%s\t pid %d\t filename=%s\n", currentThread->getName(),
-            pid, filename);
+    DEBUG ('e',"startProcess: currenThread:%s\t pid %d\t filename=%s\n", currentThread->getName(),
+           pid, filename);
     DEBUG('e', "argc=%d \t", argc);
     for(int i=0; i<argc; i++)
         DEBUG('e',"argv[%d]=%s\n", i, argv[i]);
@@ -74,7 +75,8 @@ startProcess(int pid, OpenFile* executable, char* filename, int argc, char** arg
     execThread->setThreadId(pid);
     processTable->addProcess(pid, execThread);
 
-    AddrSpace *execSpace = new AddrSpace(executable, argc, argv);  //Creation of space address for process.
+    // Creation of space address for process.
+    AddrSpace *execSpace = new AddrSpace(executable, argc, argv);
     execThread->space = execSpace;
     delete executable;
 
@@ -153,7 +155,7 @@ ExceptionHandler(ExceptionType which)
 
                 DEBUG('e',"SC_Read: descriptor= %d\t size= %d\n", descriptor, size);
 
-                if(descriptor == ConsoleInput) {
+                if(descriptor == CONSOLE_INPUT) {
                     for(int i=0; i < size; i++) {
                         buffer[i] = synchConsole->ReadConsole();
                         bytes++;
@@ -167,13 +169,40 @@ ExceptionHandler(ExceptionType which)
                         result = file->Read(buffer, size);
                         bytes = size;
                     } else {
-                        printf("SC_OPEN: Wrong descriptor for thread= %s\n", currentThread->getName());
+                        printf("SC_Read: Wrong descriptor: value=%d\t thread=%s\n", descriptor,
+                               currentThread->getName());
                         result = -1;
                     }
                 }
                 writeBuffToUsr(buffer, buffer_address, bytes);
                 break;
             }
+            case SC_Write:
+            {
+                int addr = arguments[0];
+                int size = arguments[1];
+                OpenFileId descriptor = arguments[2];
+                char buffer[size];
+
+                DEBUG('e',"SC_Write: descriptor= %d\t size= %d\n", descriptor, size);
+
+                readBuffFromUsr(addr, buffer, size);
+
+                if(descriptor == CONSOLE_OUTPUT) {
+                    for(int j=0; j < size; j++)
+                        synchConsole->WriteConsole(buffer[j]);
+                } else {
+                    file = currentThread->getFile(descriptor);
+                    if(file != NULL) {
+                        result = file->Write(buffer, size);
+                    } else {
+                        printf("SC_Write: Wrong descriptor: value=%d\t thread=%s\n", descriptor,
+                               currentThread->getName());
+                    result = -1;
+                }
+            }
+            break;
+        }
             case SC_Exit:
             {
                 amountThread--;
@@ -251,37 +280,12 @@ ExceptionHandler(ExceptionType which)
                     result = currentThread->addFile(file);
                     DEBUG('e', "thread name=%s.\n", currentThread->getName());
                 } else {
-                    printf("OPEN: an error was ocurred: thread name=%s\t file name=%s\n", currentThread->getName(), name386);
+                    printf("OPEN: an error was ocurred: thread name=%s\t file name=%s\n",
+                           currentThread->getName(), name386);
                 }
                 break;
 
-            case SC_Write:
-            {
-                int addr = arguments[0];
-                int size = arguments[1];
-                OpenFileId descriptor = arguments[2];
-                char buffer[size];
 
-                readBuffFromUsr(addr, buffer, size);
-
-                if(descriptor == ConsoleOutput) {
-                    for(int j=0; j < size; j++) 
-                        synchConsole->WriteConsole(buffer[j]);
-                } else if(descriptor == -1){
-                    printf("SysCALL Write: wrong descriptor\t currentThr=%s\n", currentThread->getName());
-                    result = -1;
-                } else {
-                    file = currentThread->getFile(descriptor);
-                    if(file != NULL) {
-                        result = file->Write(buffer, size);
-                    } else {
-                        printf("SC_OPEN: Wrong descriptor: value=%d\t thread=%s\n", descriptor,
-                                currentThread->getName());
-                        result = -1;
-                    }
-                }
-                break;
-            }
             case SC_Close:
             {
             	OpenFileId descriptor = arguments[0];

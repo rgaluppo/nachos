@@ -83,8 +83,8 @@ typedef int OpenFileId;
  * the console device.
  */
 
-#define ConsoleInput	0  
-#define ConsoleOutput	1  
+#define CONSOLE_INPUT	0
+#define CONSOLE_OUTPUT	1
  
 /* Create a Nachos file, with "name" */
 void Create(char *name);
