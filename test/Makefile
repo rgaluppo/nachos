@@ -35,8 +35,8 @@ CPP = /lib/cpp
 INCDIR =-I../userprog -I../threads
 CFLAGS = -G 0 -c $(INCDIR) -mips1
 
-all: halt shell matmult sort filetest exec join testConsole \
-	 cat cp clear
+all: halt shell matmult sort testConsole readfile \
+     writefile exec join cat cp clear
 
 start.o: start.s ../userprog/syscall.h
 	$(CPP) $(CPPFLAGS) start.s > strt.s
@@ -48,24 +48,6 @@ halt.o: halt.c
 halt: halt.o start.o
 	$(LD) $(LDFLAGS) start.o halt.o -o halt.coff
 	../bin/coff2noff halt.coff halt
-
-cat.o: cat.c
-	$(CC) $(CFLAGS) -c cat.c
-cat: cat.o start.o
-	$(LD) $(LDFLAGS) start.o cat.o -o cat.coff
-	../bin/coff2noff cat.coff cat
-
-cp.o: cp.c
-	$(CC) $(CFLAGS) -c cp.c
-cp: cp.o start.o
-	$(LD) $(LDFLAGS) start.o cp.o -o cp.coff
-	../bin/coff2noff cp.coff cp
-
-clear.o: clear.c
-	$(CC) $(CFLAGS) -c clear.c
-clear: clear.o start.o
-	$(LD) $(LDFLAGS) start.o clear.o -o clear.coff
-	../bin/coff2noff clear.coff clear
 
 shell.o: shell.c
 	$(CC) $(CFLAGS) -c shell.c
@@ -85,12 +67,23 @@ matmult: matmult.o start.o
 	$(LD) $(LDFLAGS) start.o matmult.o -o matmult.coff
 	../bin/coff2noff matmult.coff matmult
 
+testConsole.o: testConsole.c
+	$(CC) $(CFLAGS) -c testConsole.c
+testConsole: testConsole.o start.o
+	$(LD) $(LDFLAGS) start.o testConsole.o -o testConsole.coff
+	../bin/coff2noff testConsole.coff testConsole
 
-filetest.o: filetest.c
-	$(CC) $(CFLAGS) -c filetest.c
-filetest: filetest.o start.o
-	$(LD) $(LDFLAGS) start.o filetest.o -o filetest.coff
-	../bin/coff2noff filetest.coff filetest
+readfile.o: readfile.c
+	$(CC) $(CFLAGS) -c readfile.c
+readfile: readfile.o start.o
+	$(LD) $(LDFLAGS) start.o readfile.o -o readfile.coff
+	../bin/coff2noff readfile.coff readfile
+
+writefile.o: writefile.c
+	$(CC) $(CFLAGS) -c writefile.c
+writefile: writefile.o start.o
+	$(LD) $(LDFLAGS) start.o writefile.o -o writefile.coff
+	../bin/coff2noff writefile.coff writefile
 
 exec.o: exec.c
 	$(CC) $(CFLAGS) -c exec.c
@@ -104,11 +97,23 @@ join: join.o start.o
 	$(LD) $(LDFLAGS) start.o join.o -o join.coff
 	../bin/coff2noff join.coff join
 
-testConsole.o: testConsole.c
-	$(CC) $(CFLAGS) -c testConsole.c
-testConsole: testConsole.o start.o
-	$(LD) $(LDFLAGS) start.o testConsole.o -o testConsole.coff
-	../bin/coff2noff testConsole.coff testConsole
+cat.o: cat.c
+	$(CC) $(CFLAGS) -c cat.c
+cat: cat.o start.o
+	$(LD) $(LDFLAGS) start.o cat.o -o cat.coff
+	../bin/coff2noff cat.coff cat
+
+cp.o: cp.c
+	$(CC) $(CFLAGS) -c cp.c
+cp: cp.o start.o
+	$(LD) $(LDFLAGS) start.o cp.o -o cp.coff
+	../bin/coff2noff cp.coff cp
+
+clear.o: clear.c
+	$(CC) $(CFLAGS) -c clear.c
+clear: clear.o start.o
+	$(LD) $(LDFLAGS) start.o clear.o -o clear.coff
+	../bin/coff2noff clear.coff clear
 
 # Estas reglas sirven para compilar programas simples,
 # que consistan en un único fuente.

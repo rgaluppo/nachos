@@ -223,7 +223,6 @@ Al principio, se lee una dirección del espacio de memoria del usuario, la cual 
 Si el descriptor es \texttt{CONSOLE\_OUTPUT}, escribe en la consola \texttt{size} caracteres. Para ello, invoca a \texttt{synchConsole->WriteConsole}.\\
 En caso de que el descriptor corresponde a un archivo previamente abierto por el usuario, se escribe en dicho archivo \texttt{size} caracteres, almacenados en \texttt{buffer}. Para escribir en un archivo, se invoca a \texttt{OpenFile::Write}.\\
 En cambio, si el descriptor \texttt{id} no corresponde a ningún archivo abierto por el usuario, se imprime un mensaje de error y devuelve \texttt{-1}.\\
-\framebox[1.1\textwidth]{\texttt{testConsole.c}: Se creo ese test para probar escribir y leer en la consola sincrónica.}
 \subsection*{Open}
 Dado un nombre de un archivo, lo abre y retorna su descriptor.\\
 \begin{lstlisting}[style=C]
@@ -261,7 +260,17 @@ Dado un descriptor de un archivo, lo cierra.\\
 \begin{lstlisting}[style=C]
 void Close(OpenFileId id);
 \end{lstlisting}
-
+Recibe como argumento el descriptor del archivo a cerrar. Con él, obtiene el archivo invocando \texttt{Thread::GetFile}. En caso de obtener un archivo, significa que fue abierto por el usuario. Entonces lo elimina y lo quita. Para ello, invoca a \texttt{OpenFile::~OpenFile} y \texttt{Thread::RemoveFile}, respectivamente. Luego retorna \texttt{0}.\\
+En caso contrario, imprime el error en pantalla y retorna \texttt{-1}.\\
+\framebox{
+    \begin{minipage}{\textwidth}
+        \begin{description}
+            \item \texttt{testConsole.c}: Lee de la consola caracteres hasta llegar a 255 o hasta presionar \texttt{ENTER}. Luego, imprime los caracteres leídos en la consola.
+            \item \texttt{writetest.c}: Crea un archivo llamado \texttt{writetest.txt}. Lo abre, escribe un mensaje dentro y lo cierra.
+            \item \texttt{readtest.c}: Primero abre el archivo \texttt{readtest.txt}. Lee los primeros 100 caracteres y los imprime en la consola. Luego cierra el archivo.
+        \end{description}
+    \end{minipage}
+}
 \subsection*{Exit}
 \begin{lstlisting}[style=C]
 void Exit(int status);

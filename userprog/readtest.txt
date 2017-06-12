@@ -1,0 +1,7 @@
+This is a test for read file syscall:
+ Hello world! I'm reading the file called 'readtest.txt'.
+
+
+
+
+

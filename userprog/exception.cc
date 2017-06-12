@@ -124,6 +124,7 @@ ExceptionHandler(ExceptionType which)
     if (which == SyscallException) {
     	switch(type) {
             case SC_Halt:
+                DEBUG('e',"SC_Halt\n");
                 if(currentThread->space != NULL) {
                     delete currentThread->space;
                     currentThread->space = NULL;
@@ -206,11 +207,12 @@ ExceptionHandler(ExceptionType which)
             case SC_Open:
                 readStrFromUsr(arguments[0], name386);
 
-                DEBUG('e', "SC_Open starts: filename=%s\n", name386);
+                DEBUG('e', "SC_Open starts: filename= %s\n", name386);
 
                 file = fileSystem->Open(name386);
                 if(file != NULL) {
                     result = currentThread->AddFile(file);
+                    DEBUG('e', "descriptor= %d\n", result);
                 } else {
                     result = -1;
                     printf("SC_Open: an error was ocurred: thread name=%s\t file name=%s\n",
@@ -220,17 +222,20 @@ ExceptionHandler(ExceptionType which)
             case SC_Close:
             {
                 OpenFileId descriptor = arguments[0];
+
+                DEBUG('e', "SC_Close starts: descriptor= %d\n", descriptor);
                 file = currentThread->GetFile(descriptor);
                 if(file != NULL) {
+                    DEBUG('e', "Successful close file!\n");
                     file->~OpenFile();
                     currentThread->RemoveFile(descriptor);
                     result = 0;
                 } else {
                     printf("SC_Close: An error ocurrs on Close operation, with descriptor= %d", descriptor);
                     result = -1;
+                }
+                break;
             }
-            break;
-        }
             case SC_Exit:
             {
                 amountThread--;

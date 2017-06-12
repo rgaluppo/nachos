@@ -369,7 +369,7 @@ Thread::GetFile(OpenFileId descriptor)
 OpenFileId
 Thread::AddFile(OpenFile* file)
 {
-    int i = 1;  // Reservo lugares para la entrada estandar y la salida estandar.
+    int i = 2;  // Reservo lugares para la entrada estandar y la salida estandar.
     while (i < (MAX_FILES_OPENED + 1) && currentThread->filesDescriptors[i] != NULL)
 		i++;
 	if(currentThread->filesDescriptors[i] == NULL) {
