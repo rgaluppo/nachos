@@ -164,7 +164,7 @@ ExceptionHandler(ExceptionType which)
                     }
                     result = bytes;
                 } else {
-                    file = currentThread->getFile(descriptor);
+                    file = currentThread->GetFile(descriptor);
                     if(file != NULL) {
                         result = file->Read(buffer, size);
                         bytes = size;
@@ -192,14 +192,42 @@ ExceptionHandler(ExceptionType which)
                     for(int j=0; j < size; j++)
                         synchConsole->WriteConsole(buffer[j]);
                 } else {
-                    file = currentThread->getFile(descriptor);
+                    file = currentThread->GetFile(descriptor);
                     if(file != NULL) {
                         result = file->Write(buffer, size);
                     } else {
                         printf("SC_Write: Wrong descriptor: value=%d\t thread=%s\n", descriptor,
                                currentThread->getName());
                     result = -1;
+                    }
                 }
+                break;
+            }
+            case SC_Open:
+                readStrFromUsr(arguments[0], name386);
+
+                DEBUG('e', "SC_Open starts: filename=%s\n", name386);
+
+                file = fileSystem->Open(name386);
+                if(file != NULL) {
+                    result = currentThread->AddFile(file);
+                } else {
+                    result = -1;
+                    printf("SC_Open: an error was ocurred: thread name=%s\t file name=%s\n",
+                       currentThread->getName(), name386);
+                }
+                break;
+            case SC_Close:
+            {
+                OpenFileId descriptor = arguments[0];
+                file = currentThread->GetFile(descriptor);
+                if(file != NULL) {
+                    file->~OpenFile();
+                    currentThread->RemoveFile(descriptor);
+                    result = 0;
+                } else {
+                    printf("SC_Close: An error ocurrs on Close operation, with descriptor= %d", descriptor);
+                    result = -1;
             }
             break;
         }
@@ -270,36 +298,10 @@ ExceptionHandler(ExceptionType which)
                 }
                 break;
             }
-            case SC_Open:
-                DEBUG('e', "SC_Open starts\n");
-                readStrFromUsr(arguments[0], name386);
-                DEBUG('e', "filename: %s\n", name386);
-                file = fileSystem->Open(name386);
-                result = -1;
-                if(file != NULL) {
-                    result = currentThread->addFile(file);
-                    DEBUG('e', "thread name=%s.\n", currentThread->getName());
-                } else {
-                    printf("OPEN: an error was ocurred: thread name=%s\t file name=%s\n",
-                           currentThread->getName(), name386);
-                }
-                break;
 
 
-            case SC_Close:
-            {
-            	OpenFileId descriptor = arguments[0];
-                file = currentThread->getFile(descriptor);
-                if(file != NULL) {
-                    file->~OpenFile();
-                    currentThread->removeFile(descriptor);
-                    result = 0;
-                } else {
-                    printf("An error ocurrs on Close operation.");
-                    result = -1;
-                }
-                break;
-            }
+
+
             default: 
                 printf("Unexpected syscall exception %d %d\n", which, type);
                 ASSERT(false);

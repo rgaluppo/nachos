@@ -342,8 +342,15 @@ Thread::RestoreUserState()
 	machine->WriteRegister(i, userRegisters[i]);
 }
 
+//-----------------------------------------------------------
+// Thread::GetFile
+//	Given a file descriptor, returns the corresponding file.
+//
+// descriptor A file descriptor.
+// Return A file corresponding to given descriptor.
+//-----------------------------------------------------------
 OpenFile*
-Thread::getFile(OpenFileId descriptor) 
+Thread::GetFile(OpenFileId descriptor)
 {
 	OpenFile* file = NULL;
 	file = currentThread->filesDescriptors[descriptor];
@@ -352,11 +359,18 @@ Thread::getFile(OpenFileId descriptor)
 	return NULL;
 }
 
+//-----------------------------------------------------------
+// Thread::AddFile
+//	Given a file returns the corresponding file descriptor.
+//
+// file A file.
+// Return A descriptor file corresponding to given file.
+//-----------------------------------------------------------
 OpenFileId
-Thread::addFile(OpenFile* file)
+Thread::AddFile(OpenFile* file)
 {
-	int i = 2;      //Reservo lugares para la entrada estandar, la salida estandar y la salida de errores.
-	while (i < (MAX_FILES_OPENED + 2) && currentThread->filesDescriptors[i] != NULL)
+    int i = 1;  // Reservo lugares para la entrada estandar y la salida estandar.
+    while (i < (MAX_FILES_OPENED + 1) && currentThread->filesDescriptors[i] != NULL)
 		i++;
 	if(currentThread->filesDescriptors[i] == NULL) {
 		currentThread->filesDescriptors[i] = file;
@@ -365,15 +379,21 @@ Thread::addFile(OpenFile* file)
 	return -1;
 } 
 
+//-----------------------------------------------------------
+// Thread::RemoveFile
+//	Given a file descriptor, revome the corresponding file.
+//
+// descriptor A file descriptor.
+//-----------------------------------------------------------
 void
-Thread::removeFile(OpenFileId descriptor)
+Thread::RemoveFile(OpenFileId descriptor)
 {
 	if (currentThread->filesDescriptors[descriptor] != NULL) {
 		currentThread->filesDescriptors[descriptor] = NULL;
 		return;
 	}
 	printf("No se puede cerrar un archivo que no se abrió\n");
-	ASSERT(false);
+    return;
 }
 
 void

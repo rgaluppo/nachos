@@ -223,14 +223,45 @@ Al principio, se lee una dirección del espacio de memoria del usuario, la cual 
 Si el descriptor es \texttt{CONSOLE\_OUTPUT}, escribe en la consola \texttt{size} caracteres. Para ello, invoca a \texttt{synchConsole->WriteConsole}.\\
 En caso de que el descriptor corresponde a un archivo previamente abierto por el usuario, se escribe en dicho archivo \texttt{size} caracteres, almacenados en \texttt{buffer}. Para escribir en un archivo, se invoca a \texttt{OpenFile::Write}.\\
 En cambio, si el descriptor \texttt{id} no corresponde a ningún archivo abierto por el usuario, se imprime un mensaje de error y devuelve \texttt{-1}.\\
+\framebox[1.1\textwidth]{\texttt{testConsole.c}: Se creo ese test para probar escribir y leer en la consola sincrónica.}
 \subsection*{Open}
+Dado un nombre de un archivo, lo abre y retorna su descriptor.\\
 \begin{lstlisting}[style=C]
 OpenFileId Open(char *name);
 \end{lstlisting}
+Al principio, se traduce el primer argumento invocando a \texttt{readStrFromUsr}. A continuación, se invoca a \texttt{OpenFile::Open} para abrir un archivo. Si la apertura es exitosa, se le indica al \texttt{currentThread} que abrió dicho archivo, mediante la invocación a \texttt{Thread::AddFile}. Luego, se retorna el descriptor recibido. Si falla la apertura, se retorna \texttt{-1}.\\
+Por otro lado, cabe aclarar que una restricción que tiene un programa al manejar archivos, es la cantidad máxima de archivos que puede tener abiertos al mismo tiempo. Para modelar ello, se definió la siguiente constante en \texttt{threads.h}:
+\begin{lstlisting}[style=C]
+#define MAX_FILES_OPENED 5
+\end{lstlisting}
+Otra restricción que tiene un programa al manejar archivos es que sólo puede leer o escribir los archivos abiertos por él. Para modelar esto, se creo en \texttt{threads.h} una estructura de control para llevar un registro de los archivos abiertos por cada programa usuario.
+\begin{lstlisting}[style=C]
+class Thread {
+...
+#ifdef USER_PROGRAM
+private:
+...
+ OpenFile* filesDescriptors[MAX_FILES_OPENED]; // Structure for maintain all files opened for this user program.
+
+public:
+...
+    OpenFile* GetFile(OpenFileId descriptor); // Given a descriptor, returns the corresponding file.
+    OpenFileId AddFile(OpenFile* file); // Loads a file, assing an descriptor and return its.
+    void RemoveFile(OpenFileId descriptor); // Given a descriptor, unload its corresponding file.
+#endif
+\end{lstlisting}
+Dicha estructura consta de un arreglo de archivos llamado \texttt{filesDescriptors}, de tamaño \texttt{MAX\_FILES\_OPENDED} y tres métodos para interactuar con dicha estructura:
+\begin{description}
+    \item[Thread::AddFile] Dado un archivo, lo guarda en el arreglo y devuelve un \texttt{OpenFileId}. Guardamos cada archivo en el indice del arreglo, correspondiente a su descriptor. Para buscar un descriptor nuevo, basta con localizar un lugar vacío en el arreglo y devolver su posición. Se reservan el \texttt{0} y el \texttt{1} para la entrada y la salida estándar. Si no hay espacio libre, retorna \texttt{-1}.
+    \item[Thread::GetFile] Dado un descriptor de un archivo, retorna el archivo correspondiente. Para ello, busca en el arreglo. Si no lo encuentra, devuelve \texttt{NULL}.
+    \item[Thread::RemoveFile] Dado un descriptor de un archivo, limpia la posición dada.
+\end{description}
 \subsection*{Close}
+Dado un descriptor de un archivo, lo cierra.\\
 \begin{lstlisting}[style=C]
 void Close(OpenFileId id);
 \end{lstlisting}
+
 \subsection*{Exit}
 \begin{lstlisting}[style=C]
 void Exit(int status);
@@ -243,6 +274,11 @@ int Join(SpaceId id);
 \begin{lstlisting}[style=C]
 SpaceId Exec(char *name, int argc, char** argv);
 \end{lstlisting}
+\subsection*{Test}
+Esta sección menciona cuales test se hicieron para probar las llamadas a sistema. Todos ellos se encuentran en la carpeta \texttt{/test/}.
+\begin{itemize}
+    \item \texttt{testConsole.c}: Sirve para probar escribir y leer en la consola sincrónica.
+\end{itemize}
 \section{}
 \section{}
 \section{}

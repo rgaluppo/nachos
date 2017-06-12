@@ -130,22 +130,24 @@ class Thread {
 
     static int threadId;			//This will be the identifier of the processes
     int userRegisters[NumTotalRegs];	// user-level CPU register state
-    OpenFile* filesDescriptors[MAX_FILES_OPENED];
+    OpenFile* filesDescriptors[MAX_FILES_OPENED]; // Structure for maintain all files opened
+                                                  //for this user program.
 
   public:
-
-    void setThreadId(int pid);
-    int getThreadId() {return threadId;};
-    void setJoinFlag(int newFlag) { joinFlag = newFlag; };
-
     void SaveUserState();		// save user-level register state
     void RestoreUserState();		// restore user-level register state
 
     AddrSpace *space;			// User code this thread is running.
 
-    OpenFile* getFile(OpenFileId descriptor);
-    OpenFileId addFile(OpenFile* file);
-    void removeFile(OpenFileId descriptor);
+    OpenFile* GetFile(OpenFileId descriptor); // Given a descriptor, returns the
+                                              //corresponding file.
+    OpenFileId AddFile(OpenFile* file); // Loads a file, assing an descriptor and return its.
+    void RemoveFile(OpenFileId descriptor); // Given a descriptor, unload its corresponding file.
+
+
+    void setThreadId(int pid);
+    int getThreadId() {return threadId;};
+    void setJoinFlag(int newFlag) { joinFlag = newFlag; };
 #endif
 };
 
