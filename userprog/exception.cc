@@ -238,10 +238,12 @@ ExceptionHandler(ExceptionType which)
             }
             case SC_Exit:
             {
-                amountThread--;
+                DEBUG('e',"SC_Exit: currentThread=%s\n", currentThread->getName());
                 int state = arguments[0];
+
+                amountThread--;
                 if(state == 0) {
-                    DEBUG('e',"The program finish without problems.\n");
+                    DEBUG('e',"\nThe program finish well!!\n");
                 } else {
                     printf("The program finish with problems.\n");
                 }
@@ -258,20 +260,36 @@ ExceptionHandler(ExceptionType which)
                 result = state;
                 break;
             }
+            case SC_Join:
+            {
+                SpaceId pid = arguments[0];
+
+                DEBUG('e', "SC_Join: pid=%d.\n");
+
+                Thread* child = processTable->getProcess(pid);
+                if(child != NULL) {
+                    child->Join();
+                    result = 0;
+                } else {
+                    printf("JOIN: Unknown process with id=%d\n", pid);
+                  result = -1;
+                }
+                break;
+            }
             case SC_Exec:
             {
-                DEBUG('e', "Exec sysCall.\n");
                 int pid;
                 int argc = arguments[1];
                 char **argv = new char *[argc];
                 int next_addr = arguments[2];
 
                 readStrFromUsr(arguments[0], name386);
-                DEBUG('e', "filename=%s\n", name386);
+
+                DEBUG('e', "SC_Exec: filename=%s\n", name386);
 
                 OpenFile *executable = fileSystem->Open(name386);
                 if(executable == NULL) {
-                    printf("EXEC: Can not open file %s\t currentThr=%s\n", 
+                    printf("SC_Exec: Can not open file %s\t currentThread=%s\n",
                             name386, currentThread->getName());
                     result = -1;
                     break;
@@ -281,33 +299,14 @@ ExceptionHandler(ExceptionType which)
                 for(int index = 0; index < argc; index++) {
                     argv[index] = new char[128];
                     next_addr = readStrFromUsrSpecial(next_addr, argv[index], ' ');
-                    DEBUG('e', "funcion rara argv[%d]=%s \n", index, argv[index]);
+                    DEBUG('e', "argv[%d]=%s \n", index, argv[index]);
                 }
                 machine->WriteRegister(2, pid);
                 startProcess(pid, executable, name386, argc, argv);
                 movingPC();
                 return;
             }
-            case SC_Join:
-            {
-                DEBUG('e', "Join sysCall.\n");
-                SpaceId pid = arguments[0];
-                Thread* child = processTable->getProcess(pid);
-                if(child == NULL) {
-                    printf("JOIN: Unknown process with id=%d\n", pid);
-                    result = -1;
-                } else {
-                    //child->setJoinFlag(1);
-                    child->Join();
-                    result = 0;
-                }
-                break;
-            }
-
-
-
-
-            default: 
+            default:
                 printf("Unexpected syscall exception %d %d\n", which, type);
                 ASSERT(false);
     	}

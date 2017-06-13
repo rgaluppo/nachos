@@ -167,14 +167,7 @@ ExceptionHandler(ExceptionType which)
     }
   }
 \end{lstlisting}
-
-En las próximas subsecciones se muestra cómo se desarrollaron las llamadas de sistema. Las mismas fueron implementadas en el orden propuesto por la cátedra.\\
-\subsection*{SC\_Create}
-\begin{lstlisting}[style=C]
-void Create(char *name);
-\end{lstlisting}
-Su función es crear un archivo. Recibe un parámetro, el cual es la dirección de memoria donde se aloja un string para indicar el nombre del archivo. Lo traduce mediante \texttt{readStrFromUsr} e invoca a \texttt{FileSystem::Create}.\\
-A través de \texttt{R2}, devuelve \texttt{0} en caso de crear el archivo; sino devuelve \texttt{-1}.
+En las próximas subsecciones se muestra cómo se desarrollaron las llamadas de sistema. Las mismas fueron implementadas en el orden propuesto por la cátedra.
 \subsection*{Consola sincrónica}
 Se crea la clase \texttt{SynchConsole}, la cual provee una abstracción de acceso sincronizado a la consola. Un requisito que cumple es que un hilo queriendo escribir no bloquea a un hilo queriendo leer.
 \begin{lstlisting}[style=C]
@@ -204,6 +197,14 @@ Cuando se levanta el hilo principal de \textbf{\textit{NachOS}}, se crea una con
 #define CONSOLE_INPUT	0
 #define CONSOLE_OUTPUT	1
 \end{lstlisting}
+\newpage
+\subsection*{SC\_Create}
+Dado un nombre de archivo, su función es crearlo.
+\begin{lstlisting}[style=C]
+void Create(char *name);
+\end{lstlisting}
+Recibe un parámetro, el cual es la dirección de memoria donde se aloja un string para indicar el nombre del archivo. Lo traduce mediante \texttt{readStrFromUsr} e invoca a \texttt{FileSystem::Create}.\\
+A través de \texttt{R2}, devuelve \texttt{0} en caso de crear el archivo; sino devuelve \texttt{-1}.
 \subsection*{Read}
 Dado un descriptor de un archivo \texttt{id}, lee \texttt{size} bytes y los guarda en el array \texttt{buffer}. Devuelve la cantidad de bytes leídos.
 \begin{lstlisting}[style=C]
@@ -222,9 +223,9 @@ Es similar a la llamada \texttt{SC\_Read}. Se puede escribir en la consola sincr
 Al principio, se lee una dirección del espacio de memoria del usuario, la cual contiene la información a escribir. Para ello, se traduce el primer argumento invocando a \texttt{readBuffFromUsr} y guardándolo en la variable \texttt{buffer}.\\
 Si el descriptor es \texttt{CONSOLE\_OUTPUT}, escribe en la consola \texttt{size} caracteres. Para ello, invoca a \texttt{synchConsole->WriteConsole}.\\
 En caso de que el descriptor corresponde a un archivo previamente abierto por el usuario, se escribe en dicho archivo \texttt{size} caracteres, almacenados en \texttt{buffer}. Para escribir en un archivo, se invoca a \texttt{OpenFile::Write}.\\
-En cambio, si el descriptor \texttt{id} no corresponde a ningún archivo abierto por el usuario, se imprime un mensaje de error y devuelve \texttt{-1}.\\
+En cambio, si el descriptor \texttt{id} no corresponde a ningún archivo abierto por el usuario, se imprime un mensaje de error y devuelve \texttt{-1}.
 \subsection*{Open}
-Dado un nombre de un archivo, lo abre y retorna su descriptor.\\
+Dado un nombre de un archivo, lo abre y retorna su descriptor.
 \begin{lstlisting}[style=C]
 OpenFileId Open(char *name);
 \end{lstlisting}
@@ -262,6 +263,7 @@ void Close(OpenFileId id);
 \end{lstlisting}
 Recibe como argumento el descriptor del archivo a cerrar. Con él, obtiene el archivo invocando \texttt{Thread::GetFile}. En caso de obtener un archivo, significa que fue abierto por el usuario. Entonces lo elimina y lo quita. Para ello, invoca a \texttt{OpenFile::~OpenFile} y \texttt{Thread::RemoveFile}, respectivamente. Luego retorna \texttt{0}.\\
 En caso contrario, imprime el error en pantalla y retorna \texttt{-1}.\\
+\textbf{Test para manejo de archivos}\\
 \framebox{
     \begin{minipage}{\textwidth}
         \begin{description}
@@ -272,22 +274,43 @@ En caso contrario, imprime el error en pantalla y retorna \texttt{-1}.\\
     \end{minipage}
 }
 \subsection*{Exit}
+Finaliza el programa según el estado dado.
 \begin{lstlisting}[style=C]
 void Exit(int status);
 \end{lstlisting}
+Si el argumento es \texttt{0}, termina correctamente. Sino imprime un cartel advirtiendo que el programa tuvo problemas.
 \subsection*{Join}
+Dado un id de un proceso, espera a que termine y luego continua su ejecución.
 \begin{lstlisting}[style=C]
 int Join(SpaceId id);
 \end{lstlisting}
+Para poder esperar a un proceso, se tiene que llevar cuenta de los procesos que se están ejecutando. Por ello, creamos la clase \texttt{ProcessTable} que abstrae la relación mencionada anteriormente.
+\begin{lstlisting}[style=C]
+class ProcessTable{
+  public:
+    ProcessTable();
+    ~ProcessTable();	// De-allocate an process table
+
+    void addProcess(SpaceId pid, Thread* executor); // Add process at the table.
+    int getFreshSlot(); // Returns an empty slot of the table.
+    Thread* getProcess(SpaceId pid); // Given a pid, returns the appropiate process.
+    void freeSlot(SpaceId pid);		// Delete process from the table.
+
+  private:
+    Thread** table;
+};
+\end{lstlisting}
+Se agregó una variable llamada \texttt{processTable} en \texttt{system.h}. La tabla se crear cuando se inicializa el sistema. Ademas, se agregó una cota máxima de procesos que se ejecutan al mismo tiempo. Esto define la cantidad de entradas que tiene la tabla y se encuentra en \texttt{processtable.h}.
+\begin{lstlisting}[style=C]
+#define MAX_EXEC_THREADS 20
+\end{lstlisting}
+Todos los procesos que se ejecutan en modo usuario, tienen que estar registrados en dicha tabla. En particular, el proceso 'Main' también tiene que registrarse. Por ello, se agrega a la tabla momentos después de crearse, en el método \texttt{Inicialize}.\\
+Volviendo a la implementación de la llamada a sistema \texttt{Join}, utilizando el argumento se invoca a \texttt{ProcessTable::getProcess} para obtener el thread que ejecutó dicho id.\\
+Si es distinto de \texttt{NULL}, le hace Join invocando a \texttt{Thread::Join}. Caso contrario, imprime un mensaje de error y retorna \texttt{-1}.
 \subsection*{Exec}
 \begin{lstlisting}[style=C]
 SpaceId Exec(char *name, int argc, char** argv);
 \end{lstlisting}
-\subsection*{Test}
-Esta sección menciona cuales test se hicieron para probar las llamadas a sistema. Todos ellos se encuentran en la carpeta \texttt{/test/}.
-\begin{itemize}
-    \item \texttt{testConsole.c}: Sirve para probar escribir y leer en la consola sincrónica.
-\end{itemize}
 \section{}
 \section{}
 \section{}

@@ -9,13 +9,17 @@
 int
 main()
 {
-    int dummy = 0, i;
-    SpaceId newproc = Exec("../test/filetest");
+    int dummy = 0;
+
+    SpaceId newproc = Exec("../test/writetest");
     Join(newproc);
-    for(i=0; i < 10000; i++)
-        dummy++;
-    OpenFileId o = Open("test.txt");  
-    Write("Goodbye !!!\n", 12, o);
+
+    // will be execute when finish 'writetest' program.
+    for(int i=0; i < 10000; i++)
+        dummy++; // do nothing...
+    OpenFileId o = Open("writetest.txt");
+    Write("\nGoodbye !!!\n", 13, o);
     Close(o);
+
     Exit(0);
 }
