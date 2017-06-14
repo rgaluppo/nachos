@@ -2,8 +2,8 @@
 
 int main() {
     SpaceId newProc;
-    OpenFileId input = ConsoleInput;
-    OpenFileId output = ConsoleOutput;
+    OpenFileId input = CONSOLE_INPUT;
+    OpenFileId output = CONSOLE_OUTPUT;
     char *prompt ="Nachos_Shell> ";
     char  ch, buffer[60],argv[60];
     int i,j,t,join=0,argc=0, bufferSize=0;

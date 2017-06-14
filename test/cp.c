@@ -11,7 +11,7 @@ int main( int argc, char ** argv){
 	Create(destino);
 	descOr = Open(origen);
 	descDest = Open(destino);
-	Write("\n", 1, ConsoleOutput);
+    Write("\n", 1, CONSOLE_OUTPUT);
 	while(i > 0){
 		i=Read(&buffer[0], 1, descOr); 
 		Write(&buffer[0], 1, descDest);		
