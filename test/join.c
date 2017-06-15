@@ -9,7 +9,7 @@
 int
 main()
 {
-    SpaceId newproc = Exec("../test/writetest", 0, "");
+    SpaceId newproc = Exec("../test/writetest", 0, '\0');
     Join(newproc);
 
     // will be execute when finish 'writetest' program.

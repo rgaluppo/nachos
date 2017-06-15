@@ -7,9 +7,9 @@
 \BOOKMARK [0][-]{chapter.3}{3 Resoluci\363n de la Pr\341ctica N3: Programas de usuario y Multi-Programaci\363n}{}% 7
 \BOOKMARK [1][-]{section.3.1}{3.1 Desarrollo del API para copiar datos desde el n\372cleo al espacio de memoria del usuario y viceversa}{chapter.3}% 8
 \BOOKMARK [1][-]{section.3.2}{3.2 Implementaci\363n de las llamadas de sistema y la administraci\363n de interrupciones}{chapter.3}% 9
-\BOOKMARK [1][-]{section.3.3}{3.3 }{chapter.3}% 10
-\BOOKMARK [1][-]{section.3.4}{3.4 }{chapter.3}% 11
-\BOOKMARK [1][-]{section.3.5}{3.5 }{chapter.3}% 12
+\BOOKMARK [1][-]{section.3.3}{3.3 Multiprogramaci\363n con rebanadas de tiempo \(time-slicing\)}{chapter.3}% 10
+\BOOKMARK [1][-]{section.3.4}{3.4 Exec con argumentos}{chapter.3}% 11
+\BOOKMARK [1][-]{section.3.5}{3.5 Interpretes de comandos y programas de usuario}{chapter.3}% 12
 \BOOKMARK [0][-]{chapter.4}{4 Resoluci\363n de la Pr\341ctica N4}{}% 13
 \BOOKMARK [1][-]{section.4.1}{4.1 }{chapter.4}% 14
 \BOOKMARK [1][-]{section.4.2}{4.2 }{chapter.4}% 15

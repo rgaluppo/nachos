@@ -307,10 +307,57 @@ Se agregó una variable llamada \texttt{processTable} en \texttt{system.h}. La t
 Todos los procesos que se ejecutan en modo usuario, tienen que estar registrados en dicha tabla. En particular, el proceso 'Main' también tiene que registrarse. Por ello, se agrega a la tabla momentos después de crearse, en el método \texttt{Inicialize}.\\
 Volviendo a la implementación de la llamada a sistema \texttt{Join}, utilizando el argumento se invoca a \texttt{ProcessTable::getProcess} para obtener el thread que ejecutó dicho id.\\
 Si es distinto de \texttt{NULL}, le hace Join invocando a \texttt{Thread::Join}. Caso contrario, imprime un mensaje de error y retorna \texttt{-1}.
-\subsection*{Exec}
+\subsection*{Exec sin argumentos}
+Dado un archivo ejecutable, lo ejecuta. Para ejecutar un programa sin argumentos, se lo invoca con \texttt{0} y \texttt{'\textbackslash 0'} en el segundo y el tercer parámetro, respectivamente.\\
 \begin{lstlisting}[style=C]
 SpaceId Exec(char *name, int argc, char** argv);
 \end{lstlisting}
-\section{}
-\section{}
-\section{}
+Inicialmente, traducimos el nombre del archivo mediante \texttt{readStrFromUsr} e intentamos abrirlo invocando \texttt{OpenFile::Open}. Si falla, imprimimos un mensaje de error y retornamos el valor \texttt{-1}.\\
+En caso de poder abrir el archivo, obtenemos un id para el nuevo proceso. Para ello, invocamos a \texttt{ProcessTable::GetFreshSlot}. Luego, crea un thread para ejecutar el archivo y se le configura su espacio de memoria. Es decir, se cargan los segmentos de código y de datos dentro del espacio de memoria del usuario. Todo ello esta modularizado en la función \texttt{makeProcess}.
+\begin{lstlisting}[style=C]
+void
+makeProcess(int pid, OpenFile* executable, char* filename, int argc, char** argv)
+{
+    DEBUG ('e',"C: currenThread:%s\t pid %d\t filename=%s\n", currentThread->getName(),
+           pid, filename);
+    
+    Thread *execThread = new Thread(filename, 0);    //Creation of thread executor.
+    execThread->setThreadId(pid);
+    processTable->addProcess(pid, execThread);
+
+    // Creation of space address for process.
+    AddrSpace *execSpace = new AddrSpace(executable, argc, argv);
+    execThread->space = execSpace;
+    delete executable;
+
+    amountThread++;
+    execThread->Fork(doExecution, (void*) filename, 1);   //Create process.
+
+    DEBUG('e', "After finish makeProcess, pid=%d\t name=$s\n", execThread->getThreadId(),
+          execThread->getName());
+}
+\end{lstlisting}
+Notemos que al thread \texttt{execThread} se le reemplaza su espacio de memoria por el del archivo ejecutable. Cuando el Scheduler lo ejecute, va inicializar su espacio de memoria y va a llamar a la maquina MIPS de \texttt{NachOS}, como vemos en el cuerpo de la funcion \texttt{doExecution}.
+\begin{lstlisting}[style=C]
+doExecution(void* arg)
+{
+    DEBUG ('e',"doExecution: currentThread name=%s\t id=%d\n", currentThread->getName(),
+           currentThread->getThreadId());
+
+	currentThread->space->InitRegisters();  //Inicialization for MIPS registers.
+	currentThread->space->RestoreState();   //Load page table register.
+
+ 	machine->Run();	
+
+    ASSERT(false);  //Machine->Run never returns.
+}
+\end{lstlisting}
+\section{Multiprogramación con rebanadas de tiempo (time-slicing)}
+\subsection*{Múltiples programas de usuario}
+\subsection*{Cambio de contexto con rebanadas de tiempo}
+\section{Exec con argumentos}
+\begin{lstlisting}[style=C]
+SpaceId Exec(char *name, int argc, char** argv);
+\end{lstlisting}
+
+\section{Interpretes de comandos y programas de usuario}

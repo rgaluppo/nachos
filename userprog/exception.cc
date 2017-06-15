@@ -1,4 +1,4 @@
-// exception.cc 
+﻿// exception.cc 
 //	Entry point into the Nachos kernel from user programs.
 //	There are two kinds of things that can cause control to
 //	transfer back to here from user code:
@@ -47,11 +47,18 @@ movingPC()
      machine->WriteRegister(NextPCReg, pc);
 }
 
+//---------------------------------------------------------------------
+// doExecution
+//  Initialize process address memory an run.
+//
+// arg Unussed parameter.
+//---------------------------------------------------------------------
 void
 doExecution(void* arg)
 {
     DEBUG ('e',"doExecution: currentThread name=%s\t id=%d\n", currentThread->getName(),
            currentThread->getThreadId());
+
 	currentThread->space->InitRegisters();  //Inicialization for MIPS registers.
 	currentThread->space->RestoreState();   //Load page table register.
 	currentThread->space->InitArguments();  //Load arguments.
@@ -61,10 +68,20 @@ doExecution(void* arg)
     ASSERT(false);  //Machine->Run never returns.
 }
 
+//---------------------------------------------------------------------
+// makeProcess
+//	Given an executable file, make a process with him.
+//
+//  pid A process id for the new process.
+//  executable An executable file.
+//  filename A name for the new process.
+//  argc Amount of arguments.
+//  argv Vector of arguments.
+//---------------------------------------------------------------------
 void
-startProcess(int pid, OpenFile* executable, char* filename, int argc, char** argv)
+makeProcess(int pid, OpenFile* executable, char* filename, int argc, char** argv)
 {
-    DEBUG ('e',"startProcess: currenThread:%s\t pid %d\t filename=%s\n", currentThread->getName(),
+    DEBUG ('e',"C: currenThread:%s\t pid %d\t filename=%s\n", currentThread->getName(),
            pid, filename);
     DEBUG('e', "argc=%d \t", argc);
     for(int i=0; i<argc; i++)
@@ -83,7 +100,8 @@ startProcess(int pid, OpenFile* executable, char* filename, int argc, char** arg
     amountThread++;
     execThread->Fork(doExecution, (void*) filename, 1);   //Create process.
 
-    DEBUG('e', "Despues del FORK, result=%d\n", execThread->getThreadId());
+    DEBUG('e', "After finish makeProcess, pid=%d\t name=$s\n", execThread->getThreadId(),
+          execThread->getName());
 }
 
 //----------------------------------------------------------------------
@@ -113,13 +131,14 @@ ExceptionHandler(ExceptionType which)
 {
     int type = machine->ReadRegister(2);
     int arguments[4];
+    int result;
+    OpenFile* file;
+    char name386[128];
+
     arguments[0] = machine->ReadRegister(4);
     arguments[1] = machine->ReadRegister(5);
     arguments[2] = machine->ReadRegister(6);
     arguments[3] = machine->ReadRegister(7);
-    int result;
-    OpenFile* file;
-    char name386[128];
 
     if (which == SyscallException) {
     	switch(type) {
@@ -301,10 +320,9 @@ ExceptionHandler(ExceptionType which)
                     next_addr = readStrFromUsrSpecial(next_addr, argv[index], ' ');
                     DEBUG('e', "argv[%d]=%s \n", index, argv[index]);
                 }
-                machine->WriteRegister(2, pid);
-                startProcess(pid, executable, name386, argc, argv);
-                movingPC();
-                return;
+                makeProcess(pid, executable, name386, argc, argv);
+                result = pid;
+                break;
             }
             default:
                 printf("Unexpected syscall exception %d %d\n", which, type);

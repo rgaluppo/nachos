@@ -8,9 +8,9 @@
 \contentsline {chapter}{\numberline {3}Resoluci\IeC {\'o}n de la Pr\IeC {\'a}ctica N$^{\circ }$3: Programas de usuario y Multi-Programaci\IeC {\'o}n}{11}{chapter.3}
 \contentsline {section}{\numberline {3.1}Desarrollo del API para copiar datos desde el n\IeC {\'u}cleo al espacio de memoria del usuario y viceversa}{11}{section.3.1}
 \contentsline {section}{\numberline {3.2}Implementaci\IeC {\'o}n de las llamadas de sistema y la administraci\IeC {\'o}n de interrupciones}{13}{section.3.2}
-\contentsline {section}{\numberline {3.3}}{19}{section.3.3}
-\contentsline {section}{\numberline {3.4}}{19}{section.3.4}
-\contentsline {section}{\numberline {3.5}}{19}{section.3.5}
-\contentsline {chapter}{\numberline {4}Resoluci\IeC {\'o}n de la Pr\IeC {\'a}ctica N$^{\circ }$4}{20}{chapter.4}
-\contentsline {section}{\numberline {4.1}}{20}{section.4.1}
-\contentsline {section}{\numberline {4.2}}{21}{section.4.2}
+\contentsline {section}{\numberline {3.3}Multiprogramaci\IeC {\'o}n con rebanadas de tiempo (time-slicing)}{20}{section.3.3}
+\contentsline {section}{\numberline {3.4}Exec con argumentos}{20}{section.3.4}
+\contentsline {section}{\numberline {3.5}Interpretes de comandos y programas de usuario}{21}{section.3.5}
+\contentsline {chapter}{\numberline {4}Resoluci\IeC {\'o}n de la Pr\IeC {\'a}ctica N$^{\circ }$4}{22}{chapter.4}
+\contentsline {section}{\numberline {4.1}}{22}{section.4.1}
+\contentsline {section}{\numberline {4.2}}{23}{section.4.2}

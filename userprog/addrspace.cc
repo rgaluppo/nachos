@@ -172,55 +172,50 @@ AddrSpace::~AddrSpace()
 //----------------------------------------------------------------------
 void
 AddrSpace::InitArguments() {
-        DEBUG('e', "Iniciando argumentos...\n");
+    DEBUG('e', "Iniciando argumentos...\n");
 
-        DEBUG('e', "argc=%d\t", argc);
-        for(int w=0; w<argc; w++)
-            DEBUG('e', "argv[%d]=%s\n", w, argv[w]);
+    DEBUG('e', "argc=%d\t", argc);
+    for(int w=0; w<argc; w++)
+        DEBUG('e', "argv[%d]=%s\n", w, argv[w]);
 
-        int length;
-            int SP;
-                int Argv_addr[argc];
-                    int Arg_addr;
+    int length;
+    int SP;
+    int Argv_addr[argc];
+    int Arg_addr;
+    bool writeDone;
 
-                        if(argc > 0)
-                                {
-                                            for(int i = 0; i<argc; i++)
-                                                        {
-                                                                        length = strlen(argv[i]) + 1;
-                                                                                    SP = machine->ReadRegister(StackReg);
-                                                                                                
-                                                                                                Arg_addr = SP - length;
-                                                                                                            
-                                                                                                            for(int j = 0; j < length; j++)
-                                                                                                                             if(!machine->WriteMem(Arg_addr+j,1,argv[i][j]))
-                                                                                                                                                ASSERT(machine->WriteMem(Arg_addr+j,1,argv[i][j]));
-                                                                                                                         
-                                                                                                                        
-                                                                                                                        machine->WriteRegister(StackReg,Arg_addr);
-                                                                                                                                    Argv_addr[i] = Arg_addr;
-                                                                                                                                        
-                                                                                                                                            }
-                                                    SP = machine->ReadRegister(StackReg);
-                                                            machine->WriteRegister(StackReg, SP - (SP % 4));
-                                                                    
-                                                                    for(int i = argc; i >= 0 ; i--)
-                                                                                {
-                                                                                                SP = machine -> ReadRegister(StackReg);
-                                                                                                            if(!machine->WriteMem(SP-4,4,Argv_addr[i]))
-                                                                                                                                ASSERT(machine->WriteMem(SP-4,4,Argv_addr[i]));
-                                                                                                                        machine->WriteRegister(StackReg,SP-4);
-                                                                                                                                }
-                                                                            
-                                                                            SP = machine->ReadRegister(StackReg);
-                                                                                    machine->WriteRegister(StackReg, SP - 16);
-                                                                                            machine->WriteRegister(4,argc);
-                                                                                                    machine->WriteRegister(5, SP);
-                                                                                                            
-                                                                                                        
-                                                                                                        
-                                                                                                        }   
-  }
+    if(argc > 0) {
+        for(int i = 0; i<argc; i++) {
+            length = strlen(argv[i]) + 1;
+            SP = machine->ReadRegister(StackReg);
+
+            Arg_addr = SP-length;
+
+            for(int j = 0; j < length; j++) {
+                writeDone = machine->WriteMem(Arg_addr+j, 1, argv[i][j]);
+                ASSERT(writeDone);
+            }
+
+            machine->WriteRegister(StackReg, Arg_addr);
+            Argv_addr[i] = Arg_addr;
+        }
+
+        SP = machine->ReadRegister(StackReg);
+        machine->WriteRegister(StackReg, SP-(SP % 4));
+
+        for(int i = argc; i >= 0 ; i--) {
+            SP = machine -> ReadRegister(StackReg);
+            writeDone = machine->WriteMem(SP-4, 4, Argv_addr[i]);
+            ASSERT(writeDone);
+            machine->WriteRegister(StackReg, SP-4);
+        }
+
+        SP = machine->ReadRegister(StackReg);
+        machine->WriteRegister(StackReg, SP-16);
+        machine->WriteRegister(4, argc);
+        machine->WriteRegister(5, SP);
+    }
+}
 
 //----------------------------------------------------------------------
 // AddrSpace::InitRegisters
@@ -264,7 +259,6 @@ AddrSpace::InitRegisters()
 //
 //	For now, nothing!
 //----------------------------------------------------------------------
-
 void AddrSpace::SaveState() 
 { 
 #ifdef USE_TLB
@@ -283,7 +277,6 @@ void AddrSpace::SaveState()
 //
 //      For now, tell the machine where to find the page table.
 //----------------------------------------------------------------------
-
 void AddrSpace::RestoreState() 
 {
 #ifdef USE_TLB
@@ -295,6 +288,7 @@ void AddrSpace::RestoreState()
     DEBUG('s', "Restore state for %s: register PC = %d\n", currentThread->getName(), machine->ReadRegister(34));
 #endif
 }
+
 //----------------------------------------------------------------------
 // AddrSpace::UpdateTLB
 // Cuando una entrada no figura en la TLB se dispara un
@@ -303,7 +297,6 @@ void AddrSpace::RestoreState()
 //
 // position indica el indice de la pagina en la pageTable.
 //----------------------------------------------------------------------
-
 void AddrSpace::UpdateTLB(int position)
 {
     int freeSlot = -1;
