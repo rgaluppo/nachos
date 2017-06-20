@@ -2,24 +2,17 @@
 \section{Desarrollo del API para copiar datos desde el núcleo al espacio de memoria del usuario y viceversa}
 La interfaz \texttt{usertranslate.h} contiene las funciones que integran la API para traducir \texttt{Strings} y \texttt{Arrays}. La API contiene las siguientes funciones:
 \begin{lstlisting}[style=C]
-    // Lee una string desde la memoria de usuario.
-    void readStrFromUsr(int usrAddr, char *outStr);
-    // Lee un array desde la memoria del usuario.
-    void readBuffFromUsr(int usrAddr, char *outBuff, int byteCount);
-    // Traduce una string hacia la memoria de usuario.
-    void writeStrToUsr(char *str, int usrAddr);
-    // Traduce un array hacia la memoria de usuario.
-    void writeBuffToUsr(char *str, int usrAddr, int byteCount);
+// Lee una string desde la memoria de usuario.
+void readStrFromUsr(int usrAddr, char *outStr);
+// Lee un array desde la memoria del usuario.
+void readBuffFromUsr(int usrAddr, char *outBuff, int byteCount);
+// Traduce una string hacia la memoria de usuario.
+void writeStrToUsr(char *str, int usrAddr);
+// Traduce un array hacia la memoria de usuario.
+void writeBuffToUsr(char *str, int usrAddr, int byteCount);
 \end{lstlisting}
 Para implementarlas, se utilizaron los métodos \texttt{Machine::ReadMemory} y \texttt{Machine::WriteMemory}. A continuación, se muestran las implementación de la API:
 \begin{lstlisting}[style=C]
-//-----------------------------------------------------------
-// readStrFromUsr
-//  Read a string from user memory space.
-//
-// usrAddr memory address from user space.
-// outStr string where is the result of translation.
-//-----------------------------------------------------------
 void
 readStrFromUsr(int usrAddr, char *outStr) {
     int value, count = 0;
@@ -38,14 +31,6 @@ readStrFromUsr(int usrAddr, char *outStr) {
 }
 \end{lstlisting}
 \begin{lstlisting}[style=C]
-//-----------------------------------------------------------
-// readBuffFromUsr
-//  Read a buffer from user memory space.
-//
-// usrAddr memory address from user space.
-// outBuff array where is the result of translation.
-// byteCount amount of bytes reads.
-//-----------------------------------------------------------
 void
 readBuffFromUsr(int usrAddr, char *outBuff, int byteCount) {
     int value;
@@ -58,14 +43,6 @@ readBuffFromUsr(int usrAddr, char *outBuff, int byteCount) {
 }
 \end{lstlisting}
 \begin{lstlisting}[style=C]
-//-----------------------------------------------------------
-// writeStrToUsr
-//  Translate a string to user memory space.
-//
-// str string where that will be translated.
-// usrAddr memory address to user space where will be located
-//         the beginig of tralated string.
-//-----------------------------------------------------------
 void
 writeStrToUsr(char *str, int usrAddr) {
     bool done;
@@ -78,15 +55,6 @@ writeStrToUsr(char *str, int usrAddr) {
 }
 \end{lstlisting}
 \begin{lstlisting}[style=C]
-//-----------------------------------------------------------
-// writeBuffToUsr
-//  Translate an array to user memory space.
-//
-// str string where that will be translated.
-// usrAddr memory address to user space where will be located
-//         the beginig of tralated array.
-// byteCount amount of bytes reads.
-//-----------------------------------------------------------
 void
 writeBuffToUsr(char *str, int usrAddr, int byteCount) {
     bool done;
@@ -215,7 +183,7 @@ En caso de que el descriptor corresponde a un archivo previamente abierto por el
 En cambio, si el descriptor \texttt{id} no corresponde a ningún archivo abierto por el usuario, se imprime un mensaje de error y devuelve \texttt{-1}.\\
 Una vez que es leído exitosamente, se invoca a la función \texttt{writeBuffToUsr} para traducir el resultado de la lectura a una dirección en el espacio de direcciones indicado por el usuario en el primer argumento(\texttt{R4}).
 \subsection*{Write}
-Dado un array \texttt{buffer}, escribe \texttt{size} bytes en el archivo cuyo descriptor es \texttt{id}. Devuelve la cantidad de bytes leídos.\\
+Dado un array \texttt{buffer}, escribe \texttt{size} bytes en el archivo cuyo descriptor es \texttt{id}. Devuelve la cantidad de bytes leídos.
 \begin{lstlisting}[style=C]
 void Write(char *buffer, int size, OpenFileId id);
 \end{lstlisting}
@@ -257,7 +225,7 @@ Dicha estructura consta de un arreglo de archivos llamado \texttt{filesDescripto
     \item[Thread::RemoveFile] Dado un descriptor de un archivo, limpia la posición dada.
 \end{description}
 \subsection*{Close}
-Dado un descriptor de un archivo, lo cierra.\\
+Dado un descriptor de un archivo, lo cierra.
 \begin{lstlisting}[style=C]
 void Close(OpenFileId id);
 \end{lstlisting}
@@ -308,12 +276,12 @@ Todos los procesos que se ejecutan en modo usuario, tienen que estar registrados
 Volviendo a la implementación de la llamada a sistema \texttt{Join}, utilizando el argumento se invoca a \texttt{ProcessTable::getProcess} para obtener el thread que ejecutó dicho id.\\
 Si es distinto de \texttt{NULL}, le hace Join invocando a \texttt{Thread::Join}. Caso contrario, imprime un mensaje de error y retorna \texttt{-1}.
 \subsection*{Exec sin argumentos}
-Dado un archivo ejecutable, lo ejecuta. Para ejecutar un programa sin argumentos, se lo invoca con \texttt{0} y \texttt{'\textbackslash 0'} en el segundo y el tercer parámetro, respectivamente.\\
+Dado un archivo ejecutable, lo ejecuta. Para ejecutar un programa sin argumentos, se lo invoca con \texttt{0} y \texttt{'\textbackslash 0'} en el segundo y el tercer parámetro, respectivamente.
 \begin{lstlisting}[style=C]
 SpaceId Exec(char *name, int argc, char** argv);
 \end{lstlisting}
 Inicialmente, traducimos el nombre del archivo mediante \texttt{readStrFromUsr} e intentamos abrirlo invocando \texttt{OpenFile::Open}. Si falla, imprimimos un mensaje de error y retornamos el valor \texttt{-1}.\\
-En caso de poder abrir el archivo, obtenemos un id para el nuevo proceso. Para ello, invocamos a \texttt{ProcessTable::GetFreshSlot}. Luego, crea un thread para ejecutar el archivo y se le configura su espacio de memoria. Es decir, se cargan los segmentos de código y de datos dentro del espacio de memoria del usuario. Todo ello esta modularizado en la función \texttt{makeProcess}.
+En caso de poder abrir el archivo, obtenemos un id para el nuevo proceso. Para ello, invocamos a \texttt{ProcessTable::GetFreshSlot}. Luego, se crea un thread para ejecutar el archivo y se asigna un espacio de direcciones y se carga el archivo ejecutable en memoria. Todo ello esta modularizado en la función \texttt{makeProcess}.
 \begin{lstlisting}[style=C]
 void
 makeProcess(int pid, OpenFile* executable, char* filename, int argc, char** argv)
@@ -337,7 +305,7 @@ makeProcess(int pid, OpenFile* executable, char* filename, int argc, char** argv
           execThread->getName());
 }
 \end{lstlisting}
-Notemos que al thread \texttt{execThread} se le reemplaza su espacio de memoria por el del archivo ejecutable. Cuando el Scheduler lo ejecute, va inicializar su espacio de memoria y va a llamar a la maquina MIPS de \texttt{NachOS}, como vemos en el cuerpo de la funcion \texttt{doExecution}.
+Cuando el \textbf{Scheduler} ejecute el thread \texttt{execThread}, va inicializar su espacio de memoria y va a llamar a la maquina MIPS de \texttt{NachOS}, como vemos en el cuerpo de la función \texttt{doExecution}.
 \begin{lstlisting}[style=C]
 doExecution(void* arg)
 {
@@ -354,6 +322,36 @@ doExecution(void* arg)
 \end{lstlisting}
 \section{Multiprogramación con rebanadas de tiempo (time-slicing)}
 \subsection*{Múltiples programas de usuario}
+Para soportar la multiprogramación, proponemos utilizar una estructura llamada \textbf{Bitmap} (definida en \texttt{bitmap.h}) para administrar los marcos de la memoria física; de tal forma que podamos saber cuales están asignados y cuales están libres. Dicho mapa de bits va a ser una variable global llamada \texttt{memoryMap} y se define en \texttt{system.cc}, pasándole como argumento el numero de paginas físicas (\texttt{NumPhysPages}).\\
+A continuación, modificamos la clase \texttt{AddrSpace} para que soporte la multiprogramación:
+\begin{itemize}
+    \item \textbf{Chequeo de espacio}: Se modifico el calculo de cuanto espacio necesita un archivo ejecutable en memoria para que soporte el paginado.
+    \begin{lstlisting}[style=C]
+size = noffH.code.size + noffH.initData.size 
+       + noffH.uninitData.size + UserStackSize;
+numPages = divRoundUp(size, PageSize);
+size = numPages * PageSize;
+    \end{lstlisting}
+    \item \textbf{Asegurarse de que hay espacio disponible}: Luego de calcular la cantidad de paginas que necesitamos, tenemos que chequear que tengamos libre la cantidad suficiente.
+    \item \textbf{Guardar el marco en cada pagina}: Cuando se arma cada pagina, guardamos en \texttt{physicalAddr} el marco correspondiente a la memoria física. Dicho marco, es uno libre que se obtiene mediante el mapa de bits.
+    \begin{lstlisting}[style=C]
+int firstFreePhySpace = -1;
+for (i = 0; i < numPages; i++) {
+    firstFreePhySpace = memoryMap->Find();
+    ASSERT(firstFreePhySpace != -1);	//Always found space in physical memory.
+    pageTable[i].physicalPage = firstFreePhySpace;
+    ...
+}
+    \end{lstlisting}
+    \item \textbf{Inicializa la pagina}: Se inicializa cada pagina a traves del metodo \texttt{bzero}.
+    \begin{lstlisting}
+for (i = 0; i < numPages; i++) {
+    ...
+    bzero(&(machine->mainMemory[firstFreePhySpace*PageSize]), PageSize);
+}
+    \end{lstlisting}
+    \item \textbf{Carga de segmentos}: Finalmente, se cargan los segmentos del archivo ejecutable en memoria. Dicho proceso, se modularizo en el método \texttt{LoadSegment}, cuya función es cargar un segmento en memoria.
+\end{itemize}
 \subsection*{Cambio de contexto con rebanadas de tiempo}
 \section{Exec con argumentos}
 \begin{lstlisting}[style=C]

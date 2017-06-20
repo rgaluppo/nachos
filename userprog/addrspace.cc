@@ -134,7 +134,7 @@ AddrSpace::AddrSpace(OpenFile *executable, int prg_argc, char** prg_argv)
     pageTable = new TranslationEntry[numPages];
     int firstFreePhySpace = -1;
     for (i = 0; i < numPages; i++) {
-        firstFreePhySpace = memoryMap -> Find();
+        firstFreePhySpace = memoryMap->Find();
         ASSERT(firstFreePhySpace != -1);	//Always found space in physical memory.
 
         pageTable[i].virtualPage = i;
@@ -146,9 +146,9 @@ AddrSpace::AddrSpace(OpenFile *executable, int prg_argc, char** prg_argv)
                                         // a separate page, we could set its 
                                         // pages to be read-only
 
-        // zero out the entire address space, to zero the unitialized data segment 
+        // zero out the every page address space, to zero the unitialized data segment
         // and the stack segment
-        bzero (&(machine -> mainMemory[firstFreePhySpace*PageSize]), PageSize);
+        bzero(&(machine->mainMemory[firstFreePhySpace*PageSize]), PageSize);
     }
     
 

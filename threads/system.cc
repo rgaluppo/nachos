@@ -91,8 +91,9 @@ Initialize(int argc, char **argv)
 {
     int argCount;
     const char* debugArgs = "";
+#ifndef USER_PROGRAM
     bool randomYield = false;
-    
+#endif
 
 // 2007, Jose Miguel Santos Espino
     bool preemptiveScheduling = false;
@@ -125,7 +126,9 @@ Initialize(int argc, char **argv)
 	    ASSERT(argc > 1);
 	    RandomInit(atoi(*(argv + 1)));	// initialize pseudo-random
 						// number generator
+    #ifndef USER_PROGRAM
 	    randomYield = true;
+    #endif
 	    argCount = 2;
 	}
 	// 2007, Jose Miguel Santos Espino
