@@ -40,11 +40,13 @@ class AddrSpace {
 					// for now!
     unsigned int numPages;		// Number of pages in the virtual 
 					// address space
-    int LoadSegment (Segment* seg, int readingSize, int pageSize, OpenFile* excec, 
-            TranslationEntry* PageTable, int initOffset);
 
-    int argc;
-    char** argv;
+    // Load a segment into the Nachos's main memory.
+    unsigned int LoadSegment (Segment seg, unsigned int readingSize, OpenFile* excec,
+                              int initOffset, unsigned int fileOffset);
+
+    int argc;   // Amount of arguments.
+    char** argv; // Vector of arguments.
 };
 
 #endif // ADDRSPACE_H

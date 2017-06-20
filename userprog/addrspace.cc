@@ -43,28 +43,49 @@ SwapHeader (NoffHeader *noffH)
 
 //----------------------------------------------------------------------
 // AddrSpace:: loadSegmet
-//      Load the segment into the Nachos's main memory to can run the 
+//      Load a segment into the Nachos's main memory to can run the
 //      excecutable user program
+//
+//  seg A segment (code or data).
+//  readingSize Size of the segment.
+//  exec Executable file owner of the segment.
+//  initOffset This is where begins the reading.
+//  fileOffset This is where
 //----------------------------------------------------------------------
 
-int
-AddrSpace:: LoadSegment (Segment* seg, int readingSize, int pageSize, OpenFile* excec, TranslationEntry* PageTable, int initOffset)
+unsigned int
+AddrSpace:: LoadSegment (Segment seg, unsigned int readingSize, OpenFile* exec, int initOffset,
+                         unsigned int fileOffset)
 {
- 	int i = initOffset, j = 0, phys_addr = 0;
-    int virt_addr = divRoundUp(seg->virtualAddr, pageSize);
-	int file_off = seg->inFileAddr;
+    unsigned int offset = 0;
+    int file_off,
+        phys_addr,
+        virt_addr;
+    if(readingSize > 0){
+        virt_addr = divRoundUp(seg.virtualAddr, PageSize);
+        offset = initOffset;
 
-	while (i <= readingSize){
-	      file_off += i;
-	      virt_addr += j;
-	      phys_addr = PageTable[virt_addr].physicalPage;
-	     
-	      excec -> ReadAt(&(machine->mainMemory[phys_addr]), pageSize, file_off);
-	   
-	      i += pageSize;
-	      j++;
-	}
-    return i;
+        while(offset <= readingSize) {
+            file_off = fileOffset + offset;
+            phys_addr = pageTable[virt_addr].physicalPage * PageSize;
+
+            exec->ReadAt(&(machine->mainMemory[phys_addr]), PageSize, file_off);
+
+            virt_addr++;
+            offset = offset + PageSize;
+        }
+    }
+    return offset;
+
+    //LoadSegment(noffH.initData, noffH.code.size + noffH.initData.size, PageSize, executable, offset);
+    /*if (noffH.initData.size > 0){
+        j = divRoundUp(noffH.initData.virtualAddr, PageSize);
+        for ( ; offset < (unsigned) (noffH.code.size + noffH.initData.size) ;offset=offset+PageSize ){
+            executable->ReadAt(&(machine->mainMemory[pageTable[j].physicalPage * PageSize]),
+                    PageSize, noffH.code.inFileAddr+offset);
+            j++;
+        }
+    }*/
 }
 	     		
 //----------------------------------------------------------------------
@@ -85,7 +106,9 @@ AddrSpace:: LoadSegment (Segment* seg, int readingSize, int pageSize, OpenFile* 
 AddrSpace::AddrSpace(OpenFile *executable, int prg_argc, char** prg_argv)
 {
     NoffHeader noffH;
-    unsigned int i, size;
+    unsigned int i,
+            size,
+            offset;
 
     argc = prg_argc;
     argv = prg_argv;
@@ -130,27 +153,8 @@ AddrSpace::AddrSpace(OpenFile *executable, int prg_argc, char** prg_argv)
     
 
 // then, copy in the code and data segments into memory
-    unsigned int j;
-    if (noffH.code.size > 0){
-        j = noffH.code.virtualAddr;
-        j = divRoundUp(noffH.code.virtualAddr, PageSize);
-        for (i = 0; i <= (unsigned) noffH.code.size ; i=i+PageSize ){
-            executable->ReadAt(&(machine->mainMemory[pageTable[j].physicalPage * PageSize]),
-                    PageSize, noffH.code.inFileAddr+i);
-            j++;
-        }
-    }
-    else i=0;
-    if (noffH.initData.size > 0){
-        j = divRoundUp(noffH.initData.virtualAddr, PageSize);
-        for ( ; i < (unsigned) (noffH.code.size + noffH.initData.size) ;i=i+PageSize ){
-            executable->ReadAt(&(machine->mainMemory[pageTable[j].physicalPage * PageSize]),
-                    PageSize, noffH.code.inFileAddr+i);
-            j++;
-        }
-    }                     
-    
-    
+    offset = LoadSegment(noffH.code, noffH.code.size, executable, 0, noffH.code.inFileAddr);
+    LoadSegment(noffH.initData, noffH.code.size + noffH.initData.size, executable, offset, noffH.code.inFileAddr);
 }
 
 //----------------------------------------------------------------------
