@@ -16,5 +16,5 @@ int
 main()
 {
     Exec("../test/readfile", 0, '\0');
-	Exit(0);
+    return 0;
 }

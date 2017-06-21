@@ -13,5 +13,5 @@ main()
     Write("This is a test for write file syscall:\n Hello world! Put this on file 'writetest.txt'\n", 86, descriptor);
     Close(descriptor);
 
-    Exit(0);
+    return 0;
 }

@@ -275,7 +275,7 @@ Se agregó una variable llamada \texttt{processTable} en \texttt{system.h}. La t
 Todos los procesos que se ejecutan en modo usuario, tienen que estar registrados en dicha tabla. En particular, el proceso 'Main' también tiene que registrarse. Por ello, se agrega a la tabla momentos después de crearse, en el método \texttt{Inicialize}.\\
 Volviendo a la implementación de la llamada a sistema \texttt{Join}, utilizando el argumento se invoca a \texttt{ProcessTable::getProcess} para obtener el thread que ejecutó dicho id.\\
 Si es distinto de \texttt{NULL}, le hace Join invocando a \texttt{Thread::Join}. Caso contrario, imprime un mensaje de error y retorna \texttt{-1}.
-\subsection*{Exec sin argumentos}
+\subsection*{Exec sin argumentos} \label{exec_without_args}
 Dado un archivo ejecutable, lo ejecuta. Para ejecutar un programa sin argumentos, se lo invoca con \texttt{0} y \texttt{'\textbackslash 0'} en el segundo y el tercer parámetro, respectivamente.
 \begin{lstlisting}[style=C]
 SpaceId Exec(char *name, int argc, char** argv);
@@ -353,9 +353,30 @@ for (i = 0; i < numPages; i++) {
     \item \textbf{Carga de segmentos}: Finalmente, se cargan los segmentos del archivo ejecutable en memoria. Dicho proceso, se modularizo en el método \texttt{LoadSegment}, cuya función es cargar un segmento en memoria.
 \end{itemize}
 \subsection*{Cambio de contexto con rebanadas de tiempo}
-\section{Exec con argumentos}
+Para forzar los cambios de contexto, se modificó la creación del \texttt{timer}, al momento de iniciar \textit{\textbf{NachOS}}.
 \begin{lstlisting}[style=C]
-SpaceId Exec(char *name, int argc, char** argv);
+#ifdef USER_PROGRAM
+    randomYield = false;
+#endif
+    timer = new Timer(TimerInterruptHandler, 0, randomYield);
 \end{lstlisting}
-
+Al invocar el constructor con  el tercer parámetro en \texttt{false}, se crea un temporizador cuyo timeout ocurrirá cada \texttt{TimerTicks} unidades. La definición de \texttt{TimerTicks} se encuentra en \texttt{stats.h}.
+\section{Exec con argumentos}
+A lo desarrollado en \nameref{exec_without_args}, se agrego el procesamiento del segundo y tercer argumento. La cantidad de argumentos nos viene en el registro \texttt{R5} y el string de argumentos sin traducir, vienen por el registro \texttt{R6}. Para traducir el vector de argumentos, invocamos a método \texttt{readSpecialStringFromUser}, declarado en \texttt{usertranlate.h}, para traducir cada argumento y guardarlos en el array \texttt{argv}. Por convención, el string con los argumentos estará separado por espacios.
+\begin{lstlisting}[style=C]
+// Dado un string con argumentos separados por 'divide',
+//traduce un argumento y retorna la direccion del proximo
+//argumento a traducir.
+int readSpecialStringFromUser(int usrAddr,char *outStr,char divide);
+\end{lstlisting}
+Al finalizar la traducción, se invoca a \texttt{makeProcess} y se continua como mencionamos en \nameref{exec_without_args}. Ademas, se modifico la función \texttt{doExecution} para que inicialice los argumentos antes de ejecutar el archivo.\\
+Por otro lado, se modifico la clase \texttt{AddSpace}, ya que necesitamos copiar los argumentos en el stack de usuario. En la llamada al constructor, se guardan \texttt{argc} y \texttt{argv}. Tambien se creo el método \texttt{AddrSpace::InitArguments}, el cual se encarga de almacenar correctamente los argumentos en el stack. Empieza guardando en la parte superior de la pila el valor de los argumentos, seguidos los punteros a esas direcciones. Finalmente, mueve el stackpointer cuatro posiciones mas abajo del ultimo argumento ingresado en la pila. 
 \section{Interpretes de comandos y programas de usuario}
+Se implemento un interprete de comandos, el cual lee un comando de la consola y lo ejecuta. Si el comando comienza con el carácter \texttt{\&}, debe ser ejecutado en background. En \texttt{test/shell.c} se encuentra la implementación del interprete.\\
+Ademas, se implementaron los siguientes programas utilitarios:
+\begin{description}
+    \item \textbf{CAT}
+    \item \textbf{CP} Su función es copiar el contenido de un archivo a otro. Para ello, necesita el nombre del archivo a copiar y el nombre del archivo destino.
+    \item \textbf{CLEAR} Su función es limpiar la consola. Para ello, imprime 250 saltos de linea.
+\end{description}
+Las implementaciones de todos ellos se encuentran la carpeta \texttt{test/}.

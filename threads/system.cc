@@ -91,9 +91,7 @@ Initialize(int argc, char **argv)
 {
     int argCount;
     const char* debugArgs = "";
-#ifndef USER_PROGRAM
     bool randomYield = false;
-#endif
 
 // 2007, Jose Miguel Santos Espino
     bool preemptiveScheduling = false;
@@ -125,11 +123,9 @@ Initialize(int argc, char **argv)
 	} else if (!strcmp(*argv, "-rs")) {
 	    ASSERT(argc > 1);
 	    RandomInit(atoi(*(argv + 1)));	// initialize pseudo-random
-						// number generator
-    #ifndef USER_PROGRAM
+                                        // number generator
 	    randomYield = true;
-    #endif
-	    argCount = 2;
+        argCount = 2;
 	}
 	// 2007, Jose Miguel Santos Espino
 	else if (!strcmp(*argv, "-p")) {
@@ -167,12 +163,11 @@ Initialize(int argc, char **argv)
     interrupt = new Interrupt;			// start up interrupt handling
     scheduler = new Scheduler();		// initialize the ready queue
     
-#ifndef USER_PROGRAM
-	if(randomYield)
-		timer = new Timer(TimerInterruptHandler, 0, randomYield);
-#else
-	timer = new Timer(TimerInterruptHandler, 0, false);
+#ifdef USER_PROGRAM
+    randomYield = false;
 #endif
+    timer = new Timer(TimerInterruptHandler, 0, randomYield);
+
 
     threadToBeDestroyed = NULL;
 

@@ -13,4 +13,7 @@ void writeStrToUsr(char *str, int usrAddr);
 // Traduce un array hacia la memoria de usuario.
 void writeBuffToUsr(char *str, int usrAddr, int byteCount);
 
-int readStrFromUsrSpecial(int usrAddr, char *outStr, char divide);
+// Dado un string con argumentos separados por 'divide',
+//traduce un argumento y retorna la direccion del proximo
+//argumento a traducir.
+int readSpecialStringFromUser(int usrAddr, char *outStr, char divide);

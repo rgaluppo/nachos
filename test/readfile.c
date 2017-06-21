@@ -15,5 +15,5 @@ main()
     Close(descriptor);
     Write(buffer, 100, CONSOLE_OUTPUT);
 
-    Exit(0);
+    return 0;
 }

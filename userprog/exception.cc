@@ -176,9 +176,8 @@ ExceptionHandler(ExceptionType which)
                 DEBUG('e',"SC_Read: descriptor= %d\t size= %d\n", descriptor, size);
 
                 if(descriptor == CONSOLE_INPUT) {
-                    for(int i=0; i < size; i++) {
+                    for(int i=0; i < size; i++, bytes++) {
                         buffer[i] = synchConsole->ReadConsole();
-                        bytes++;
                         if(buffer[i] == '\n')
                             break;
                     }
@@ -187,14 +186,13 @@ ExceptionHandler(ExceptionType which)
                     file = currentThread->GetFile(descriptor);
                     if(file != NULL) {
                         result = file->Read(buffer, size);
-                        bytes = size;
                     } else {
-                        printf("SC_Read: Wrong descriptor: value=%d\t thread=%s\n", descriptor,
-                               currentThread->getName());
+                        printf("SC_OPEN: Wrong descriptor for thread= %s\n", currentThread->getName());
                         result = -1;
+                        break;
                     }
                 }
-                writeBuffToUsr(buffer, buffer_address, bytes);
+                writeBuffToUsr(buffer, buffer_address, result);
                 break;
             }
             case SC_Write:
@@ -317,7 +315,7 @@ ExceptionHandler(ExceptionType which)
                 pid = processTable->getFreshSlot();
                 for(int index = 0; index < argc; index++) {
                     argv[index] = new char[128];
-                    next_addr = readStrFromUsrSpecial(next_addr, argv[index], ' ');
+                    next_addr = readSpecialStringFromUser(next_addr, argv[index], ' ');
                     DEBUG('e', "argv[%d]=%s \n", index, argv[index]);
                 }
                 makeProcess(pid, executable, name386, argc, argv);
@@ -357,7 +355,6 @@ ExceptionHandler(ExceptionType which)
                 break;
             case AddressErrorException:
                 exception = "AddressErrorException";
-                ASSERT(false);
                 break;
             case OverflowException:
                 exception = "OverflowException";

@@ -9,8 +9,8 @@
 \contentsline {section}{\numberline {3.1}Desarrollo del API para copiar datos desde el n\IeC {\'u}cleo al espacio de memoria del usuario y viceversa}{11}{section.3.1}
 \contentsline {section}{\numberline {3.2}Implementaci\IeC {\'o}n de las llamadas de sistema y la administraci\IeC {\'o}n de interrupciones}{12}{section.3.2}
 \contentsline {section}{\numberline {3.3}Multiprogramaci\IeC {\'o}n con rebanadas de tiempo (time-slicing)}{20}{section.3.3}
-\contentsline {section}{\numberline {3.4}Exec con argumentos}{21}{section.3.4}
-\contentsline {section}{\numberline {3.5}Interpretes de comandos y programas de usuario}{21}{section.3.5}
-\contentsline {chapter}{\numberline {4}Resoluci\IeC {\'o}n de la Pr\IeC {\'a}ctica N$^{\circ }$4}{22}{chapter.4}
-\contentsline {section}{\numberline {4.1}}{22}{section.4.1}
-\contentsline {section}{\numberline {4.2}}{23}{section.4.2}
+\contentsline {section}{\numberline {3.4}Exec con argumentos}{22}{section.3.4}
+\contentsline {section}{\numberline {3.5}Interpretes de comandos y programas de usuario}{22}{section.3.5}
+\contentsline {chapter}{\numberline {4}Resoluci\IeC {\'o}n de la Pr\IeC {\'a}ctica N$^{\circ }$4}{23}{chapter.4}
+\contentsline {section}{\numberline {4.1}}{23}{section.4.1}
+\contentsline {section}{\numberline {4.2}}{24}{section.4.2}

@@ -353,6 +353,8 @@ OpenFile*
 Thread::GetFile(OpenFileId descriptor)
 {
 	OpenFile* file = NULL;
+    if(descriptor == -1)
+        return NULL;
 	file = currentThread->filesDescriptors[descriptor];
 	if (file != NULL)
 		return file;

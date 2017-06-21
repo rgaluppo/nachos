@@ -82,16 +82,17 @@ writeBuffToUsr(char *str, int usrAddr, int byteCount) {
 }
 
 //----------------------------------------------------------------------
-// readStrFromUsrSpecial
-//  Translate an array to user memory space.
+// readSpecialStringFromUser
+//  Given a string arguments, translate one argumento to an array into
+// user memory space.
 //
-// usrAddr memory address from user space.
-// outBuff array where is the result of translation.
-// divide
-// returns
+// usrAddr Memory address from user space.
+// outBuff Array where will be the result of translation.
+// divide Char for split the string.
+// returns The address for the next argument.
 //----------------------------------------------------------------------
 int
-readStrFromUsrSpecial(int usrAddr, char *outStr, char divide) {
+readSpecialStringFromUser(int usrAddr, char *outStr, char divide) {
     int value = 1,
         size = 1,
         i = 0,

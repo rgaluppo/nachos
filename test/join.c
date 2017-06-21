@@ -9,7 +9,7 @@
 int
 main()
 {
-    SpaceId newproc = Exec("../test/writetest", 0, '\0');
+    SpaceId newproc = Exec("../test/writefile", 0, '\0');
     Join(newproc);
 
     // will be execute when finish 'writetest' program.
@@ -17,5 +17,5 @@ main()
     Write("\nGoodbye !!!\n", 13, o);
     Close(o);
 
-    Exit(0);
+    return 0;
 }
