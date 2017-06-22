@@ -302,6 +302,12 @@ ExceptionHandler(ExceptionType which)
 
                 readStrFromUsr(arguments[0], name386);
 
+                for(int index = 0; index < argc; index++) {
+                    argv[index] = new char[128];
+                    next_addr = readSpecialStringFromUser(next_addr, argv[index], ' ');
+                    DEBUG('e', "argv[%d]=%s \n", index, argv[index]);
+                }
+
                 DEBUG('e', "SC_Exec: command = %s\n", name386);
 
                 OpenFile *executable = fileSystem->Open(name386);
@@ -313,11 +319,6 @@ ExceptionHandler(ExceptionType which)
                 }
 
                 pid = processTable->getFreshSlot();
-                for(int index = 0; index < argc; index++) {
-                    argv[index] = new char[128];
-                    next_addr = readSpecialStringFromUser(next_addr, argv[index], ' ');
-                    DEBUG('e', "argv[%d]=%s \n", index, argv[index]);
-                }
                 makeProcess(pid, executable, name386, argc, argv);
                 result = pid;
                 break;

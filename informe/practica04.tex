@@ -48,7 +48,7 @@ El primero se incrementa cuando ocurre un fallo de paginación. Esto ocurre cuan
 Para modificar el tamaño de la TLB, se modifica la variable \texttt{TLBSize}, declarada en \texttt{system.h}.
 \subsection*{Resultados}
 Se realizaron distintas pruebas variando la cantidad de entradas de la tabla. Los valores de prueba fueron 4, 16, 32, 64, 128 y 256. Ademas, la pagina que sale es elegida al azar.\\
-En \ref{tab:practica04:statics} se muestra las estadísticas sobre la cantidad de aciertos y fallas al utilizar el buffer de traducción adelantada, para los programas \texttt{matmult.c} y \texttt{sort.c}.\\ 
+En \ref{tab:practica04:statics} se muestra los porcentajes de aciertos y fallas de la \textbf{TLB}, para los programas \texttt{matmult.c} y \texttt{sort.c}.\\ 
 \begin{table}
 	\center
 	\begin{tabular}{|c|c|c|}
