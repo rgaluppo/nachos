@@ -295,16 +295,15 @@ void AddrSpace::RestoreState()
 
 //----------------------------------------------------------------------
 // AddrSpace::UpdateTLB
-// Cuando una entrada no figura en la TLB se dispara un
-// PageFaultException, permitiendo de esta forma, agregar dicha pagina
-// en la TLB.
+// When an entry does not appear in the TLB, a PageFaultException is
+// triggered, allowing this page to be added in the TLB.
 //
-// position indica el indice de la pagina en la pageTable.
+// position Is the virtual address that failed
 //----------------------------------------------------------------------
-void AddrSpace::UpdateTLB(int position)
+void AddrSpace::UpdateTLB(int virtualAddr)
 {
     int freeSlot = -1;
-    TranslationEntry page = pageTable[position];
+    TranslationEntry page = pageTable[virtualAddr];
 
     //Busco un lugar disponible en la TLB.
     for (int i = 0; i < TLBSize; i++){

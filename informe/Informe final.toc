@@ -11,6 +11,9 @@
 \contentsline {section}{\numberline {3.3}Multiprogramaci\IeC {\'o}n con rebanadas de tiempo (time-slicing)}{20}{section.3.3}
 \contentsline {section}{\numberline {3.4}Exec con argumentos}{22}{section.3.4}
 \contentsline {section}{\numberline {3.5}Interpretes de comandos y programas de usuario}{22}{section.3.5}
-\contentsline {chapter}{\numberline {4}Resoluci\IeC {\'o}n de la Pr\IeC {\'a}ctica N$^{\circ }$4}{23}{chapter.4}
-\contentsline {section}{\numberline {4.1}}{23}{section.4.1}
-\contentsline {section}{\numberline {4.2}}{24}{section.4.2}
+\contentsline {chapter}{\numberline {4}Resoluci\IeC {\'o}n de la Pr\IeC {\'a}ctica N$^{\circ }$4: Memoria virtual y TLB}{23}{chapter.4}
+\contentsline {section}{\numberline {4.1}Implementar TLB}{23}{section.4.1}
+\contentsline {section}{\numberline {4.2}An\IeC {\'a}lisis de TLB cambiando la cantidad de entradas}{24}{section.4.2}
+\contentsline {section}{\numberline {4.3}Implementar carga por demanda}{25}{section.4.3}
+\contentsline {section}{\numberline {4.4}Implementar la pol\IeC {\'\i }tica de paginaci\IeC {\'o}n FIFO}{25}{section.4.4}
+\contentsline {section}{\numberline {4.5}Mejorar la pol\IeC {\'\i }tica de paginaci\IeC {\'o}n}{25}{section.4.5}

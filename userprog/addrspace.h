@@ -34,7 +34,7 @@ class AddrSpace {
     void SaveState();			// Save/restore address space-specific
     void RestoreState();		// info on a context switch
 
-    void UpdateTLB(int position);   // update TLB table;
+    void UpdateTLB(int virtualAddr);   // update TLB table;
   private:
     TranslationEntry *pageTable;	// Assume linear page table translation
 					// for now!

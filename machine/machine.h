@@ -34,7 +34,7 @@ const int PageSize = SectorSize; 	// set the page size equal to
 
 const int NumPhysPages = 64;
 const int MemorySize = NumPhysPages * PageSize;
-const int TLBSize = 128;			// if there is a TLB, make it small
+const int TLBSize = 256;	// if there is a TLB, make it small
 
 enum ExceptionType { NoException,           // Everything ok!
 		     SyscallException,      // A program executed a system call.

@@ -1,14 +1,14 @@
-\chapter{Resolución de la Práctica N\grad4}
-\section{}
-\textbf{\textit{exception.cc}}
-Capturamos las excepciones \textit{PageFaultException} y \textit{ReadOnlyException}:\\
+\chapter{Resolución de la Práctica N\grad4: Memoria virtual y TLB}
+\section{Implementar TLB}
+Capturamos las excepciones \texttt{PageFaultException} y \texttt{ReadOnlyException}.\\
+Cuando ocurre la primera, se obtiene la dirección de memoria que la originó leyendo el valor del registro \texttt{R39}. Luego se invoca a \texttt{AddrSpace::UpdateTLB} para que cree una nueva entrada en la tabla para dicho valor. Notemos que al retornar no se realiza un aumento en el \texttt{PC}. Por lo tanto, se ejecutara nuevamente la sentencia que origino la excepción.
 \begin{lstlisting}[style=C]
 if (which == SyscallException) {
 	...
 } else {
 	DEBUG('e', "Is not a SyscallException\n");
     const char *exception = "";
-    switch(which){
+    switch(which) {
     	...
     	
 		case PageFaultException:
@@ -16,85 +16,65 @@ if (which == SyscallException) {
 	    	int failVirtAddr = machine -> ReadRegister(BadVAddrReg);
 
 	        DEBUG('v',"\n Antes de actualizar la TLB: failVAddr=%d \n", failVirtAddr);
-	        stats->numPageFaults++;
 			currentThread->space->UpdateTLB(failVirtAddr / PageSize);
 	        return;
 		}
 	    case ReadOnlyException: 
 	    	exception = "ReadOnlyException";
-    	    break;
-    	    
+    	    break;	    
     	...
     	
     	default:
                 printf("Unexpected user mode exception.");
                 ASSERT(false);
-        }
+    }
     printf("Unexpected user mode exception:\t which=%s  type=%d\n", exception, type);
     ASSERT(false);
 }
 \end{lstlisting}
-\textbf{\textit{addrspace.h}}
-Se agrega el método \textit{void UpdateTLB(int position)}, el cual dada un índice, obtiene la página correspondiente de memoria.\\
-Dicho método se utiliza para cuando la página a utilizar no se encuentra en el TLB. Se encarga de buscarla en la memoria y guardarla en el TLB\\
-\textbf{\textit{addrspace.cc}}
-Se implementa el método \textit{void UpdateTLB(int position)}:\\
+Como mencionamos anteriormente, se agrega el método \texttt{AddrSpace::UpdateTLB}
 \begin{lstlisting}[style=C]
-void AddrSpace::UpdateTLB(int position)
-{
-    int freeSlot = -1;
-    TranslationEntry page = pageTable[position];
-
-    //Busco un lugar disponible en la TLB.
-    for (int i = 0; i < TLBSize; i++){
-        if(machine->tlb[i].valid == false){
-            freeSlot = i;
-            DEBUG('v',"Found space in TLB: freeSlot=%d\n", freeSlot);
-            break;
-        }
-    }
-    if(freeSlot == -1){
-        // No hay espacio libre en la TLB, elijo uno aleatoreamente.
-        freeSlot = Random() % TLBSize;
-    }
-	
-    page.valid = true;
-    machine->tlb[freeSlot] = page;
-    DEBUG('v',"Finish updateTLB\n");
-}
+void UpdateTLB(int position);   // update TLB table;
 \end{lstlisting}
-\section{}
-La tabla \ref{tab:practica04:statics} nos muestra las estadísticas sobre la cantidad de aciertos y fallas al utilizar el buffer de traducción adelantada, para los programas \textit{Sort} y \textit{Matmult}. Además, se realizaron distintas pruebas variando el tamaño del buffer. Agregamos a la estadística los casos de 128 y 256 entradas.\\
-\begin{table}[!ht]
+Se utiliza para cuando la página a utilizar no se encuentra en el \textbf{TLB}. Se encarga de buscarla en la memoria y guardarla en la \textbf{TLB}.
+\section{Análisis de TLB cambiando la cantidad de entradas}
+\subsection*{Modificaciones}
+Para ver como influye el tamaño de la \textbf{TLB} respecto a la cantidad de paginas que fallan, se agregaron dos indicadores a las estadísticas de \textbf{NachOS}. Ellos se encuentran en \texttt{stats.h}.
+\begin{lstlisting}[style=C]
+int numPageFaults;  // number of virtual memory page faults
+int numPagesFound;  // number of virtual memory page founds
+\end{lstlisting}
+El primero se incrementa cuando ocurre un fallo de paginación. Esto ocurre cuando se captura la excepción \texttt{PageFaultException}. En cambio, el segundo se incrementa cuando se encuentra la pagina. Ocurre al final del constructor \texttt{Translate::Translate}.\\
+Para modificar el tamaño de la TLB, se modifica la variable \texttt{TLBSize}, declarada en \texttt{system.h}.
+\subsection*{Resultados}
+Se realizaron distintas pruebas variando la cantidad de entradas de la tabla. Los valores de prueba fueron 4, 16, 32, 64, 128 y 256. Ademas, la pagina que sale es elegida al azar.\\
+En \ref{tab:practica04:statics} se muestra las estadísticas sobre la cantidad de aciertos y fallas al utilizar el buffer de traducción adelantada, para los programas \texttt{matmult.c} y \texttt{sort.c}.\\ 
+\begin{table}
 	\center
 	\begin{tabular}{|c|c|c|}
+	    \hline
+		\multirow{2}{*}{TLB size}   &    \multicolumn{2}{c|}{Programa}           \\
+		\cline{2-3}
+                                    &    \texttt{mathmult}    &    \texttt{sort} \\
 		\hline
-		\rowcolor{gray!50}
-		Programa					&	TLB size			& Valores			\\	\hline
-		\multirow{10}{*}{Sort}		&	\multirow{2}{*}{4}	& faults: 1.014.833	\\
-									&						& hits: 22.235.837	\\
-									&	\multirow{2}{*}{32}	& faults: 765		\\
-									&						& hits: 21.818.027	\\
-									&	\multirow{2}{*}{64}	& faults: 39		\\
-									&						& hits: 21.817.385	\\
-									&	\multirow{2}{*}{128}& faults: 39		\\
-									&						& hits: 21.817.385	\\
-									&	\multirow{2}{*}{256}& faults: 39		\\
-									&						& hits: 21.817.385	\\ 	\hline
-		\multirow{10}{*}{Matmult}	&	\multirow{2}{*}{4}	& faults: 62.644	\\
-									&						& hits:	761.344		\\
-									&	\multirow{2}{*}{32}	& faults: 99		\\
-									&						& hits: 726.245		\\
-									&	\multirow{2}{*}{64}	& faults: 46		\\
-									&						& hits: 726.197		\\
-									&	\multirow{2}{*}{128}& faults: 46		\\
-									&						& hits: 726.197		\\
-									&	\multirow{2}{*}{256}& faults: 46		\\
-									&						& hits: 726.197		\\ 	\hline
-
+		\multirow{2}{*}{4}          &     faults:  7,60\%     &    faults:  4,36\% \\
+		                            &     hits  : 92,39\%     &    hits  : 95,64\%    \\               
+		\multirow{2}{*}{16}         &     faults:  0,569\%    &    faults:  0,042\%    \\
+		                            &     hits  : 99,43\%     &    hits  : 99,958\%    \\             
+		\multirow{2}{*}{32}         &     faults:  0,013\%    &    faults:  0,035\%    \\
+		                            &     hits  : 99,986\%    &    hits  : 99,996\%    \\               
+		\multirow{2}{*}{64}         &     faults:  0,006\%    &    faults:  0,0001\%    \\
+		                            &     hits  : 99,993\%    &    hits  : 99,999\%    \\               
+		\multirow{2}{*}{128}        &     faults:  0,006\%    &    faults:  0,0001\%    \\
+		                            &     hits  : 99,993\%    &    hits  : 99,999\%    \\               
+		\multirow{2}{*}{256}        &     faults:  0,006\%    &    faults:  0,0002\%    \\
+		                            &     hits  : 99,994\%    &    hits  : 99,999\%    \\ \hline             
 	\end{tabular}
-	\caption{Estadísticas para los programas Sort y MatMult, variando el tamaño de la TLB.}
+    \caption{Estadísticas para los programas \texttt{mathmult} y \texttt{sort}, variando el tamaño de la TLB.}
 	\label{tab:practica04:statics}
 \end{table}
-Para ésta forma de seleccionar cuál página sale de la TLB (elegimos una al azar), encontramos una cota máxima de rendimiento.\\
-Notamos que a partir de una tabla de 64 entradas, obtenemos la mayor cantidad de aciertos y la menor cantidad de fallos.\\
+Para ésta forma de seleccionar la página  que sale de la \textbf{TLB}, encontramos una cota máxima de rendimiento en una tabla con 64 entradas. Notamos que una tabla con mas entradas, se sigue teniendo el mismo rendimiento.
+\newpage
+\section{Implementar carga por demanda}
+\section{Implementar la política de paginación FIFO}
+\section{Mejorar la política de paginación}

@@ -349,7 +349,9 @@ ExceptionHandler(ExceptionType which)
 			}
             case ReadOnlyException: 
                 exception = "ReadOnlyException";
-                break;
+                // Solamente notificamos que ocurrio.
+                printf("An user mode exception was triggered:\t which=%s  type=%d\n", exception, type);
+                return;
             case BusErrorException: 
                 exception = "BusErrorException";
                 break;
