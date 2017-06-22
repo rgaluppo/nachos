@@ -11,7 +11,7 @@ ProcessTable::ProcessTable()
 {
     int i;
     table = new Thread* [MAX_EXEC_THREADS];
-    for(i=0; i<MAX_EXEC_THREADS; i++) 
+    for(i=0; i < MAX_EXEC_THREADS; i++)
         table[i] = NULL;    // inicializo la tabla de procesos con NULL.
 }
 	     		
@@ -22,7 +22,7 @@ ProcessTable::ProcessTable()
 ProcessTable::~ProcessTable()
 {
     int i;
-    for(i=0; i<MAX_EXEC_THREADS; i++) { 
+    for(i=0; i < MAX_EXEC_THREADS; i++) {
         table[i] = NULL;    // Limpio la tabla de procesos.
     }
     delete table;
@@ -58,7 +58,7 @@ ProcessTable::addProcess(SpaceId pid, Thread* executor)
 int
 ProcessTable::getFreshSlot()
 {
-    int index = 1;
+    int index = 1; // 0 is the pid of main process.
 
     while(table[index] != NULL)
         index++;

@@ -288,7 +288,7 @@ ExceptionHandler(ExceptionType which)
                     child->Join();
                     result = 0;
                 } else {
-                    printf("JOIN: Unknown process with id=%d\n", pid);
+                    printf("JOIN: Unknown process with pid=%d\n", pid);
                   result = -1;
                 }
                 break;
@@ -302,11 +302,11 @@ ExceptionHandler(ExceptionType which)
 
                 readStrFromUsr(arguments[0], name386);
 
-                DEBUG('e', "SC_Exec: filename=%s\n", name386);
+                DEBUG('e', "SC_Exec: command = %s\n", name386);
 
                 OpenFile *executable = fileSystem->Open(name386);
                 if(executable == NULL) {
-                    printf("SC_Exec: Can not open file %s\t currentThread=%s\n",
+                    printf("SC_Exec: Can not execute command '%s'\t currentThread=%s\n",
                             name386, currentThread->getName());
                     result = -1;
                     break;

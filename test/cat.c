@@ -1,10 +1,13 @@
 #include "syscall.h"
 
-int main( int argc, char ** argv) {
+int main(int argc, char ** argv) {
 	const int size = 1;
-	char buffer[size];
+    char buffer[size],
+            *originPath = argv[0];
 	int i = 1;
-    OpenFileId descriptor = Open(argv[0]);
+    if(argc != 1)
+        Exit(-1);
+    OpenFileId descriptor = Open(originPath);
 
     if(descriptor == -1)
         Exit(-1);
