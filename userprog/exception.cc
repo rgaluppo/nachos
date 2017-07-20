@@ -93,7 +93,7 @@ makeProcess(int pid, OpenFile* executable, char* filename, int argc, char** argv
     processTable->addProcess(pid, execThread);
 
     // Creation of space address for process.
-    AddrSpace *execSpace = new AddrSpace(executable, argc, argv);
+    AddrSpace *execSpace = new AddrSpace(executable, argc, argv, pid);
     execThread->space = execSpace;
     delete executable;
 

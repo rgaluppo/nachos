@@ -111,7 +111,7 @@ int
 OpenForWrite(const char *name)
 {
     int fd = open(name, O_RDWR|O_CREAT|O_TRUNC, 0666);
-
+	//DEBUG('o',"ERROR\n, %d,  %s",fd, name);
     ASSERT(fd >= 0); 
     return fd;
 }

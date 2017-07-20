@@ -41,6 +41,11 @@ BitMap* memoryMap;
 SynchConsole* synchConsole;
 #endif
 
+#ifdef VM
+    List<int> *fifo;
+    CoreMap *coreMap;
+#endif
+
 #ifdef NETWORK
 PostOffice *postOffice;
 #endif
@@ -103,6 +108,7 @@ Initialize(int argc, char **argv)
     processTable = new ProcessTable();
     bool debugUserProg = false;	// single step user program
 #endif
+
 #ifdef FILESYS_NEEDED
     bool format = false;	// format disk
 #endif
@@ -189,10 +195,14 @@ Initialize(int argc, char **argv)
 
     
 #ifdef USER_PROGRAM
-    processTable->addProcess(currentThread->getThreadId(), currentThread);
+    processTable->addProcess(0, currentThread);
     machine = new Machine(debugUserProg);	// this must come first
     synchConsole = new SynchConsole(NULL, NULL);
 	memoryMap = new BitMap(NumPhysPages);
+#endif
+#ifdef VM
+    fifo = new List<int>;
+    coreMap = new CoreMap(NumPhysPages);
 #endif
 
 #ifdef FILESYS
@@ -230,6 +240,11 @@ Cleanup()
     delete machine;
     delete synchConsole;
 	delete memoryMap;
+#endif
+
+#ifdef VM
+    delete fifo;
+    delete coreMap;
 #endif
 
 #ifdef FILESYS_NEEDED

@@ -38,11 +38,10 @@ ProcessTable::~ProcessTable()
 void
 ProcessTable::addProcess(SpaceId pid, Thread* executor)
 {
-    DEBUG('e', "addProcess: pid=%d\t thread=%s\n", pid, executor->getName());
-
-    if(pid < MAX_EXEC_THREADS)
+    DEBUG('e', "addProcess: pid=%d\t thread=%s\t max=%d\n", pid, executor->getName(), MAX_EXEC_THREADS);
+    if(pid < MAX_EXEC_THREADS){
         table[pid] = executor;
-    else {
+    } else {
         printf("ProcessTable: Unable to get an Identifier of process(PID): %s\n",
                executor->getName());
         ASSERT(false);

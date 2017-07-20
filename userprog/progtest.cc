@@ -25,15 +25,20 @@ StartProcess(const char *filename)
 {
     OpenFile *executable = fileSystem->Open(filename);
     AddrSpace *space;
+    int pid;
 
     if (executable == NULL) {
 	printf("Unable to open file %s\n", filename);
 	return;
     }
-    space = new AddrSpace(executable, 0, NULL);    
+
+    pid = processTable->getFreshSlot();
+    space = new AddrSpace(executable, 0, NULL, pid);
     currentThread->space = space;
 
-    delete executable;			// close file
+    // If we close this file, NachOS rises 'Assertion failed: line 182, file "../machine/sysdep.cc"'
+    // For more details see: http://usc.class.csci402.narkive.com/eaUe9iS5/compiling-from-vm-directory-only
+    //delete executable;			// close file
 
     space->InitRegisters();		// set the initial register values
     space->RestoreState();		// load page table register

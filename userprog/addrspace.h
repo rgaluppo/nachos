@@ -21,7 +21,7 @@
 
 class AddrSpace {
   public:
-    AddrSpace(OpenFile *executable, int prg_argc, char** prg_argv);	// Create an address space,
+    AddrSpace(OpenFile *executable, int prg_argc, char** prg_argv, int pid);	// Create an address space,
 					// initializing it with the program
 					// stored in the file "executable"
     ~AddrSpace();			// De-allocate an address space
@@ -35,6 +35,23 @@ class AddrSpace {
     void RestoreState();		// info on a context switch
 
     void UpdateTLB(int virtualAddr);   // update TLB table;
+
+    void OnDemandLoad(TranslationEntry *page, int errorAddr); // Load page on memory by demand.
+    TranslationEntry* InvPageTable(int i);
+    bool IsValid (int pos);
+    bool IsUsed (int pos);
+    void SetUse (int pos, bool b);
+    bool IsDirty (int pos);
+
+#ifdef DEMAND_LOADING
+    void LoadPage(TranslationEntry *page); // Load a page into memory.
+#endif
+#ifdef VM
+    void NoSwap(int pos);
+    void MemToSwap(int vpn);
+    int UpdateTLB2(int p);
+    void SwapToMem(TranslationEntry *page);
+#endif
   private:
     TranslationEntry *pageTable;	// Assume linear page table translation
 					// for now!
@@ -47,6 +64,16 @@ class AddrSpace {
 
     int argc;   // Amount of arguments.
     char** argv; // Vector of arguments.
+
+#ifdef DEMAND_LOADING
+    OpenFile *executable_file; // Save executeble for load later.
+    NoffHeader noff_hdr; // Save header for load later
+#endif
+#ifdef VM
+    OpenFile *swapFile;
+    char swapFileName[8];
+    int* swapMemory;
+#endif
 };
 
 #endif // ADDRSPACE_H
