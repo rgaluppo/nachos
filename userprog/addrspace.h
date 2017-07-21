@@ -51,6 +51,7 @@ class AddrSpace {
     void MemToSwap(int vpn);
     int UpdateTLB2(int p);
     void SwapToMem(TranslationEntry *page);
+    int* swapMemory;
 #endif
   private:
     TranslationEntry *pageTable;	// Assume linear page table translation
@@ -69,10 +70,9 @@ class AddrSpace {
     OpenFile *executable_file; // Save executeble for load later.
     NoffHeader noff_hdr; // Save header for load later
 #endif
-#ifdef VM
+#ifdef VM_SWAP
     OpenFile *swapFile;
     char swapFileName[8];
-    int* swapMemory;
 #endif
 };
 

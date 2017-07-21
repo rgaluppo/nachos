@@ -41,7 +41,7 @@ BitMap* memoryMap;
 SynchConsole* synchConsole;
 #endif
 
-#ifdef VM
+#ifdef VM_SWAP
     List<int> *fifo;
     CoreMap *coreMap;
 #endif
@@ -200,7 +200,7 @@ Initialize(int argc, char **argv)
     synchConsole = new SynchConsole(NULL, NULL);
 	memoryMap = new BitMap(NumPhysPages);
 #endif
-#ifdef VM
+#ifdef VM_SWAP
     fifo = new List<int>;
     coreMap = new CoreMap(NumPhysPages);
 #endif
@@ -242,7 +242,7 @@ Cleanup()
 	delete memoryMap;
 #endif
 
-#ifdef VM
+#ifdef VM_SWAP
     delete fifo;
     delete coreMap;
 #endif

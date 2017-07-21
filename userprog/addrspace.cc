@@ -448,7 +448,7 @@ AddrSpace::UpdateTLB(int position)
 void
 AddrSpace::OnDemandLoad(TranslationEntry *page, int errorAddr)
 {
-    DEBUG('W', "Pagina pos = %d .... phys = %d ...Valid = %o ... swap = %o \n", errorAddr,
+    DEBUG('W', "Pagina pos = %d .... phys = %d ...Valid = %o ...\n swap = %d", errorAddr,
           page->physicalPage, page->valid, swapMemory[errorAddr]);
 
     if(page->physicalPage == -1 && !swapMemory[errorAddr]) { // no esta cargado en memoria
@@ -524,7 +524,7 @@ AddrSpace::LoadPage(TranslationEntry *page)
 }
 #endif
 //FUNCIONES DE SWAP
-#ifdef VM
+#ifdef VM_SWAP
 
 void AddrSpace :: NoSwap(int pos)
 {

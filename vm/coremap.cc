@@ -12,7 +12,7 @@
 
 extern ProcessTable *processTable;
 
-#ifdef VM
+#ifdef VM_SWAP
 //----------------------------------------------------------------------
 // CoreMap::CoreMap
 // 	Initialize a CoreMap with "nitems" bits, so that every bit is clear.

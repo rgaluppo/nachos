@@ -36,7 +36,7 @@
 // Each bit represents whether the corresponding sector or page is
 // in use or free.
 
-#ifdef VM
+#ifdef VM_SWAP
 class CoreMap {
   public:
     CoreMap(int nitems);		// Initialize a CoreMap, with "nitems" bits
