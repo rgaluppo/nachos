@@ -95,7 +95,7 @@ makeProcess(int pid, OpenFile* executable, char* filename, int argc, char** argv
     // Creation of space address for process.
     AddrSpace *execSpace = new AddrSpace(executable, argc, argv, pid);
     execThread->space = execSpace;
-    delete executable;
+    //delete executable;
 
     amountThread++;
     execThread->Fork(doExecution, (void*) filename, 1);   //Create process.

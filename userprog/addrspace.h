@@ -38,10 +38,6 @@ class AddrSpace {
 
     void OnDemandLoad(TranslationEntry *page, int errorAddr); // Load page on memory by demand.
     TranslationEntry* InvPageTable(int i);
-    bool IsValid (int pos);
-    bool IsUsed (int pos);
-    void SetUse (int pos, bool b);
-    bool IsDirty (int pos);
 
 #ifdef DEMAND_LOADING
     void LoadPage(TranslationEntry *page); // Load a page into memory.
@@ -73,6 +69,12 @@ class AddrSpace {
 #ifdef VM_SWAP
     OpenFile *swapFile;
     char swapFileName[8];
+
+  public:
+    bool IsValid (int pos);
+    bool IsUsed (int pos);
+    void SetUse (int pos, bool b);
+    bool IsDirty (int pos);
 #endif
 };
 

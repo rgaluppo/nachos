@@ -368,31 +368,6 @@ AddrSpace ::InvPageTable(int i)
     return &(pageTable[i]);
 }
 
-
-void
-AddrSpace :: SetUse(int i,bool b)
-{
-    pageTable[i].use = b;
-}
-
-bool
-AddrSpace :: IsValid(int p)
-{
-    return pageTable[p].valid;
-}
-
-bool
-AddrSpace :: IsUsed(int p)
-{
-    return pageTable[p].use;
-}
-
-bool
-AddrSpace :: IsDirty(int p)
-{
-    return pageTable[p].dirty;
-}
-
 //----------------------------------------------------------------------
 // AddrSpace::UpdateTLB
 // When an entry does not appear in the TLB, a PageFaultException is
@@ -525,6 +500,30 @@ AddrSpace::LoadPage(TranslationEntry *page)
 #endif
 //FUNCIONES DE SWAP
 #ifdef VM_SWAP
+
+void
+AddrSpace :: SetUse(int i,bool b)
+{
+    pageTable[i].use = b;
+}
+
+bool
+AddrSpace :: IsValid(int p)
+{
+    return pageTable[p].valid;
+}
+
+bool
+AddrSpace :: IsUsed(int p)
+{
+    return pageTable[p].use;
+}
+
+bool
+AddrSpace :: IsDirty(int p)
+{
+    return pageTable[p].dirty;
+}
 
 void AddrSpace :: NoSwap(int pos)
 {
