@@ -1,5 +1,5 @@
 \chapter{Resolución de la Práctica N\grad4: Memoria virtual y TLB}
-\section{Implementar TLB}
+\section{Implementar TLB} \label{update_TLB}
 Capturamos las excepciones \texttt{PageFaultException} y \texttt{ReadOnlyException}.\\
 Cuando ocurre la primera, se obtiene la dirección de memoria que la originó leyendo el valor del registro \texttt{R39}. Luego se invoca a \texttt{AddrSpace::UpdateTLB} para que cree una nueva entrada en la tabla para dicho valor. Notemos que al retornar no se realiza un aumento en el \texttt{PC}. Por lo tanto, se ejecutara nuevamente la sentencia que origino la excepción.
 \begin{lstlisting}[style=C]
@@ -76,5 +76,18 @@ En \ref{tab:practica04:statics} se muestra los porcentajes de aciertos y fallas 
 Para ésta forma de seleccionar la página  que sale de la \textbf{TLB}, encontramos una cota máxima de rendimiento en una tabla con 64 entradas. Notamos que una tabla con mas entradas, se sigue teniendo el mismo rendimiento.
 \newpage
 \section{Implementar carga por demanda}
+Cuando se inicia un programa, no va a tener ninguna de sus páginas en memoria. Ellas, se cargarán cuando el sistema solicite acceder a alguna de ellas.\\
+Para implementar esto, cuando se crea el espacio de direcciones de un thread se le asigna \texttt{-{}1} a la dirección física de cada una de sus páginas y a su vez se setea el bit de \texttt{valid} en \texttt{false}. Con esto último se indica que la página no está en memoria. Por lo tanto, las páginas se irán cargando en memoria conforme se reciban las \texttt{PageFaultException}.\\
+Se agregaron los siguientes métodos a la clase \texttt{AddrSpace}:
+\begin{lstlisting}[style=C]
+  public:
+    ...
+    void OnDemandLoad(TranslationEntry *page, int errorAddr); // Load page on memory by demand.
+    void LoadPage(TranslationEntry *page); // Load a page into memory.
+  private:
+    OpenFile *executable_file; // Save executeble for load later.
+    NoffHeader noff_hdr; // Save header for load later
+\end{lstlisting}
+Se modificó el método \texttt{AddrSpace::UpdateTLB} para que llame a \texttt{AddrSpace::OnDemandLoad}, cuya función es chequear el estado de la página. Si ya tiene asignada una dirección física, se continúa con la actualización del \textbf{TLB} como se explicó en \nameref{update_TLB}. En caso contrario, se llama al método \texttt{AddrSpace::LoadPage}, el cual le asigna a la página una posición en el mapa de bits y la carga en memoria. Finalmente, continua la ejecución de \texttt{AddrSpace::UpdateTLB} para actualizar el \textbf{TLB}.
 \section{Implementar la política de paginación FIFO}
 \section{Mejorar la política de paginación}

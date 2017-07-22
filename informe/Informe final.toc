@@ -15,5 +15,5 @@
 \contentsline {section}{\numberline {4.1}Implementar TLB}{23}{section.4.1}
 \contentsline {section}{\numberline {4.2}An\IeC {\'a}lisis de TLB cambiando la cantidad de entradas}{24}{section.4.2}
 \contentsline {section}{\numberline {4.3}Implementar carga por demanda}{25}{section.4.3}
-\contentsline {section}{\numberline {4.4}Implementar la pol\IeC {\'\i }tica de paginaci\IeC {\'o}n FIFO}{25}{section.4.4}
-\contentsline {section}{\numberline {4.5}Mejorar la pol\IeC {\'\i }tica de paginaci\IeC {\'o}n}{25}{section.4.5}
+\contentsline {section}{\numberline {4.4}Implementar la pol\IeC {\'\i }tica de paginaci\IeC {\'o}n FIFO}{26}{section.4.4}
+\contentsline {section}{\numberline {4.5}Mejorar la pol\IeC {\'\i }tica de paginaci\IeC {\'o}n}{26}{section.4.5}

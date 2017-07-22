@@ -36,18 +36,19 @@ class AddrSpace {
 
     void UpdateTLB(int virtualAddr);   // update TLB table;
 
-    void OnDemandLoad(TranslationEntry *page, int errorAddr); // Load page on memory by demand.
-    TranslationEntry* InvPageTable(int i);
+    TranslationEntry* GetEntryByVAddr(int i);  // Getter for an entry in a translation table, corresponding to
+                                            // the virtual address i.
 
-#ifdef DEMAND_LOADING
-    void LoadPage(TranslationEntry *page); // Load a page into memory.
-#endif
 #ifdef VM
+    void OnDemandLoad(TranslationEntry *page, int errorAddr); // Load page on memory by demand.
     void NoSwap(int pos);
     void MemToSwap(int vpn);
     int UpdateTLB2(int p);
     void SwapToMem(TranslationEntry *page);
     int* swapMemory;
+#endif
+#ifdef DEMAND_LOADING
+    void LoadPage(TranslationEntry *page); // Load a page into memory.
 #endif
   private:
     TranslationEntry *pageTable;	// Assume linear page table translation

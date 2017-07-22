@@ -121,6 +121,7 @@ AddrSpace::AddrSpace(OpenFile *executable, int prg_argc, char** prg_argv, int pi
 
 #ifndef VM
 // check we're not trying to run something too big -.-
+    ASSERT(numPages <=(unsigned) NumPhysPages);
     ASSERT(numPages <= (unsigned) memoryMap->NumClear());
 #endif
 
@@ -132,30 +133,31 @@ AddrSpace::AddrSpace(OpenFile *executable, int prg_argc, char** prg_argv, int pi
     for (i = 0; i < numPages; i++) {
         pageTable[i].virtualPage = i;
 #ifdef USE_TLB
-#ifdef VM_SWAP
-    #ifndef DEMAND_LOADING
+    #ifdef VM_SWAP
+        #ifndef DEMAND_LOADING
         pageTable[i].physicalPage = coreMap->Find(pageTable[i]);
         fifo->Append(pageTable[i].physicalPage);
         swapMemory[i] = false;
-    #endif
-#endif //idef VM_SWAP
-#ifdef DEMAND_LOADING
+        #endif
+    #endif // FIN VM_SWAP
+    #ifdef DEMAND_LOADING
         pageTable[i].physicalPage = firstFreePhySpace;
         pageTable[i].valid = false;
         swapMemory[i] = false;
         DEBUG('W', "Pagina por Demanda\n");
-#endif// ifdef DEMAND_LOADING
-#ifndef VM_SWAP
-    #ifndef DEMAND_LOADING
+    #endif// FIN DEMAND_LOADING
+    #ifndef VM_SWAP
+        #ifndef DEMAND_LOADING
         firstFreePhySpace = memoryMap->Find();
         ASSERT(firstFreePhySpace != -1);	//Always found space in physical memory.
         pageTable[i].physicalPage = firstFreePhySpace;
-    #endif
-#endif
+        #endif
+    #endif //FIN VM_SWAP
 #else
         firstFreePhySpace = memoryMap->Find();
         ASSERT(firstFreePhySpace != -1);	//Always found space in physical memory.
         pageTable[i].physicalPage = firstFreePhySpace;
+        pageTable[i].valid = true;
 #endif
 
         pageTable[i].use = false;
@@ -178,22 +180,25 @@ AddrSpace::AddrSpace(OpenFile *executable, int prg_argc, char** prg_argv, int pi
 #endif
 
 #ifdef DEMAND_LOADING
-  noff_hdr = noffH;
-  executable_file = executable;
+    noff_hdr = noffH;
+    executable_file = executable;
 #endif
-
+#ifdef VM_SWAP
+    sprintf(swapFileName, "swap.%d", pid);
+    ASSERT(fileSystem->Create(swapFileName, size));
+    swapFile = fileSystem->Open(swapFileName);
+    DEBUG('G', "CREO SWAP %s \n",swapFileName);
+ #endif
 }
 
 //----------------------------------------------------------------------
 // AddrSpace::~AddrSpace
 // 	Dealloate an address space.  Nothing for now!
 //----------------------------------------------------------------------
-
 AddrSpace::~AddrSpace()
 {
    for(unsigned int i=0; i < numPages; i++)
        memoryMap -> Clear (pageTable[i].physicalPage);
-
 
    int i;
 
@@ -362,14 +367,21 @@ AddrSpace::RestoreState()
 
 }
 
+//----------------------------------------------------------------------
+// AddrSpace::GetEntryByVAddr
+//  Obtains the page corresponding to a given virtual address.
+//
+// i A virtual address.
+// return The correspinding page.
+//----------------------------------------------------------------------
 TranslationEntry*
-AddrSpace ::InvPageTable(int i)
+AddrSpace ::GetEntryByVAddr(int i)
 {
     return &(pageTable[i]);
 }
 
 //----------------------------------------------------------------------
-// AddrSpace::UpdateTLB
+//  AddrSpace::UpdateTLB
 // When an entry does not appear in the TLB, a PageFaultException is
 // triggered, allowing this page to be added in the TLB.
 //
@@ -379,7 +391,11 @@ void
 AddrSpace::UpdateTLB(int position)
 {
     int freeSlot = -1;
-    TranslationEntry* page = InvPageTable(position);
+    TranslationEntry* page = GetEntryByVAddr(position);
+
+#if defined(DEMAND_LOADING) || defined(VM_SWAP)
+    OnDemandLoad(page, position);
+#endif
 
     //Busco un lugar disponible en la TLB.
     for (int i = 0; i < TLBSize; i++){
@@ -394,10 +410,7 @@ AddrSpace::UpdateTLB(int position)
     }
     DEBUG('V',"Found space in TLB: freeSlot=%d\n", freeSlot);
 
-#if defined(DEMAND_LOADING) || defined(VM_SWAP)
-    OnDemandLoad(page, position);
-#endif
-
+    // Pongo la pagina en el TLB.
     page->valid = true;
     machine->tlb[freeSlot].virtualPage = page->virtualPage;
     machine->tlb[freeSlot].physicalPage = page->physicalPage;
@@ -498,42 +511,83 @@ AddrSpace::LoadPage(TranslationEntry *page)
     }
 }
 #endif
-//FUNCIONES DE SWAP
-#ifdef VM_SWAP
 
+#ifdef VM_SWAP
+//----------------------------------------------------------------------
+// AddrSpace::SetUse
+//  Mark as used a page.
+//
+// i A virtual address.
+// b A state who indicates is the page is used or not.
+//----------------------------------------------------------------------
 void
 AddrSpace :: SetUse(int i,bool b)
 {
     pageTable[i].use = b;
 }
 
+//----------------------------------------------------------------------
+// AddrSpace::IsValid
+//  Getter for bit valid of a page.
+//
+// p A virtual address.
+// return The value of bit valid.
+//----------------------------------------------------------------------
 bool
 AddrSpace :: IsValid(int p)
 {
     return pageTable[p].valid;
 }
 
+//----------------------------------------------------------------------
+// AddrSpace::IsUsed
+//  Getter for bit used of a page.
+//
+// p A virtual address.
+// return The value of bit used.
+//----------------------------------------------------------------------
 bool
 AddrSpace :: IsUsed(int p)
 {
     return pageTable[p].use;
 }
 
+//----------------------------------------------------------------------
+// AddrSpace::IsDirty
+//  Getter for bit dirty of a page.
+//
+// p A virtual address.
+// return The value of bit dirty.
+//----------------------------------------------------------------------
 bool
 AddrSpace :: IsDirty(int p)
 {
     return pageTable[p].dirty;
 }
 
-void AddrSpace :: NoSwap(int pos)
+//----------------------------------------------------------------------
+// AddrSpace::NoSwap
+//  Obtains the page corresponding to a given virtual address.
+//
+// i A virtual address.
+// return The correspinding page.
+//----------------------------------------------------------------------
+void
+AddrSpace :: NoSwap(int pos)
 {
-
     pageTable[pos].physicalPage = -1;
     pageTable[pos].valid = false;
-
-
 }
-int AddrSpace::UpdateTLB2(int p)
+
+//----------------------------------------------------------------------
+// AddrSpace::UpdateTLB2
+//  Obtains the page corresponding to a given virtual address.
+//
+// i A virtual address.
+// return The correspinding page.
+//----------------------------------------------------------------------
+int
+AddrSpace::UpdateTLB2(int p)
 {
     int k;
 
@@ -541,14 +595,21 @@ int AddrSpace::UpdateTLB2(int p)
         if (machine->tlb[k].physicalPage == p)
                 machine->tlb[k].valid = false;
     return 0;
-
 }
+
+//----------------------------------------------------------------------
+// AddrSpace::MemToSwap
+//  Obtains the page corresponding to a given virtual address.
+//
+// i A virtual address.
+// return The correspinding page.
+//----------------------------------------------------------------------
 void
 AddrSpace :: MemToSwap(int vpn)
 {
     DEBUG('G', "MemToSwap>>>>>>>>\n");
 
-    TranslationEntry *page = InvPageTable(vpn);
+    TranslationEntry *page = GetEntryByVAddr(vpn);
     int p = page->virtualPage;
     int i = p*PageSize;
 
@@ -570,6 +631,13 @@ AddrSpace :: MemToSwap(int vpn)
     //modificar el tlb de esa pagina
 }
 
+//----------------------------------------------------------------------
+// AddrSpace::SwapToMem
+//  Obtains the page corresponding to a given virtual address.
+//
+// i A virtual address.
+// return The correspinding page.
+//----------------------------------------------------------------------
 void
 AddrSpace :: SwapToMem(TranslationEntry *page)
 {
