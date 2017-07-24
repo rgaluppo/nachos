@@ -197,49 +197,40 @@ AddrSpace::AddrSpace(OpenFile *executable, int prg_argc, char** prg_argv, int pi
 //----------------------------------------------------------------------
 AddrSpace::~AddrSpace()
 {
-   for(unsigned int i=0; i < numPages; i++)
-       memoryMap -> Clear (pageTable[i].physicalPage);
+    int physicalAddr;
+#ifdef VM_SWAP
+    int fifoadd, fifohead;
+#endif
 
-   int i;
+    for (unsigned int i=0; i< numPages; i++) {
+        physicalAddr = pageTable[i].physicalPage;
+        if (physicalAddr != -1) {
+#ifdef VM_SWAP
+            coreMap->Clear(physicalAddr);
+            fifohead = fifo->Remove();
+            if(fifohead != physicalAddr) {
+                fifo->Append(fifohead);
+                fifoadd = fifo->Remove();
 
-       #ifdef VM_SWAP
-        int phys, fifoadd, fifohead;
-           for (i=0; i< (int)numPages; i++){
-               phys = 	pageTable[i].physicalPage;
-               if ( phys != -1)
-               {
-                   coreMap->Clear(phys);
-                   fifohead = fifo->Remove();
+                while(fifoadd != fifohead) {
+                    if(fifoadd != physicalAddr) {
+                        fifo->Append(fifoadd);
+                    }
+                    fifoadd = fifo->Remove();
+                }
+                fifo->Prepend(fifoadd);
+            }
+        }
+    }
+    ASSERT(fileSystem->Remove(swapFileName));
+#else
+            memoryMap->Clear(pageTable[i].physicalPage);
+        }
+    }
+#endif
 
-                   if(fifohead != phys)
-                       {
-                           fifo->Append(fifohead);
-                           fifoadd = fifo->Remove();
-
-                       while(fifoadd != fifohead)
-                       {
-                           if(fifoadd != phys)
-                           {
-                           fifo->Append(fifoadd);
-                           }
-                           fifoadd = fifo->Remove();
-                       }
-                       fifo->Prepend(fifoadd);
-                       }
-               }
-           }
-       ASSERT(fileSystem->Remove(swapFileName));
-       #else
-           for (i=0; i< (int)numPages; i++){
-               if (pageTable[i].physicalPage != -1){
-                   memoryMap->Clear(pageTable[i].physicalPage);
-               }
-           }
-       #endif
-
-   delete pageTable;
+    delete pageTable;
 }
-
 
 //----------------------------------------------------------------------
 // AddrSpace::InitArguments
@@ -446,7 +437,7 @@ AddrSpace::OnDemandLoad(TranslationEntry *page, int errorAddr)
 #endif
 #ifdef VM_SWAP
         fifo->Append(page->physicalPage);
-        DEBUG('D', " Despues de fifo Append-----%d \n", errorAddr);
+        DEBUG('G', " Despues de fifo Append-----%d \n", errorAddr);
 #endif
     } else if(swapMemory[errorAddr]) {
 #ifdef VM_SWAP
@@ -456,7 +447,7 @@ AddrSpace::OnDemandLoad(TranslationEntry *page, int errorAddr)
         SwapToMem(page);
         fifo->Append(page->physicalPage);
 
-        DEBUG('D', "Swap \n");
+        DEBUG('G', "Swap \n");
 #else
         ASSERT(false);
 #endif

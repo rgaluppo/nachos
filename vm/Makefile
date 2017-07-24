@@ -969,10 +969,10 @@ processtable.o: ../userprog/processtable.cc /usr/include/stdc-predef.h \
  ../machine/machine.h ../threads/utility.h ../machine/translate.h \
  ../machine/disk.h ../userprog/addrspace.h ../filesys/filesys.h \
  ../filesys/openfile.h ../bin/noff.h ../userprog/syscall.h
-coremap.o: ../vm/coremap.cc /usr/include/stdc-predef.h \
- ../threads/copyright.h ../vm/coremap.h ../threads/utility.h \
- ../threads/copyright.h ../machine/sysdep.h /usr/include/stdlib.h \
- /usr/include/features.h /usr/include/x86_64-linux-gnu/sys/cdefs.h \
+coremap.o: ../vm/coremap.cc /usr/include/stdc-predef.h ../vm/coremap.h \
+ ../threads/utility.h ../threads/copyright.h ../machine/sysdep.h \
+ ../threads/copyright.h /usr/include/stdlib.h /usr/include/features.h \
+ /usr/include/x86_64-linux-gnu/sys/cdefs.h \
  /usr/include/x86_64-linux-gnu/bits/wordsize.h \
  /usr/include/x86_64-linux-gnu/gnu/stubs.h \
  /usr/include/x86_64-linux-gnu/gnu/stubs-64.h \

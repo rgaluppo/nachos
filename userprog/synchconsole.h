@@ -13,9 +13,9 @@ public:
 	
     void WriteConsole(char c); // Write a char into console.
     char ReadConsole(); // Read a char from console.
-    void RequestWrite();    // Provides sync access for reading
+    void RequestWrite();    // Provides sync access for writing
                             //the console.
-    void RequestRead();     // Provides sync access for writing
+    void RequestRead();     // Provides sync access for reading
                             //the console.
 private: 
     Console *console;   // NacOS console.

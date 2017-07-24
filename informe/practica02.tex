@@ -12,7 +12,6 @@ class Lock {
   public:
 	// Constructor: inicia el cerrojo como libre
   	Lock(const char* debugName);
-
   	~Lock();          // destructor
   	const char* getName() { return name; }	// para depuracion
 
@@ -27,7 +26,7 @@ class Lock {
   private:
     Thread *blocker; 	// thread que adquirio el cerrojo.
     const char* name;	// nombre del cerrojo.
-    Semaphore *semLock;     // Semaforo para aislar la zona compartida
+    Semaphore *semLock; // Semaforo para aislar la zona compartida
 };
 \end{lstlisting}
 \textsf{\underline{Implementación}}\\
@@ -73,9 +72,9 @@ class Condition {
     const char* getName() { return (name); };
 
     // Las tres operaciones sobre variables condicion.
-    // El hilo que invoque a cualquiera de estas operaciones debe tener
-    // adquirido el cerrojo correspondiente; de lo contrario se debe
-    // producir un error.
+    // El hilo que invoque a cualquiera de estas operaciones debe
+    // tener adquirido el cerrojo correspondiente; de lo contrario
+    // se debe producir un error.
     void Wait(); 	
     void Signal();   
     void Broadcast();
@@ -83,8 +82,8 @@ class Condition {
   private:
     const char* name; // Nombre de la v.c.
     Lock* lock;	// Cerrojo vinculado a la v.c.
-    List<Semaphore*> * semList; // Lista de semaforos correspondiente a los
-                                // hilos que se fueron bloqueando.
+    List<Semaphore*> * semList; //Lista de semaforos correspondiente
+                     // a los hilos que se fueron bloqueando.
 };
 \end{lstlisting}
 \textsf{\underline{Detalles de la implementación}}\\
@@ -109,7 +108,7 @@ Finalmente, para implementar \texttt{Condition::Broadcast} se realizaron los sig
 	\item Mientras haya algún semáforo en la lista \texttt{semList}, se invoca a \texttt{Signal}. De esta forma, logramos que se liberen todos los threads que se encontraban bloqueados.
 \end{enumerate}
 \section{Implementación de puertos}
-\textsf{\underline{Introcción}}\\
+\textsf{\underline{Introducción}}\\
 La siguiente clase implementa un sistema de mensajes entre hilos, el cual permite que los emisores se
 sincronicen con los receptores mediante un buffer.\\
 Se definen dos operaciones: \textbf{\texttt{Send}} y \textbf{\texttt{Receive}}. La primera espera a que esté libre el buffer e inserta un mensaje en él. La segunda, se encarga de la recepción de un mensaje, bloqueándose mientras no llegue ninguno.
@@ -118,7 +117,7 @@ class Puerto {
     public:
         Puerto(const char* name);
         ~Puerto();
-        const char* getName() { return portname; }	// para depuracion
+        const char* getName() { return portname; } //Para depuracion
 
         void Send(int message);
         void Receive(int* postbox);
@@ -132,7 +131,7 @@ class Puerto {
 }
 \end{lstlisting}
 \textsf{\underline{Detalles de la implementación}}\\
-En el constructor, se crean el cerrojo y las variables de configuración. Además, se inicializa el nombre del puerto y se indica que el buffer está libre.\\
+En el constructor, se crean el cerrojo y las variables de condición. Además, se asigna el nombre del puerto y se indica que el buffer está libre.\\
 Para implementar \texttt{Puerto::Send}, se realizaron los siguientes pasos:
 \begin{enumerate}
 	\item Se obtiene el cerrojo \texttt{lockPort}.
@@ -177,7 +176,7 @@ Thread::Join()
 Además, se modificaron los siguientes métodos:
 \begin{itemize}
 	\item \textbf{\texttt{Thread::Fork}} Se le agregó un argumento para setear la bandera \texttt{joinFlag} al momento de crear un hijo. Si el parámetro viene con un número mayor a cero, significa que el padre espera a que este nuevo hijo termine.
-	\item \textbf{\texttt{Thread::Finish}} Si está activada la bandera \texttt{joinFlag}, se envía un mensaje a través del puerto \texttt{joinPort}, indicando de esta forma que finalicé. Por lo tanto, puedo desbloquear el otro thread.
+	\item \textbf{\texttt{Thread::Finish}} Si está activada la bandera \texttt{joinFlag}, se envía un mensaje a través del puerto \texttt{joinPort}, indicando de esta forma que finalizo. Por lo tanto, se puede desbloquear al padre que espera.
 \end{itemize}
 Finalmente, mostraremos la secuencia de ejecución para utilizar esta característica:
 \begin{enumerate}
@@ -231,7 +230,7 @@ Para desarrollar las colas de prioridad múltiple, se modificó \textbf{\texttt{
     \item \textbf{Constructor de la clase} Se indica la cantidad de colas. Además, se inicializan las colas.
     \item \textbf{Destructor de la clase} Se eliminan las colas.
     \item \textbf{\texttt{Scheduler::ReadyToRun}} Agrega al thread al final de la cola correspondiente a su prioridad.
-    \item \textbf{\texttt{Scheduler::FindNextToRun}} Empezando por las colas de mayor prioridad, obtiene un thread para ejecutarse. Si la cola superior está vacía, sigue con la cola de prioridad inmediatamente menor. Y así sucesivamente hasta encotrar un thread.
+    \item \textbf{\texttt{Scheduler::FindNextToRun}} Empezando por las colas de mayor prioridad, obtiene un thread para ejecutarse. Si la cola superior está vacía, sigue con la cola de prioridad inmediatamente menor. Y así sucesivamente hasta encontrar un thread.
 \end{itemize}
 \subsection*{Inversión de prioridades}
 \textsf{\underline{Descripción del problema}}\\
@@ -243,7 +242,7 @@ Sean dos procesos A,B que comparten un recurso. Supongamos que se da la siguient
 Esta situación hace que queden invertidas las prioridades relativas entre ambos, ya que el proceso B tiene que esperar a que el proceso A libere el recurso compartido. Como consecuencia, el proceso de mayor prioridad se ejecutará luego del proceso de menor prioridad.\\
 \\\textsf{\underline{Detalles de la implementación de la solución}}\\
 Para solucionar el problema de inversión de prioridades, aplicamos una técnica llamada \emph{Herencia de Prioridades}: dados dos procesos que comparten un recurso, tales que tengan distintas prioridades. Supongamos que el proceso de menor prioridad esté bloqueando el recurso compartido. Entonces procedemos a cambiar la prioridad de dicho proceso, asignándole la prioridad del otro.\\
-En NachOS, este problema puede ocurrir cuando dos threads comparten un cerrojo o una variable de condición. Para solucionar este problema, se modificaron las siguientes clases:
+En \textbf{\textit{NachOS}}, este problema puede ocurrir cuando dos threads comparten un cerrojo o una variable de condición. Para solucionar este problema, se modificaron las siguientes clases:
 \begin{itemize}
     \item \texttt{synch.h} y \texttt{synch.cc}: Se agregó un cerrojo llamado \texttt{invPrController}, cuya función es controlar el cambio de prioridades.
     \item \texttt{scheduler.h} y \texttt{scheduler.cc}: Se agregó un método llamado \texttt{Scheduller::ChangePriorityQueue} cuya función es cambiar de cola a un thread. Para ello, recibe dos argumentos: un thread y una prioridad.

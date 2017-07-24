@@ -1,1 +1,30 @@
 \chapter{Resolución de la Práctica N\grad1}
+\begin{itemize}
+    \item \textit{¿Cuánta memoria tiene la máquina simulada para \textbf{\textit{NachOS}}?}\\
+    La máquina simulada tiene 32 páginas de 128 bytes.
+    \item \textit{¿Cómo cambiaría ese valor?}\\
+    Para cambiar ese valor hay que modificar la cantidad de páginas y/o modificar el tamaño de cada una de ellas. Las respectivas variables son \texttt{NumPhysPages} y \texttt{PageSize}. 
+    \item \textit{¿De qué tamaño es un disco?}\\
+    El disco simulado por \textbf{\textit{NachOS}} tiene 131 MB. Su estructura interna consta de 32 pistas de 32 sectores de 128 bytes cada una.
+    \item \textit{¿Cuántas instrucciones del \textbf{\textit{MIPS}} simula \textbf{\textit{NachOS}}?}\\
+\textbf{\textit{NachOS}} puede simular hasta 63 instrucciones del \textbf{\textit{MIPS}} (\texttt{MaxOpcode=63}) aunque sólo hay definidas 59 de ellas. El listado se encuentra en \texttt{mipssim.h}.
+    \item \textit{Explicar el código que procesa la instrucción \texttt{add}}\\
+\begin{lstlisting}[style=C]
+case OP_ADD:
+  sum = registers[(int)instr->rs] + registers[(int)instr->rt];
+  if (!((registers[(int)instr->rs] ^ registers[(int)instr->rt])
+             &  SIGN_BIT) 
+      && ( (registers[(int)instr->rs] ^ sum)
+             & SIGN_BIT)) {
+
+                   RaiseException(OverflowException, 0);
+                   return;
+    }
+    registers[(int)instr->rd] = sum;
+\end{lstlisting}
+
+   
+\end{itemize}
+
+    
+

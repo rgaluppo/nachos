@@ -45,7 +45,7 @@ class AddrSpace {
     void MemToSwap(int vpn);
     int UpdateTLB2(int p);
     void SwapToMem(TranslationEntry *page);
-    int* swapMemory;
+
 #endif
 #ifdef DEMAND_LOADING
     void LoadPage(TranslationEntry *page); // Load a page into memory.
@@ -68,8 +68,9 @@ class AddrSpace {
     NoffHeader noff_hdr; // Save header for load later
 #endif
 #ifdef VM_SWAP
-    OpenFile *swapFile;
-    char swapFileName[8];
+    OpenFile *swapFile;     // File for swapping.
+    char swapFileName[8];   // Name of swapping file.
+    int* swapMemory;    // Boolean list that indicates if a page is on SWAP.
 
   public:
     bool IsValid (int pos);

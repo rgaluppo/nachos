@@ -146,10 +146,9 @@ public:
 	
     void WriteConsole(char c); // Write a char into console.
     char ReadConsole(); // Read a char from console.
-    void RequestWrite();    // Provides sync access for reading
-                            //the console.
-    void RequestRead();     // Provides sync access for writing
-                            //the console.
+    void RequestWrite();    // Provides sync access for writing
+    void RequestRead();     // Provides sync access for reading
+
 private: 
     Console *console;   // NacOS console.
     Semaphore *readAvail,   // For reader console handler.
@@ -165,8 +164,7 @@ Cuando se levanta el hilo principal de \textbf{\textit{NachOS}}, se crea una con
 #define CONSOLE_INPUT	0
 #define CONSOLE_OUTPUT	1
 \end{lstlisting}
-\newpage
-\subsection*{SC\_Create}
+\subsection*{Create}
 Dado un nombre de archivo, su función es crearlo.
 \begin{lstlisting}[style=C]
 void Create(char *name);

@@ -10,25 +10,29 @@ if (which == SyscallException) {
     const char *exception = "";
     switch(which) {
     	...
-    	
-		case PageFaultException:
-		{
-	    	int failVirtAddr = machine -> ReadRegister(BadVAddrReg);
+        case PageFaultException:
+        {
+            int failVirtAddr = machine -> ReadRegister(BadVAddrReg);
 
-	        DEBUG('v',"\n Antes de actualizar la TLB: failVAddr=%d \n", failVirtAddr);
-			currentThread->space->UpdateTLB(failVirtAddr / PageSize);
-	        return;
-		}
-	    case ReadOnlyException: 
-	    	exception = "ReadOnlyException";
-    	    break;	    
-    	...
-    	
+            DEBUG('v',"Antes de actualizar la TLB: failVAddr=%d\n",
+                    failVirtAddr);
+            currentThread->space->UpdateTLB(failVirtAddr / PageSize);
+            return;
+        }
+        case ReadOnlyException: 
+        exception = "ReadOnlyException";
+        // Solamente notificamos que ocurrio.
+        printf("An exception was triggered: which=%s  type=%d\n",
+                    exception, type);
+        return;    
+        ...
+        
     	default:
-                printf("Unexpected user mode exception.");
-                ASSERT(false);
+            printf("Unexpected user mode exception.");
+            ASSERT(false);
     }
-    printf("Unexpected user mode exception:\t which=%s  type=%d\n", exception, type);
+    printf("Unexpected exception:\t which=%s  type=%d\n",
+                    exception, type);
     ASSERT(false);
 }
 \end{lstlisting}
@@ -47,28 +51,23 @@ int numPagesFound;  // number of virtual memory page founds
 El primero se incrementa cuando ocurre un fallo de paginación. Esto ocurre cuando se captura la excepción \texttt{PageFaultException}. En cambio, el segundo se incrementa cuando se encuentra la pagina. Ocurre al final del constructor \texttt{Translate::Translate}.\\
 Para modificar el tamaño de la TLB, se modifica la variable \texttt{TLBSize}, declarada en \texttt{system.h}.
 \subsection*{Resultados}
-Se realizaron distintas pruebas variando la cantidad de entradas de la tabla. Los valores de prueba fueron 4, 16, 32, 64, 128 y 256. Ademas, la pagina que sale es elegida al azar.\\
+Se realizaron distintas pruebas variando la cantidad de entradas de la tabla. Los valores de prueba fueron 4, 16, 32, 64 y 128. Además, la página que sale es elegida al azar.\\
 En \ref{tab:practica04:statics} se muestra los porcentajes de aciertos y fallas de la \textbf{TLB}, para los programas \texttt{matmult.c} y \texttt{sort.c}.\\ 
 \begin{table}
 	\center
-	\begin{tabular}{|c|c|c|}
+	\begin{tabular}{|c|c|c|c|c|}
 	    \hline
-		\multirow{2}{*}{TLB size}   &    \multicolumn{2}{c|}{Programa}           \\
-		\cline{2-3}
-                                    &    \texttt{mathmult}    &    \texttt{sort} \\
+		\multirow{3}{*}{TLB size}   &    \multicolumn{4}{c|}{Programa}           \\
+		\cline{2-5}
+            &            \multicolumn{2}{c|}{\texttt{mathmult}}    &    \multicolumn{2}{c|}{\texttt{sort}} \\
+        \cline{2-5}
+            &    faults    &    hits       &    faults    &    hits    \\
 		\hline
-		\multirow{2}{*}{4}          &     faults:  7,60\%     &    faults:  4,36\% \\
-		                            &     hits  : 92,39\%     &    hits  : 95,64\%    \\               
-		\multirow{2}{*}{16}         &     faults:  0,569\%    &    faults:  0,042\%    \\
-		                            &     hits  : 99,43\%     &    hits  : 99,958\%    \\             
-		\multirow{2}{*}{32}         &     faults:  0,013\%    &    faults:  0,035\%    \\
-		                            &     hits  : 99,986\%    &    hits  : 99,996\%    \\               
-		\multirow{2}{*}{64}         &     faults:  0,006\%    &    faults:  0,0001\%    \\
-		                            &     hits  : 99,993\%    &    hits  : 99,999\%    \\               
-		\multirow{2}{*}{128}        &     faults:  0,006\%    &    faults:  0,0001\%    \\
-		                            &     hits  : 99,993\%    &    hits  : 99,999\%    \\               
-		\multirow{2}{*}{256}        &     faults:  0,006\%    &    faults:  0,0002\%    \\
-		                            &     hits  : 99,994\%    &    hits  : 99,999\%    \\ \hline             
+		4   &    7,60\%    &    92,39\%    &    4,36\%    &    95,64\% \\
+       16   &    0,569\%   &    99,43\%    &    0,042\%   &    99,958\%   \\
+       32   &    0,013\%   &    99,986\%   &    0,035\%   &    99,996\%    \\               
+       64   &    0,006\%   &    99,993\%   &    0,0001\%  &    99,999\%    \\               
+      128   &    0,006\%   &    99,993\%   &    0,0001\%  &    99,999\%    \\    \hline             
 	\end{tabular}
     \caption{Estadísticas para los programas \texttt{mathmult} y \texttt{sort}, variando el tamaño de la TLB.}
 	\label{tab:practica04:statics}
@@ -82,12 +81,64 @@ Se agregaron los siguientes métodos a la clase \texttt{AddrSpace}:
 \begin{lstlisting}[style=C]
   public:
     ...
-    void OnDemandLoad(TranslationEntry *page, int errorAddr); // Load page on memory by demand.
-    void LoadPage(TranslationEntry *page); // Load a page into memory.
+     // Load page on memory by demand.
+    void OnDemandLoad(TranslationEntry *page, int errorAddr);
+    void LoadPage(TranslationEntry *page);//Load a page into memory.
   private:
     OpenFile *executable_file; // Save executeble for load later.
     NoffHeader noff_hdr; // Save header for load later
 \end{lstlisting}
 Se modificó el método \texttt{AddrSpace::UpdateTLB} para que llame a \texttt{AddrSpace::OnDemandLoad}, cuya función es chequear el estado de la página. Si ya tiene asignada una dirección física, se continúa con la actualización del \textbf{TLB} como se explicó en \nameref{update_TLB}. En caso contrario, se llama al método \texttt{AddrSpace::LoadPage}, el cual le asigna a la página una posición en el mapa de bits y la carga en memoria. Finalmente, continua la ejecución de \texttt{AddrSpace::UpdateTLB} para actualizar el \textbf{TLB}.
-\section{Implementar la política de paginación FIFO}
+\section{Implementar la política de paginación FIFO e implementar SWAP}
+\subsection*{Desarrollo de SWAP}
+Con el objetivo de proveer la ilusión de una memoria mucho más grande que la física, cuando se crea el espacio de direcciones para un programa, se creará un archivo que servirá de \textbf{SWAP}.\\
+Además, necesitamos saber qué páginas se encuentran \textit{swappeadas}. Para manejar esto, se crea un arreglo \texttt{swapMemory} de booleanos, donde el \texttt{i-ésimo} elemento indica si la página \texttt{i} está o no \textit{swappeada}.\newpage
+Se agregaron los siguiente miembros a la clase \texttt{AddrSpace}:
+\begin{lstlisting}[style=C]
+private:
+    ...
+    OpenFile *swapFile;     // File for swapping.
+    char swapFileName[8];   // Name of swapping file.
+    int* swapMemory;    // Boolean list that indicates if a page is on SWAP.
+\end{lstlisting}
+Finalmente, se creó una estructura para llevar un control de las direcciones físicas ocupadas y con qué direcciones virtuales y procesos están vinculadas. Esta estructura está implementada en la clase \texttt{CoreMap}, y es una modificación de la clase \texttt{BitMap}:
+\begin{lstlisting}[style=C]
+class CoreMap {
+  public:
+    CoreMap(int nitems); // Initialize a CoreMap, with "nitems" bits
+                        // initially, all bits are cleared.
+
+    ~CoreMap();    // De-allocate CoreMap
+    
+    void Mark(int which, int pid, int vir);    // Set the "nth" bit
+    void Clear(int which);    // Clear the "nth" bit
+
+    int Find(int virtualPage); //Effect, set the bit. If no bits are
+        // clear, find a page candite to leave the memory and
+        // put it into swap. Then, return his place into the memory.
+    
+    int NumClear();    // Return the number of clear bits
+    void Print();    // Print contents of CoreMap
+    
+  private:
+    BitMap *memoryMap; // Indicates wich frames are free.
+    int numbit;    // Indicates the amount of elements of memoryMap.
+
+    int* pids;    // List of pids. The pid[i] is the threadId
+                 // corresponding to page i.
+    
+    int* virAdds;    // List of virtual address that was loaded
+                    // into the memory.
+
+
+    int fifoAlgorithm(); // Return the virtual address of the page 
+                        // candidated to leave memory using
+                        // FIFO algorithm.
+
+    int secondChanceAlgorithm(); // Return the virtual address of
+                        // the page candidated to leave memory
+                        // using 'second chance' algorithm.
+};
+\end{lstlisting}
+\subsection*{Política de paginación FIFO}
 \section{Mejorar la política de paginación}

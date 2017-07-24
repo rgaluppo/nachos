@@ -15,18 +15,10 @@
 #ifndef COREMAP_H
 #define COREMAP_H
 
-#include "copyright.h"
 #include "utility.h"
 #include "bitmap.h"
 #include "translate.h"
 #include "list.h"
-
-
-
-
-// Definitions helpful for representing a CoreMap as an array of integers
-#define BitsInByte 	8
-#define BitsInWord 	32
 
 // The following class defines a "CoreMap" -- an array of bits,
 // each of which can be independently set, cleared, and tested.
@@ -35,7 +27,6 @@
 // for instance, disk sectors, or main memory pages.
 // Each bit represents whether the corresponding sector or page is
 // in use or free.
-
 #ifdef VM_SWAP
 class CoreMap {
   public:
@@ -45,24 +36,24 @@ class CoreMap {
     
     void Mark(int which, int pid, int vir);   	// Set the "nth" bit
     void Clear(int which);  	// Clear the "nth" bit
-    bool Test(int which);   	// Is the "nth" bit set?
-    //int Find(TranslationEntry *page);            	// Return the # of a clear bit, and as a side
-	int Find(int virtualPage);
-				// effect, set the bit. 
-				// If no bits are clear, return -1.
+
+    int Find(int virtualPage); // effect, set the bit. If no bits are clear,
+                // find a page candite to leave the memory and put it into swap.
+                // Then, return his place into the memory.
     int NumClear();		// Return the number of clear bits
 
-    void Print();		// Print contents of CoreMap
-    
-
-
+    void Print();		// Print contents of CoreMap    
   private:
-	BitMap *bitmap;
-	int numbit;
+    BitMap *memoryMap;  // Indicates using a bit map, wich frames are free.
+    int numbit;         // Indicates the amount of elements of memoryMap.
 
-	int* pids;			// pid correspondiente a la pagina i
-	int* virAdds;		// direcciones virtuales de paginas cargadas en memoria 
+    int* pids;			// List of pids. The pid[i] is the threadId corresponding to page i.
+    int* virAdds;		// List of virtual address that was loaded into the memory.
 
+    int fifoAlgorithm(); // Return the virtual address of the page candidated to leave memory
+                // using FIFO algorithm.
+    int secondChanceAlgorithm(); // Return the virtual address of the page candidated to leave
+                // memory using 'second chance' algorithm.
 };
 
 #endif
