@@ -65,12 +65,11 @@ Finish            &    threads/thread.cc    \\
 \item \textit{¿Porqué se prefiere emular una CPU en vez de utilizar directamente la CPU existente?}\\
 En primer lugar, si no se simulara \textbf{\textit{NachOS}}, se necesitaría una máquina con \textbf{\textit{MIPS}} para correrlo; o que se implemente para otras arquitecturas(Intel 64, por ejemplo).\\
 En segundo lugar, si se utilizara una máquina real, si por error de programación un test genera un proceso que cae en deadlock, habría que reiniciar la máquina real. Al simular la CPU, podemos matar ese proceso y volver a testear. Lo mismo sucedería si un test escribe mal en el disco o en la memoria (Segmentation Fault, por ejemplo).\\
-Finalmente, se desea que el aprendizaje del alumno esté enfocado al SO y no al hardware, los dispositivos emulados resultan sencillos de entender y manejar. Y dado que \textbf{\textit{NachOS}} se ejecuta como un proceso, se puede desarrollar software y depurarlo con absoluto control. Incluso podrían correr varios \textbf{\textit{NachOS}} a la vez en la misma máquina.\\
-
+Finalmente, se desea que el aprendizaje del alumno esté enfocado al SO y no al hardware, los dispositivos emulados resultan sencillos de entender y manejar. Y dado que \textbf{\textit{NachOS}} se ejecuta como un proceso, se puede desarrollar software y depurarlo con absoluto control. Incluso podrían correr varios \textbf{\textit{NachOS}} a la vez en la misma máquina.\newpage
 
 \item \textit{Comente el efecto de las distintas banderas de \texttt{debug}.}
 
-\begin{table}[hb]
+\begin{table}[!h]
 	\center
     \begin{tabular}{|c|l|}
 \hline
@@ -101,7 +100,7 @@ Bandera & Efecto \\
 
 Las constantes de pre-procesador mencionadas están definidas en los archivos \texttt{Makefile} de ciertos directorios, los cuales se mencionan en el \autoref{preprocessing_constants}.
 
-\begin{table}[hb]
+\begin{table}[!h]
 	\center
     \begin{tabular}{|c|l|}
 \hline 
