@@ -1,5 +1,5 @@
 \chapter{Resolución de la Práctica N\grad1}
-\begin{itemize}
+\begin{enumerate}
     \item \textit{¿Cuánta memoria tiene la máquina simulada para \textbf{\textit{NachOS}}?}\\
     La máquina simulada tiene 32 páginas de 128 bytes.
     \item \textit{¿Cómo cambiaría ese valor?}\\
@@ -9,6 +9,7 @@
     \item \textit{¿Cuántas instrucciones del \textbf{\textit{MIPS}} simula \textbf{\textit{NachOS}}?}\\
 \textbf{\textit{NachOS}} puede simular hasta 63 instrucciones del \textbf{\textit{MIPS}} (\texttt{MaxOpcode=63}) aunque sólo hay definidas 59 de ellas. El listado se encuentra en \texttt{mipssim.h}.
     \item \textit{Explicar el código que procesa la instrucción \texttt{add}}\\
+\texttt{OP\_ADD} realiza la suma del contenido de dos registros cuyo valor son enteros con signo, \texttt{rs} y \texttt{rt}, y siempre que no ocurra \textbf{\textit{overflow}} almacena el resultado en \texttt{rd}; en caso contrario lanza la excepción \texttt{OverflowException}.
 \begin{lstlisting}[style=C]
 case OP_ADD:
   sum = registers[(int)instr->rs] + registers[(int)instr->rt];
@@ -19,12 +20,131 @@ case OP_ADD:
 
                    RaiseException(OverflowException, 0);
                    return;
-    }
-    registers[(int)instr->rd] = sum;
+  }
+  
+  registers[(int)instr->rd] = sum;
 \end{lstlisting}
+Además, se utiliza la constante \texttt{SIGN\_BIT}, definida en \texttt{mipssim.h}. Es una máscara cuyo valor es  \texttt{0x80000000}. Nos sirve para saber que signo tiene un número.\\
+Por otro lado, \textbf{\textit{Overflow}} en una suma solamente ocurre cuando los operandos tienen el mismo signo y el resultado tiene distinto signo. Esto sucede porque el acarreo cambia el bit de signo.\\
+Voliendo a la condición del if:
+\begin{verbatim}
+    ~( sign1 XOR sign2) && (sign1 XOR signResult)
+\end{verbatim}
+donde:
+\begin{verbatim}
+    sign1 = num1 & SIGN_BIT      // Obtenemos el signo del operando1
+    sign2 = num2 & SIGN_BIT      // Obtenemos el signo del operando2
+    signResult = sum & SIGN_BIT  // Obtenemos el signo del resultado de la suma
+\end{verbatim}
 
-   
-\end{itemize}
+\item \textit{Nombrar los archivos fuente en los que figuran las funciones y métodos llamados por el \texttt{main} de \textbf{\textit{NachOS}} al ejecutarlo en el directorio \texttt{threads} (hasta dos niveles de profundidad).}
+\begin{center}
+    \begin{tabular}{|c|l|}
+\hline
+Funciones llamadas por \texttt{main.cc}    &    Están definidas en    \\
+\hline
+DEBUG             &    threads/utility.cc    \\
+ASSERT            &    threads/utility.h    \\
+Initialize        &    threads/system.cc    \\
+ThreadTest        &    threads/threadtest.cc    \\
+StartProcess      &    userprog/progtest.cc    \\
+ConsoleTest       &    userprog/progtest.cc    \\
+Halt              &    machine/interrupt.cc    \\
+Copy              &    filesys/fstest.cc	\\
+Print             &    filesys/fstest.cc	\\
+Remove            &    filesys/directory.cc    \\
+List              &    filesys/directory.cc    \\
+PerfonmanceTest   &    filesys/fstest.cc	\\
+Delay             &    machine/sysdep.cc    \\
+MailTest          &    network/nettest.cc    \\
+Finish            &    threads/thread.cc    \\
+\hline
+    \end{tabular}
+\end{center}
 
-    
+\item \textit{¿Porqué se prefiere emular una CPU en vez de utilizar directamente la CPU existente?}\\
+En primer lugar, si no se simulara \textbf{\textit{NachOS}}, se necesitaría una máquina con \textbf{\textit{MIPS}} para correrlo; o que se implemente para otras arquitecturas(Intel 64, por ejemplo).\\
+En segundo lugar, si se utilizara una máquina real, si por error de programación un test genera un proceso que cae en deadlock, habría que reiniciar la máquina real. Al simular la CPU, podemos matar ese proceso y volver a testear. Lo mismo sucedería si un test escribe mal en el disco o en la memoria (Segmentation Fault, por ejemplo).\\
+Finalmente, se desea que el aprendizaje del alumno esté enfocado al SO y no al hardware, los dispositivos emulados resultan sencillos de entender y manejar. Y dado que \textbf{\textit{NachOS}} se ejecuta como un proceso, se puede desarrollar software y depurarlo con absoluto control. Incluso podrían correr varios \textbf{\textit{NachOS}} a la vez en la misma máquina.\\
 
+
+\item \textit{Comente el efecto de las distintas banderas de \texttt{debug}.}
+
+\begin{table}[hb]
+	\center
+    \begin{tabular}{|c|l|}
+\hline
+Bandera & Efecto \\
+\hline
+\texttt{+} & muestra todos los mensajes de \texttt{debug}. Es decir, activa todas las banderas. \\
+\texttt{t} & mensajes relacionados al manejo de threads.    \\
+\texttt{s} & mensajes relacionadas a la sincronización de threads.    \\
+\texttt{i} & mensajes relacionados con interrupciones.\\
+\texttt{m} & mensajes relacionados a la máquina \textbf{\textit{MIPS}} simulada por \textbf{\textit{NachOS}}.  \\
+\texttt{d} & mensajes relacionados al disco simulado por \textbf{\textit{NachOS}}.    \\
+\texttt{f} & mensajes relacionados al sistema de archivos.    \\
+\texttt{a} & mensajes relacionados con el manejo de direcciones.\\
+\texttt{n} & mensajes relacionados a la red simulada por \textbf{\textit{NachOS}}.\\
+\hline
+    \end{tabular}
+    \caption{Debugging flags.}
+    \label{debugging_flags}
+\end{table}
+
+\item \textit{¿Qué efecto hacen las macros \texttt{ASSERT} y \texttt{DEBUG} definidas en \texttt{utility.h}?}
+\begin{description}
+    \item $ASSERT$ Recibe una condición. Si se reduce a \texttt{false}, imprime un mensaje y hace un \texttt{core dump}, indicando el archivo y la línea donde ocurrió el mismo. Sirve para documentar condiciones ciertas.
+    \item $DEBUG$ Imprime un mensaje de depuración sólo si las banderas están habilitadas(\texttt{./nachos -d}). Además, permite clasificar los mensajes, asignado a cada clase una bandera (ver \autoref{debugging_flags}).
+\end{description}
+
+\item \textit{¿Dónde están definidas las constantes \texttt{USER\_PROGRAM}, \texttt{FILESYS\_NEEDED}, \texttt{FILESYS\_STUB} y \texttt{NETWORK}?}
+
+Las constantes de pre-procesador mencionadas están definidas en los archivos \texttt{Makefile} de ciertos directorios, los cuales se mencionan en el \autoref{preprocessing_constants}.
+
+\begin{table}[hb]
+	\center
+    \begin{tabular}{|c|l|}
+\hline 
+Constante & Directorios\\
+\hline
+$USER\_PROGRAM$ & userprog, vm, network, filesys \\
+$FILESYS\_NEEDED$ & userprog, vm, network, filesys \\
+$FILESYS\_STUB$ & userprog, vm \\
+$NETWORK$ & network \\
+\hline
+    \end{tabular}
+    \caption{Ubicación de las constantes de pre-procesamiento.}
+    \label{preprocessing_constants}
+\end{table}
+
+
+\item \textit{¿Cuál es la diferencia entre las clases \texttt{List} y \texttt{SynchList}?}\\
+La principal diferencia es que la segunda clase ofrece estructuras de datos que permiten un acceso sincronizado a las listas (sus métodos son \textit{thread safety}). Mantiene los siguientes invariantes:
+\begin{enumerate}
+    \item Si un \texttt{thread} intenta remover un elemento de la lista, va a esperar a que dicha lista tenga al menos un elemento.
+    \item Un \texttt{thread} a la vez puede acceder a la lista.
+\end{enumerate}
+
+\item \textit{¿En qué archivos está definida la función \texttt{main}? ¿En qué archivo está definida la función \texttt{main} del ejecutable \textbf{\textit{NachOS}} del directorio \texttt{userprog}?}\\
+La función \texttt{main} está definida en: test/matmult.c, test/halt.c, test/sort.c, test/shell.c, bin/coff2noff.c, bin/coff2flat.c, bin/main.c, bin/out.c, bin/disasm.c y en threads/main.cc.\\
+La función \texttt{main} del ejecutable \textbf{\textit{NachOS}} del directorio \texttt{userprog} está definida en el archivo \texttt{threads/main.cc}.\\
+\item \textit{¿Qué línea de comandos soporta \textbf{\textit{NachOS}}? ¿Qué efecto hace la opción \texttt{-rs}?}
+Signatura de \textbf{\textit{NachOS}}, definida en el archivo \texttt{main.cc}.
+\begin{lstlisting}[style=C]
+nachos -d <debugflags> -rs <random seed #>
+       -s -x <nachos file> -c <consoleIn> <consoleOut>
+       -f -cp <unix file> <nachos file>
+       -p <nachos file> -r <nachos file> -l -D -t
+       -n <network reliability> -m <machine id>
+       -o <other machine id>
+       -z
+\end{lstlisting}
+El comando \texttt{-{}rs} produce que se llame al método \texttt{Yield} aleatoriamente dentro de la ejecución. La función de dicho método es detener la ejecución del \texttt{thread} actual y selecciona uno nuevo de la lista de \texttt{thread} listos para ejecutar, si no hay ninguno otro listo, sigue ejecutando el \texttt{thread} actual. En otras palabras, el \texttt{Scheduller} pasa a ser preemtivo.\\
+
+\item \textit{Modificar el ejemplo del directorio threads para que se generen 5 threads en lugar de 2.}\\
+Se modificó el archivo \texttt{threadtest.cc} para que contenga varios tests. Cuando se llama a \texttt{ThreadTest}, se ejecutan una serie de test, cada uno de ellos separados en subrutinas. La modificación que se pide se encuentra en el método \texttt{SimpleTest}.
+\item \textit{Modificar el ejemplo para que estos cinco hilos utilicen un semáforo inicializado en 3. Esto sólo debe ocurrir si se define la macro de compilación $SEMAPHORE\_TEST$.}\\
+Vale la misma aclaración que en la pregunta anterior. En esta ocasión, la modificación se encuentra en el método \texttt{SemaphoreTest}.
+\item \textit{Agregar al ejemplo anterior una linea de debug donde diga cuando cada hilo hace un P() y cuando un V(). La salida debe verse por pantalla solamente si se activa ESA bandera de debug.}\\
+Se modificó el archivo \texttt{synch.cc} para agregar las lineas de debug. Se utilizo la bandera \texttt{'S'}.
+\end{enumerate}

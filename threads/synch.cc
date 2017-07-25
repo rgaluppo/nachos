@@ -65,6 +65,7 @@ void
 Semaphore::P()
 {
     IntStatus oldLevel = interrupt->SetLevel(IntOff);	// disable interrupts
+    DEBUG('T', "El thread %s hizo P()\n", currentThread->getName());
     
     while (value == 0) { 				// semaphore not available
 		queue->Append(currentThread);	// so go to sleep
@@ -89,6 +90,7 @@ Semaphore::V()
 {
     Thread *thread;
     IntStatus oldLevel = interrupt->SetLevel(IntOff);
+    DEBUG('T', "El thread %s hizo V()\n", currentThread->getName());
 
     thread = queue->Remove();
     if (thread != NULL)	   // make thread ready, consuming the V immediately

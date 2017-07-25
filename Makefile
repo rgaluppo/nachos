@@ -23,7 +23,7 @@ all:
 
 # don't delete executables in "test" in case there is no cross-compiler
 clean:
-	$(SH) -c "rm -f */{core,nachos,DISK,*.o,swtch.s} test/*.coff bin/{coff2flat,coff2noff,disassemble,out} vm/swap.* vm/stats.txt"
+	$(SH) -c "rm -f */{core,nachos,DISK,*.o,swtch.s} test/*.coff bin/{coff2flat,coff2noff,disassemble,out} vm/swap.* vm/stats.txt informe/*.aux informe/*.bbl  informe/*.blg informe/*.out informe/*.toc informe/*.synctex.gz"
 
 print:
 	$(SH) -c "$(LPR) Makefile* */Makefile"

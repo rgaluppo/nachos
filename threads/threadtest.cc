@@ -15,6 +15,7 @@ using namespace std;
 
 struct timespec timeOut, timeOut2, remains, remains2;
 Puerto* puerto = new Puerto("rosario");
+Semaphore *s = new Semaphore("Ejercicio 15", 3);
 
 //----------------------------------------------------------------------
 // SimpleThread
@@ -28,16 +29,34 @@ Puerto* puerto = new Puerto("rosario");
 void
 SimpleThread(void* name)
 {
-    DEBUG('t', "Entering SimpleTest\n");
+    printf("Thread %s is entering to SimpleThread\n", currentThread->getName());
     currentThread-> Yield();
     char* threadName = (char*)name;
-    for (int num = 0; num < 10; num++) {
+    for (int num = 0; num < 5; num++) {
         printf("*** thread %s looped %d times\n", threadName, num);
+        currentThread-> Yield();
     }
-    currentThread-> Yield();
     printf(">>> Thread %s has finished\n", threadName);
 }
 
+//----------------------------------------------------------------------
+// AuxSemaphoreFun
+//----------------------------------------------------------------------
+void
+AuxSemaphoreFun(void* name)
+{
+    printf("Thread %s is entering to AuxSemaphoreFun\n", currentThread->getName());
+
+    char* threadName = (char*)name;
+
+    for (int num = 0; num < 5; num++) {
+        s->P();
+        printf("*** thread %s looped %d times\n", threadName, num);
+        s->V();
+        currentThread-> Yield();
+    }
+    printf(">>> Thread %s has finished\n", threadName);
+}
 //----------------------------------------------------------------------
 // AuxLockFun
 //----------------------------------------------------------------------
@@ -73,6 +92,57 @@ OtherFunction(void* name)
     nanosleep(&timeOut, &remains);
     puerto->Send(2);
 }
+
+//----------------------------------------------------------------------
+// SimpleTest
+//----------------------------------------------------------------------
+void
+SimpleTest()
+{
+    DEBUG('T', "Entering SimpleTest\n");
+    int i;
+    Thread* newThread;
+
+    for(i=0; i < 5; i++) {
+        char *threadname = new char[128];
+        stringstream ss;
+        string aux("Hilo ");
+
+        ss << i;
+        string str = ss.str();
+        aux += str;
+
+        strcpy(threadname, aux.c_str());
+        newThread = new Thread (threadname, 0);
+        newThread->Fork (SimpleThread, (void*)threadname, 0);
+    }
+}
+
+//----------------------------------------------------------------------
+// SemaphoreTest
+//----------------------------------------------------------------------
+void
+SemaphoreTest()
+{
+    DEBUG('T', "Entering SemaphoreTest\n");
+    int i;
+    Thread* newThread;
+
+    for(i=0; i < 5; i++) {
+        char *threadname = new char[128];
+        stringstream ss;
+        string aux("Hilo ");
+
+        ss << i;
+        string str = ss.str();
+        aux += str;
+
+        strcpy(threadname, aux.c_str());
+        newThread = new Thread (threadname, 0);
+        newThread->Fork (AuxSemaphoreFun, (void*)threadname, 0);
+    }
+}
+
 
 //----------------------------------------------------------------------
 // JoinTest
@@ -214,7 +284,13 @@ PortTest()
 void
 ThreadTest()
 {
-    JoinTest();
-    Lock_and_PriorityTest();
-    PortTest();
+    SimpleTest();
+
+#ifdef SEMAPHORE_TEST
+    SemaphoreTest();
+#endif
+
+    //JoinTest();
+    //Lock_and_PriorityTest();
+    //PortTest();
 }

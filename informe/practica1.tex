@@ -73,14 +73,8 @@ backgroundcolor=\color{gray75},
     El segundo se encuentr en code/machine/disk.h :
         + SectorSize. Actualmente su valor es 128.
 
-3. El disco simlado por Nachos tiene 131 MBytes. Su estructura interna consta de 32 pistas de 32 sectores de 128 bytes cada una. Esto esta definido en las siguientes varibles :
-    + SectorSize
-    + SectorsPerTrack
-    + NumTracks
 
-Todas ellas se encuentran definidas en /code/machine/disk.h
-
-4. Las instrucciones de MIPS que implementa Nachos son 57. El listado se encuenta en code/machine/mipssim.h . A continuacion se listan:
+ A continuacion se listan:
 ADD – Add (with overflow)
 ADDI -- Add immediate (with overflow)
 ADDIU -- Add immediate unsigned (no overflow)
@@ -177,12 +171,14 @@ $
 	break;
 \end{lstlisting}
 
-Overflow en una suma solo ocurre cuando sumo dos numeros del mismo signo y el resultado tiene distinto signo. Esto tiene lugar porque el acarreo cambia el bit de signo.
-Entonces hacemos que la condicion del if sea:      ~ ( sign1 XOR sign2) && (sign1 XOR signResult)
-Estos valores lo calculamos de la siguente manera:
+Overflow en una suma solo ocurre cuando sumo dos números del mismo signo y el resultado tiene distinto signo. Esto esuc porque el acarreo cambia el bit de signo.
+Entonces hacemos que la condición del if sea:      \begin{verbatim}~ ( sign1 XOR sign2) && (sign1 XOR signResult)\end{verbatim}
+Estos valores lo calculamos de la siguiente manera:
+\begin{verbatim}
     sign1 = num1 & SIGN_BIT
     sign2 = num2 & SIGN_BIT
     signResult = sum & SIGN_BIT
+\end{verbatim}
 
 Reference: Calculating Overflow Flag: Method 1 - http://teaching.idallen.com/dat2343/10f/notes/040_overflow.txt
 
