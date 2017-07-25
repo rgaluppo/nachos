@@ -15,3 +15,14 @@
 *.coff
 userprog/nachos
 threads/nachos
+swtch.s
+test/*.coff 
+vm/swap.*
+vm/stats.txt
+informe/*.aux
+informe/*.bbl
+informe/*.blg
+informe/*.out
+informe/*.toc
+informe/*.synctex.gz"
+
