@@ -107,7 +107,6 @@ AddrSpace::costructorForUserProg(OpenFile *executable, int prg_argc, char** prg_
     size = numPages * PageSize;
 
 // check we're not trying to run something too big -.-
-    ASSERT(numPages <=(unsigned) NumPhysPages);
     ASSERT(numPages <= (unsigned) memoryMap->NumClear());
 
     DEBUG('a', "Initializing address space, num pages %d, size %d\n", numPages, size);
@@ -179,7 +178,6 @@ AddrSpace::costructorForDemandLoading(OpenFile *executable, int prg_argc, char**
         pageTable[i].physicalPage = firstFreePhySpace;
         pageTable[i].valid = false;
         swapMemory[i] = false;
-        DEBUG('W', "Pagina por Demanda\n");
 #else
         firstFreePhySpace = memoryMap->Find();
         ASSERT(firstFreePhySpace != -1);	//Always found space in physical memory.
@@ -236,7 +234,6 @@ AddrSpace::costructorForSwap(OpenFile *executable, int prg_argc, char** prg_argv
 
 #ifndef VM
 // check we're not trying to run something too big -.-
-    ASSERT(numPages <=(unsigned) NumPhysPages);
     ASSERT(numPages <= (unsigned) memoryMap->NumClear());
 #endif
 
@@ -254,20 +251,19 @@ AddrSpace::costructorForSwap(OpenFile *executable, int prg_argc, char** prg_argv
         fifo->Append(pageTable[i].physicalPage);
         swapMemory[i] = false;
         #endif
-    #endif // FIN VM_SWAP
+    #endif
     #ifdef DEMAND_LOADING
         pageTable[i].physicalPage = firstFreePhySpace;
         pageTable[i].valid = false;
         swapMemory[i] = false;
-        DEBUG('W', "Pagina por Demanda\n");
-    #endif// FIN DEMAND_LOADING
+    #endif
     #ifndef VM_SWAP
         #ifndef DEMAND_LOADING
         firstFreePhySpace = memoryMap->Find();
         ASSERT(firstFreePhySpace != -1);	//Always found space in physical memory.
         pageTable[i].physicalPage = firstFreePhySpace;
         #endif
-    #endif //FIN VM_SWAP
+    #endif
 #else
         firstFreePhySpace = memoryMap->Find();
         ASSERT(firstFreePhySpace != -1);	//Always found space in physical memory.
@@ -292,12 +288,9 @@ AddrSpace::costructorForSwap(OpenFile *executable, int prg_argc, char** prg_argv
     noff_hdr = noffH;
     executable_file = executable;
 #endif
-#ifdef VM_SWAP
+
     sprintf(swapFileName, "swap.%d", pid);
-    ASSERT(fileSystem->Create(swapFileName, size));
     swapFile = fileSystem->Open(swapFileName);
-    DEBUG('G', "CREO SWAP %s \n",swapFileName);
- #endif
 
 }
 #endif
@@ -329,103 +322,6 @@ AddrSpace::AddrSpace(OpenFile *executable, int prg_argc, char** prg_argv, int pi
     costructorForUserProg(executable, prg_argc, prg_argv, pid);
 #endif
 
-    /*
-    NoffHeader noffH;
-    unsigned int i,
-            size;
-#ifndef DEMAND_LOADING
-    unsigned int offset;
-#endif
-    argc = prg_argc;
-    argv = prg_argv;
-
-    executable->ReadAt((char *)&noffH, sizeof(noffH), 0);
-    if ((noffH.noffMagic != NOFFMAGIC) && 
-		(WordToHost(noffH.noffMagic) == NOFFMAGIC))
-    	SwapHeader(&noffH);
-    ASSERT(noffH.noffMagic == NOFFMAGIC);
-
-// how big is address space?
-    size = noffH.code.size + noffH.initData.size + noffH.uninitData.size 
-			+ UserStackSize;	// we need to increase the size
-						// to leave room for the stack
-    numPages = divRoundUp(size, PageSize);
-    size = numPages * PageSize;
-#if defined(VM_SWAP) || defined(DEMAND_LOADING)
-    swapMemory = new int [numPages];
-#endif
-
-#ifndef VM
-// check we're not trying to run something too big -.-
-    ASSERT(numPages <=(unsigned) NumPhysPages);
-    ASSERT(numPages <= (unsigned) memoryMap->NumClear());
-#endif
-
-    DEBUG('a', "Initializing address space, num pages %d, size %d\n", numPages, size);
-// first, set up the translation 
-    pageTable = new TranslationEntry[numPages];
-
-    int firstFreePhySpace = -1;
-    for (i = 0; i < numPages; i++) {
-        pageTable[i].virtualPage = i;
-#ifdef USE_TLB
-    #ifdef VM_SWAP
-        #ifndef DEMAND_LOADING
-        pageTable[i].physicalPage = coreMap->Find(pageTable[i]);
-        fifo->Append(pageTable[i].physicalPage);
-        swapMemory[i] = false;
-        #endif
-    #endif // FIN VM_SWAP
-    #ifdef DEMAND_LOADING
-        pageTable[i].physicalPage = firstFreePhySpace;
-        pageTable[i].valid = false;
-        swapMemory[i] = false;
-        DEBUG('W', "Pagina por Demanda\n");
-    #endif// FIN DEMAND_LOADING
-    #ifndef VM_SWAP
-        #ifndef DEMAND_LOADING
-        firstFreePhySpace = memoryMap->Find();
-        ASSERT(firstFreePhySpace != -1);	//Always found space in physical memory.
-        pageTable[i].physicalPage = firstFreePhySpace;
-        #endif
-    #endif //FIN VM_SWAP
-#else
-        firstFreePhySpace = memoryMap->Find();
-        ASSERT(firstFreePhySpace != -1);	//Always found space in physical memory.
-        pageTable[i].physicalPage = firstFreePhySpace;
-        pageTable[i].valid = true;
-#endif
-
-        pageTable[i].use = false;
-        pageTable[i].dirty = false;
-        pageTable[i].readOnly = false;  // if the code segment was entirely on 
-                                        // a separate page, we could set its 
-                                        // pages to be read-only
-
-#ifndef DEMAND_LOADING
-        // zero out the every page address space, to zero the unitialized data segment
-        // and the stack segment
-        bzero(&(machine->mainMemory[firstFreePhySpace*PageSize]), PageSize);
-#endif
-    }
-    
-#ifndef DEMAND_LOADING
-// then, copy in the code and data segments into memory
-    offset = LoadSegment(noffH.code, noffH.code.size, executable, 0, noffH.code.inFileAddr);
-    LoadSegment(noffH.initData, noffH.code.size + noffH.initData.size, executable, offset, noffH.code.inFileAddr);
-#endif
-
-#ifdef DEMAND_LOADING
-    noff_hdr = noffH;
-    executable_file = executable;
-#endif
-#ifdef VM_SWAP
-    sprintf(swapFileName, "swap.%d", pid);
-    ASSERT(fileSystem->Create(swapFileName, size));
-    swapFile = fileSystem->Open(swapFileName);
-    DEBUG('G', "CREO SWAP %s \n",swapFileName);
- #endif
- */
 }
 
 //----------------------------------------------------------------------
@@ -434,39 +330,40 @@ AddrSpace::AddrSpace(OpenFile *executable, int prg_argc, char** prg_argv, int pi
 //----------------------------------------------------------------------
 AddrSpace::~AddrSpace()
 {
-    int physicalAddr;
+
 #ifdef VM_SWAP
-    int fifoadd, fifohead;
-#endif
+    int add, head;
 
     for (unsigned int i=0; i< numPages; i++) {
-        physicalAddr = pageTable[i].physicalPage;
-        if (physicalAddr != -1) {
-#ifdef VM_SWAP
-            coreMap->Clear(physicalAddr);
-            fifohead = fifo->Remove();
-            if(fifohead != physicalAddr) {
-                fifo->Append(fifohead);
-                fifoadd = fifo->Remove();
+        if (pageTable[i].physicalPage != -1) {
+            coreMap->Clear(pageTable[i].physicalPage);
+            head = fifo->Remove();
+            if(head != pageTable[i].physicalPage) {
+                fifo->Append(head);
+                add = fifo->Remove();
 
-                while(fifoadd != fifohead) {
-                    if(fifoadd != physicalAddr) {
-                        fifo->Append(fifoadd);
+                while(add != head) {
+                    if(add != pageTable[i].physicalPage) {
+                        fifo->Append(add);
                     }
-                    fifoadd = fifo->Remove();
+                    add = fifo->Remove();
                 }
-                fifo->Prepend(fifoadd);
+                fifo->Prepend(add);
             }
         }
     }
-    ASSERT(fileSystem->Remove(swapFileName));
+
+    delete pageTable;
 #else
+    for (unsigned int i=0; i< numPages; i++) {
+        if (pageTable[i].physicalPage != -1) {
             memoryMap->Clear(pageTable[i].physicalPage);
         }
     }
-#endif
 
     delete pageTable;
+#endif
+
 }
 
 //----------------------------------------------------------------------
@@ -621,8 +518,28 @@ AddrSpace::UpdateTLB(int position)
     int freeSlot = -1;
     TranslationEntry* page = GetEntryByVAddr(position);
 
-#if defined(DEMAND_LOADING) || defined(VM_SWAP)
-    OnDemandLoad(page, position);
+#ifdef VM
+    bool pageInSwap = swapMemory[position],
+            wasNotLoaded = page->physicalPage == -1 && !pageInSwap; // no esta cargado en memoria
+
+    if(wasNotLoaded) {
+
+    #ifdef DEMAND_LOADING
+        LoadPage(page);
+    #endif
+
+    #ifdef VM_SWAP
+
+        fifo->Append(page->physicalPage);
+    } else if(pageInSwap) {
+        int bitIndex = coreMap->Find(page->virtualPage);
+        page->physicalPage = bitIndex;
+
+        SwapToMem(page);
+        fifo->Append(page->physicalPage);
+
+    #endif
+    }
 #endif
 
     //Busco un lugar disponible en la TLB.
@@ -646,51 +563,7 @@ AddrSpace::UpdateTLB(int position)
     machine->tlb[freeSlot].use = page->use;			// esta en el tlb
     machine->tlb[freeSlot].valid = page->valid;
     machine->tlb[freeSlot].readOnly = page->readOnly;
-
-    DEBUG('V',"Finish updateTLB\n");
-
 }
-
-#ifdef VM
-//----------------------------------------------------------------------
-// AddrSpace::OnDemandLoad
-//  The pages of code or data of the executable will be loaded when it is
-// required to access that page. That is, when the PageFaultException
-// exception occurs.
-//
-// page A page that will be loaded.
-// errorAdd A virtual address that failed
-//----------------------------------------------------------------------
-void
-AddrSpace::OnDemandLoad(TranslationEntry *page, int errorAddr)
-{
-    DEBUG('W', "Pagina pos = %d .... phys = %d ...Valid = %o ...\n swap = %d", errorAddr,
-          page->physicalPage, page->valid, swapMemory[errorAddr]);
-
-    if(page->physicalPage == -1 && !swapMemory[errorAddr]) { // no esta cargado en memoria
-
-#ifdef DEMAND_LOADING
-        LoadPage(page);
-#endif
-#ifdef VM_SWAP
-        fifo->Append(page->physicalPage);
-        DEBUG('G', " Despues de fifo Append-----%d \n", errorAddr);
-#endif
-    } else if(swapMemory[errorAddr]) {
-#ifdef VM_SWAP
-        int bitIndex = coreMap->Find(page->virtualPage);
-        page->physicalPage = bitIndex;
-
-        SwapToMem(page);
-        fifo->Append(page->physicalPage);
-
-        DEBUG('G', "Swap \n");
-#else
-        ASSERT(false);
-#endif
-    }
-}
-#endif
 
 #ifdef DEMAND_LOADING
 //----------------------------------------------------------------------
@@ -715,11 +588,7 @@ AddrSpace::LoadPage(TranslationEntry *page)
     freePhysAddr = memoryMap->Find();
 #endif
 
-    if (freePhysAddr == -1) {
-        ASSERT(false);
-    } else {
-        page->physicalPage = freePhysAddr;
-    }
+    page->physicalPage = freePhysAddr;
 
     virtualAddr = page->virtualPage * PageSize;
     code_start = divRoundUp(noff_hdr.code.virtualAddr, PageSize);
@@ -729,11 +598,9 @@ AddrSpace::LoadPage(TranslationEntry *page)
     DEBUG('W',"physAddr=%d\t virtualAddr=%d\n", freePhysAddr, virtualAddr);
 
     if(virtualAddr >= code_start && virtualAddr < data_start) {
-        DEBUG('W',"SOY CODIGO\n");
         executable_file->ReadAt(&(machine->mainMemory[page->physicalPage * PageSize]),
                 PageSize, file_offset);
     } else {
-        DEBUG('W',"SOY DATO\n");
         executable_file->ReadAt(&(machine->mainMemory[page->physicalPage * PageSize]),
                 PageSize, file_offset);
     }
@@ -817,12 +684,11 @@ AddrSpace :: NoSwap(int pos)
 int
 AddrSpace::UpdateTLB2(int p)
 {
-    int k;
-
-    for(k = 0; k < TLBSize; k++)
-        if (machine->tlb[k].physicalPage == p)
-                machine->tlb[k].valid = false;
-    return 0;
+    for(int i = 0; i < TLBSize; i++)
+        if (machine->tlb[i].physicalPage == p) {
+                machine->tlb[i].valid = false;
+                break;
+        }
 }
 
 //----------------------------------------------------------------------

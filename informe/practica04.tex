@@ -36,9 +36,11 @@ if (which == SyscallException) {
     ASSERT(false);
 }
 \end{lstlisting}
-Como mencionamos anteriormente, se agrega el método \texttt{AddrSpace::UpdateTLB}
+Como mencionamos anteriormente, se modificó la clase \texttt{AddrSpace}
 \begin{lstlisting}[style=C]
 void UpdateTLB(int position);   // update TLB table;
+TranslationEntry* GetEntryByVAddr(int i);  // Getter for an entry 
+   // in a translation table, corresponding to the virtual address i.
 \end{lstlisting}
 Se utiliza para cuando la página a utilizar no se encuentra en el \textbf{TLB}. Se encarga de buscarla en la memoria y guardarla en la \textbf{TLB}.
 \section{Análisis de TLB cambiando la cantidad de entradas}
@@ -79,16 +81,18 @@ Cuando se inicia un programa, no va a tener ninguna de sus páginas en memoria. 
 Para implementar esto, cuando se crea el espacio de direcciones de un thread se le asigna \texttt{-{}1} a la dirección física de cada una de sus páginas y a su vez se setea el bit de \texttt{valid} en \texttt{false}. Con esto último se indica que la página no está en memoria. Por lo tanto, las páginas se irán cargando en memoria conforme se reciban las \texttt{PageFaultException}.\\
 Se agregaron los siguientes métodos a la clase \texttt{AddrSpace}:
 \begin{lstlisting}[style=C]
-  public:
+public:
     ...
-     // Load page on memory by demand.
-    void OnDemandLoad(TranslationEntry *page, int errorAddr);
     void LoadPage(TranslationEntry *page);//Load a page into memory.
-  private:
+private:
     OpenFile *executable_file; // Save executeble for load later.
     NoffHeader noff_hdr; // Save header for load later
+    
+    // Class constructor with DEMAND_LOADING flag
+    void costructorForDemandLoading(OpenFile *executable,
+                int prg_argc, char** prg_argv, int pid);
 \end{lstlisting}
-Se modificó el método \texttt{AddrSpace::UpdateTLB} para que llame a \texttt{AddrSpace::OnDemandLoad}, cuya función es chequear el estado de la página. Si ya tiene asignada una dirección física, se continúa con la actualización del \textbf{TLB} como se explicó en \nameref{update_TLB}. En caso contrario, se llama al método \texttt{AddrSpace::LoadPage}, el cual le asigna a la página una posición en el mapa de bits y la carga en memoria. Finalmente, continua la ejecución de \texttt{AddrSpace::UpdateTLB} para actualizar el \textbf{TLB}.
+Se modificó el método \texttt{AddrSpace::UpdateTLB} para que se verifique el estado de la página. Si ya tiene asignada una dirección física, se continúa con la actualización del \textbf{TLB} como se explicó en \nameref{update_TLB}. En caso contrario, se llama al método \texttt{AddrSpace::LoadPage}, el cual le asigna a la página una posición en el mapa de bits y la carga en memoria. Finalmente, continua la ejecución de \texttt{AddrSpace::UpdateTLB} para actualizar el \textbf{TLB}.
 \section{Implementar la política de paginación FIFO e implementar SWAP}
 \subsection*{Desarrollo de SWAP}
 Con el objetivo de proveer la ilusión de una memoria mucho más grande que la física, cuando se crea el espacio de direcciones para un programa, se creará un archivo que servirá de \textbf{SWAP}.\\

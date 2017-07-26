@@ -40,7 +40,6 @@ class AddrSpace {
                                             // the virtual address i.
 
 #ifdef VM
-    void OnDemandLoad(TranslationEntry *page, int errorAddr); // Load page on memory by demand.
     void NoSwap(int pos);
     void MemToSwap(int vpn);
     int UpdateTLB2(int p);
@@ -50,6 +49,12 @@ class AddrSpace {
 #endif
 #ifdef DEMAND_LOADING
     void LoadPage(TranslationEntry *page); // Load a page into memory.
+#endif
+#ifdef VM_SWAP
+    bool IsValid (int pos); //  Getter for bit valid of a page.
+    bool IsUsed (int pos);  //  Getter for bit used of a page.
+    void SetUse (int pos, bool b);  //  Mark as used a page.
+    bool IsDirty (int pos); //  Getter for bit dirty of a page.
 #endif
   private:
     TranslationEntry *pageTable;	// Assume linear page table translation
@@ -75,12 +80,6 @@ class AddrSpace {
     OpenFile *swapFile;     // File for swapping.
     char swapFileName[8];   // Name of swapping file.
     void costructorForSwap(OpenFile *executable, int prg_argc, char** prg_argv, int pid);   // Class constructor with VM_SWAP flag
-
-  public:
-    bool IsValid (int pos);
-    bool IsUsed (int pos);
-    void SetUse (int pos, bool b);
-    bool IsDirty (int pos);
 #endif
 };
 
