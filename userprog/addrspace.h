@@ -61,16 +61,20 @@ class AddrSpace {
     unsigned int LoadSegment (Segment seg, unsigned int readingSize, OpenFile* excec,
                               int initOffset, unsigned int fileOffset);
 
+    void costructorForUserProg(OpenFile *executable, int prg_argc, char** prg_argv, int pid);   // Class constructor without flags
+
     int argc;   // Amount of arguments.
     char** argv; // Vector of arguments.
 
 #ifdef DEMAND_LOADING
     OpenFile *executable_file; // Save executeble for load later.
     NoffHeader noff_hdr; // Save header for load later
+    void costructorForDemandLoading(OpenFile *executable, int prg_argc, char** prg_argv, int pid); // Class constructor with DEMAND_LOADING flag
 #endif
 #ifdef VM_SWAP
     OpenFile *swapFile;     // File for swapping.
     char swapFileName[8];   // Name of swapping file.
+    void costructorForSwap(OpenFile *executable, int prg_argc, char** prg_argv, int pid);   // Class constructor with VM_SWAP flag
 
   public:
     bool IsValid (int pos);

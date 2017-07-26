@@ -76,7 +76,231 @@ AddrSpace:: LoadSegment (Segment seg, unsigned int readingSize, OpenFile* exec, 
     }
     return offset;
 }
-	     		
+
+//----------------------------------------------------------------------
+// AddrSpace::costructorForUserProg
+//  Class constructor without flags
+//----------------------------------------------------------------------
+void
+AddrSpace::costructorForUserProg(OpenFile *executable, int prg_argc, char** prg_argv, int pid)
+{
+    NoffHeader noffH;
+    unsigned int i,
+            size,
+            offset;
+    int firstFreePhySpace = -1;
+
+    argc = prg_argc;
+    argv = prg_argv;
+
+    executable->ReadAt((char *)&noffH, sizeof(noffH), 0);
+    if ((noffH.noffMagic != NOFFMAGIC) &&
+        (WordToHost(noffH.noffMagic) == NOFFMAGIC))
+        SwapHeader(&noffH);
+    ASSERT(noffH.noffMagic == NOFFMAGIC);
+
+// how big is address space?
+    size = noffH.code.size + noffH.initData.size + noffH.uninitData.size
+            + UserStackSize;	// we need to increase the size
+                        // to leave room for the stack
+    numPages = divRoundUp(size, PageSize);
+    size = numPages * PageSize;
+
+// check we're not trying to run something too big -.-
+    ASSERT(numPages <=(unsigned) NumPhysPages);
+    ASSERT(numPages <= (unsigned) memoryMap->NumClear());
+
+    DEBUG('a', "Initializing address space, num pages %d, size %d\n", numPages, size);
+// first, set up the translation
+    pageTable = new TranslationEntry[numPages];
+
+    for (i = 0; i < numPages; i++) {
+        pageTable[i].virtualPage = i;
+
+        firstFreePhySpace = memoryMap->Find();
+        ASSERT(firstFreePhySpace != -1);	//Always found space in physical memory.
+
+        pageTable[i].physicalPage = firstFreePhySpace;
+        pageTable[i].valid = true;
+        pageTable[i].use = false;
+        pageTable[i].dirty = false;
+        pageTable[i].readOnly = false;  // if the code segment was entirely on
+                                        // a separate page, we could set its
+                                        // pages to be read-only
+
+        // zero out the every page address space, to zero the unitialized data segment
+        // and the stack segment
+        bzero(&(machine->mainMemory[firstFreePhySpace*PageSize]), PageSize);
+    }
+
+// then, copy in the code and data segments into memory
+    offset = LoadSegment(noffH.code, noffH.code.size, executable, 0, noffH.code.inFileAddr);
+    LoadSegment(noffH.initData, noffH.code.size + noffH.initData.size, executable, offset, noffH.code.inFileAddr);
+}
+
+#ifdef DEMAND_LOADING
+//----------------------------------------------------------------------
+// AddrSpace::costructorForDemandLoading
+//  Class constructor with DEMAND_LOADING flag
+//----------------------------------------------------------------------
+void
+AddrSpace::costructorForDemandLoading(OpenFile *executable, int prg_argc, char** prg_argv, int pid)
+{
+    NoffHeader noffH;
+    unsigned int i,
+            size;
+    int firstFreePhySpace = -1;
+
+    argc = prg_argc;
+    argv = prg_argv;
+
+    executable->ReadAt((char *)&noffH, sizeof(noffH), 0);
+    if ((noffH.noffMagic != NOFFMAGIC) &&
+        (WordToHost(noffH.noffMagic) == NOFFMAGIC))
+        SwapHeader(&noffH);
+    ASSERT(noffH.noffMagic == NOFFMAGIC);
+
+// how big is address space?
+    size = noffH.code.size + noffH.initData.size + noffH.uninitData.size
+            + UserStackSize;	// we need to increase the size
+                        // to leave room for the stack
+    numPages = divRoundUp(size, PageSize);
+    size = numPages * PageSize;
+    swapMemory = new int [numPages];
+
+    DEBUG('a', "Initializing address space, num pages %d, size %d\n", numPages, size);
+// first, set up the translation
+    pageTable = new TranslationEntry[numPages];
+
+    for (i = 0; i < numPages; i++) {
+        pageTable[i].virtualPage = i;
+
+#ifdef USE_TLB
+        pageTable[i].physicalPage = firstFreePhySpace;
+        pageTable[i].valid = false;
+        swapMemory[i] = false;
+        DEBUG('W', "Pagina por Demanda\n");
+#else
+        firstFreePhySpace = memoryMap->Find();
+        ASSERT(firstFreePhySpace != -1);	//Always found space in physical memory.
+        pageTable[i].physicalPage = firstFreePhySpace;
+        pageTable[i].valid = true;
+#endif
+
+        pageTable[i].use = false;
+        pageTable[i].dirty = false;
+        pageTable[i].readOnly = false;  // if the code segment was entirely on
+                                        // a separate page, we could set its
+                                        // pages to be read-only
+
+    }
+
+    noff_hdr = noffH;
+    executable_file = executable;
+
+}
+#endif
+
+#ifdef VM_SWAP
+//----------------------------------------------------------------------
+// AddrSpace::costructorForSwap
+//  Class constructor with VM_SWAP flag
+//----------------------------------------------------------------------
+void
+AddrSpace::costructorForSwap(OpenFile *executable, int prg_argc, char** prg_argv, int pid)
+{
+ NoffHeader noffH;
+    unsigned int i,
+            size;
+#ifndef DEMAND_LOADING
+    unsigned int offset;
+#endif
+    argc = prg_argc;
+    argv = prg_argv;
+
+    executable->ReadAt((char *)&noffH, sizeof(noffH), 0);
+    if ((noffH.noffMagic != NOFFMAGIC) &&
+        (WordToHost(noffH.noffMagic) == NOFFMAGIC))
+        SwapHeader(&noffH);
+    ASSERT(noffH.noffMagic == NOFFMAGIC);
+
+// how big is address space?
+    size = noffH.code.size + noffH.initData.size + noffH.uninitData.size
+            + UserStackSize;	// we need to increase the size
+                        // to leave room for the stack
+    numPages = divRoundUp(size, PageSize);
+    size = numPages * PageSize;
+#if defined(VM_SWAP) || defined(DEMAND_LOADING)
+    swapMemory = new int [numPages];
+#endif
+
+#ifndef VM
+// check we're not trying to run something too big -.-
+    ASSERT(numPages <=(unsigned) NumPhysPages);
+    ASSERT(numPages <= (unsigned) memoryMap->NumClear());
+#endif
+
+    DEBUG('a', "Initializing address space, num pages %d, size %d\n", numPages, size);
+// first, set up the translation
+    pageTable = new TranslationEntry[numPages];
+
+    int firstFreePhySpace = -1;
+    for (i = 0; i < numPages; i++) {
+        pageTable[i].virtualPage = i;
+#ifdef USE_TLB
+    #ifdef VM_SWAP
+        #ifndef DEMAND_LOADING
+        pageTable[i].physicalPage = coreMap->Find(pageTable[i].virtualPage);
+        fifo->Append(pageTable[i].physicalPage);
+        swapMemory[i] = false;
+        #endif
+    #endif // FIN VM_SWAP
+    #ifdef DEMAND_LOADING
+        pageTable[i].physicalPage = firstFreePhySpace;
+        pageTable[i].valid = false;
+        swapMemory[i] = false;
+        DEBUG('W', "Pagina por Demanda\n");
+    #endif// FIN DEMAND_LOADING
+    #ifndef VM_SWAP
+        #ifndef DEMAND_LOADING
+        firstFreePhySpace = memoryMap->Find();
+        ASSERT(firstFreePhySpace != -1);	//Always found space in physical memory.
+        pageTable[i].physicalPage = firstFreePhySpace;
+        #endif
+    #endif //FIN VM_SWAP
+#else
+        firstFreePhySpace = memoryMap->Find();
+        ASSERT(firstFreePhySpace != -1);	//Always found space in physical memory.
+        pageTable[i].physicalPage = firstFreePhySpace;
+        pageTable[i].valid = true;
+#endif
+
+        pageTable[i].use = false;
+        pageTable[i].dirty = false;
+        pageTable[i].readOnly = false;  // if the code segment was entirely on
+                                        // a separate page, we could set its
+                                        // pages to be read-only
+    }
+
+#ifndef DEMAND_LOADING
+// then, copy in the code and data segments into memory
+    offset = LoadSegment(noffH.code, noffH.code.size, executable, 0, noffH.code.inFileAddr);
+    LoadSegment(noffH.initData, noffH.code.size + noffH.initData.size, executable, offset, noffH.code.inFileAddr);
+#endif
+
+#ifdef DEMAND_LOADING
+    noff_hdr = noffH;
+    executable_file = executable;
+#endif
+#ifdef VM_SWAP
+    sprintf(swapFileName, "swap.%d", pid);
+    ASSERT(fileSystem->Create(swapFileName, size));
+    swapFile = fileSystem->Open(swapFileName);
+    DEBUG('G', "CREO SWAP %s \n",swapFileName);
+ #endif
+
+}
+#endif
 //----------------------------------------------------------------------
 // AddrSpace::AddrSpace
 // 	Create an address space to run a user program.
@@ -94,6 +318,18 @@ AddrSpace:: LoadSegment (Segment seg, unsigned int readingSize, OpenFile* exec, 
 
 AddrSpace::AddrSpace(OpenFile *executable, int prg_argc, char** prg_argv, int pid)
 {
+
+#if defined(VM_SWAP) || defined(DEMAND_LOADING)
+    #ifdef VM_SWAP
+    costructorForSwap(executable, prg_argc, prg_argv, pid);
+    #else
+    costructorForDemandLoading(executable, prg_argc, prg_argv, pid);
+    #endif
+#else
+    costructorForUserProg(executable, prg_argc, prg_argv, pid);
+#endif
+
+    /*
     NoffHeader noffH;
     unsigned int i,
             size;
@@ -189,6 +425,7 @@ AddrSpace::AddrSpace(OpenFile *executable, int prg_argc, char** prg_argv, int pi
     swapFile = fileSystem->Open(swapFileName);
     DEBUG('G', "CREO SWAP %s \n",swapFileName);
  #endif
+ */
 }
 
 //----------------------------------------------------------------------
