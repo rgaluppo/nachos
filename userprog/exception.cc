@@ -95,7 +95,6 @@ makeProcess(int pid, OpenFile* executable, char* filename, int argc, char** argv
     // Creation of space address for process.
     AddrSpace *execSpace = new AddrSpace(executable, argc, argv, pid);
     execThread->space = execSpace;
-    //delete executable;
 
     amountThread++;
     execThread->Fork(doExecution, (void*) filename, 1);   //Create process.
@@ -341,18 +340,26 @@ ExceptionHandler(ExceptionType which)
                 break;
             case PageFaultException:
 			{
+#ifdef VM
                 int failVirtAddr = machine -> ReadRegister(BadVAddrReg);
-
                 DEBUG('v',"\n Antes de actualizar la TLB: failVAddr=%d \n", failVirtAddr);
                 stats->numPageFaults++;
 				currentThread->space->UpdateTLB(failVirtAddr / PageSize);
                 return;
+#else
+            exception = "ReadOnlyException";
+            break;
+#endif
 			}
             case ReadOnlyException: 
                 exception = "ReadOnlyException";
+#ifdef VM
                 // Solamente notificamos que ocurrio.
                 printf("An user mode exception was triggered:\t which=%s  type=%d\n", exception, type);
                 return;
+#else
+            break;
+#endif
             case BusErrorException: 
                 exception = "BusErrorException";
                 break;

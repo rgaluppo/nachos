@@ -23,6 +23,7 @@ BitMap::BitMap(int nitems)
     numBits = nitems;
     numWords = divRoundUp(numBits, BitsInWord);
     map = new unsigned int[numWords];
+
 #ifdef VM_SWAP
     physicalToVirtual = new int [nitems];
 #endif
@@ -39,7 +40,9 @@ BitMap::BitMap(int nitems)
 BitMap::~BitMap()
 { 
     delete map;
+#ifdef VM_SWAP
     delete physicalToVirtual;
+#endif
 }
 
 //----------------------------------------------------------------------

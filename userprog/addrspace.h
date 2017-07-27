@@ -34,16 +34,9 @@ class AddrSpace {
     void SaveState();			// Save/restore address space-specific
     void RestoreState();		// info on a context switch
 
-    void UpdateTLB(int virtualAddr);   // update TLB table;
-
-    TranslationEntry* GetEntryByVAddr(int i);  // Getter for an entry in a translation table, corresponding to
-                                            // the virtual address i.
-
 #ifdef VM
-    void MemToSwap(int virtualAddr, int physicalAddr);
-    void SwapToMem(TranslationEntry *page);
+    void UpdateTLB(int virtualAddr);   // update TLB table;
     int* swapMemory;    // Boolean list that indicates if a page is on SWAP.
-
 #endif
 #ifdef DEMAND_LOADING
     void LoadPage(TranslationEntry *page); // Load a page into memory.
@@ -53,6 +46,8 @@ class AddrSpace {
     bool IsUsed (int pos);  //  Getter for bit used of a page.
     void SetUse (int pos, bool b);  //  Mark as used a page.
     bool IsDirty (int pos); //  Getter for bit dirty of a page.
+    void MemToSwap(int virtualAddr, int physicalAddr);
+    void SwapToMem(TranslationEntry *page);
 #endif
   private:
     TranslationEntry *pageTable;	// Assume linear page table translation

@@ -182,7 +182,6 @@ AddrSpace::costructorForDemandLoading(OpenFile *executable, int prg_argc, char**
 #ifdef USE_TLB
         pageTable[i].physicalPage = firstFreePhySpace;
         pageTable[i].valid = false;
-        swapMemory[i] = false;
 #else
         firstFreePhySpace = memoryMap->Find();
         ASSERT(firstFreePhySpace != -1);	//Always found space in physical memory.
@@ -195,12 +194,9 @@ AddrSpace::costructorForDemandLoading(OpenFile *executable, int prg_argc, char**
         pageTable[i].readOnly = false;  // if the code segment was entirely on
                                         // a separate page, we could set its
                                         // pages to be read-only
-
     }
-
     noff_hdr = noffH;
     executable_file = executable;
-
 }
 #endif
 
@@ -218,6 +214,8 @@ AddrSpace::costructorForSwap(OpenFile *executable, int prg_argc, char** prg_argv
 #ifndef DEMAND_LOADING
     unsigned int offset;
 #endif
+    int firstFreePhySpace = -1;
+
     argc = prg_argc;
     argv = prg_argv;
 
@@ -235,46 +233,31 @@ AddrSpace::costructorForSwap(OpenFile *executable, int prg_argc, char** prg_argv
     size = numPages * PageSize;
     swapMemory = new int [numPages];
 
-
-#ifndef VM
-// check we're not trying to run something too big -.-
-    ASSERT(numPages <= (unsigned) memoryMap->NumClear());
-#endif
-
     DEBUG('a', "Initializing address space, num pages %d, size %d\n", numPages, size);
+
 // first, set up the translation
     pageTable = new TranslationEntry[numPages];
 
-    int firstFreePhySpace = -1;
     for (i = 0; i < numPages; i++) {
         pageTable[i].virtualPage = i;
 #ifdef USE_TLB
-    #ifdef VM_SWAP
-        #ifndef DEMAND_LOADING
-        pageTable[i].physicalPage = memoryMap->FindFrameForVirtualAddress(pageTable[i].virtualPage);
-        fifo->Append(pageTable[i].physicalPage);
-        swapMemory[i] = false;
-        #endif
-    #endif
+        pageTable[i].valid = false;
     #ifdef DEMAND_LOADING
         pageTable[i].physicalPage = firstFreePhySpace;
-        pageTable[i].valid = false;
-        swapMemory[i] = false;
-    #endif
-    #ifndef VM_SWAP
-        #ifndef DEMAND_LOADING
-        firstFreePhySpace = memoryMap->Find();
+    #else
+        pageTable[i].physicalPage = memoryMap->FindFrameForVirtualAddress(pageTable[i].virtualPage);
         ASSERT(firstFreePhySpace != -1);	//Always found space in physical memory.
-        pageTable[i].physicalPage = firstFreePhySpace;
-        #endif
+        fifo->Append(pageTable[i].physicalPage);
     #endif
 #else
-        firstFreePhySpace = memoryMap->Find();
+        firstFreePhySpace = memoryMap->FindFrameForVirtualAddress(pageTable[i].virtualPage);
         ASSERT(firstFreePhySpace != -1);	//Always found space in physical memory.
         pageTable[i].physicalPage = firstFreePhySpace;
+        fifo->Append(pageTable[i].physicalPage);
         pageTable[i].valid = true;
 #endif
 
+        swapMemory[i] = false;
         pageTable[i].use = false;
         pageTable[i].dirty = false;
         pageTable[i].readOnly = false;  // if the code segment was entirely on
@@ -496,19 +479,7 @@ AddrSpace::RestoreState()
 
 }
 
-//----------------------------------------------------------------------
-// AddrSpace::GetEntryByVAddr
-//  Obtains the page corresponding to a given virtual address.
-//
-// i A virtual address.
-// return The correspinding page.
-//----------------------------------------------------------------------
-TranslationEntry*
-AddrSpace ::GetEntryByVAddr(int i)
-{
-    return &(pageTable[i]);
-}
-
+#ifdef VM
 //----------------------------------------------------------------------
 //  AddrSpace::UpdateTLB
 // When an entry does not appear in the TLB, a PageFaultException is
@@ -520,34 +491,29 @@ void
 AddrSpace::UpdateTLB(int position)
 {
     int freeSlot = -1;
-    TranslationEntry* page = GetEntryByVAddr(position);
+    TranslationEntry* page = &(pageTable[position]);
 
 
     bool pageInSwap = swapMemory[position],
             wasNotLoaded = page->physicalPage == -1 && !pageInSwap; // no esta cargada en memoria ni en swap
 
-    DEBUG('V',"UpdateTLB: position=%d\t wasNotLoaded=%s\t phys=%d\t pageInSwap=%s\n",
-          position, wasNotLoaded?"true":"false",page->physicalPage, pageInSwap?"true":"false");
+    DEBUG('V',"UpdateTLB: position=%d\t phys=%d\t pageInSwap=%s\n",
+          position, page->physicalPage, pageInSwap?"true":"false");
     if(wasNotLoaded) {
     #ifdef DEMAND_LOADING
         LoadPage(page);
     #endif
 
     #ifdef VM_SWAP
-
         fifo->Append(page->physicalPage);
-        #endif
+    #endif
     } else if(pageInSwap) { // si esta cargada en swap
 #ifdef VM_SWAP
-
-        int bitIndex = memoryMap->FindFrameForVirtualAddress(page->virtualPage);
-        page->physicalPage = bitIndex;
+        page->physicalPage = memoryMap->FindFrameForVirtualAddress(page->virtualPage);
         SwapToMem(page);
         fifo->Append(page->physicalPage);
 #endif
-
     }
-
 
     //Busco un lugar disponible en la TLB.
     for (int i = 0; i < TLBSize; i++){
@@ -571,6 +537,7 @@ AddrSpace::UpdateTLB(int position)
     machine->tlb[freeSlot].valid = page->valid;
     machine->tlb[freeSlot].readOnly = page->readOnly;
 }
+#endif
 
 #ifdef DEMAND_LOADING
 //----------------------------------------------------------------------
@@ -594,8 +561,6 @@ AddrSpace::LoadPage(TranslationEntry *page)
 #else
     freePhysAddr = memoryMap->Find();
 #endif
-
-    DEBUG('W',"freePhysAddr=%d\n", freePhysAddr);
     page->physicalPage = freePhysAddr;
 
     virtualAddr = page->virtualPage * PageSize;
@@ -677,7 +642,8 @@ AddrSpace :: IsDirty(int p)
 void
 AddrSpace::MemToSwap(int virtualAddr, int physicalAddr)
 {
-    DEBUG('G', "AddrSpace::MemToSwap: virtualPage=%d\n", virtualAddr);
+    DEBUG('Y', "AddrSpace::MemToSwap: virtualPage=%d\t physicalPage=%d\n",
+          virtualAddr, physicalAddr);
 
     TranslationEntry *page =  &(pageTable[virtualAddr]);
 
@@ -710,7 +676,7 @@ AddrSpace::MemToSwap(int virtualAddr, int physicalAddr)
 void
 AddrSpace::SwapToMem(TranslationEntry *page)
 {
-    DEBUG('G', "AddrSpace::SwapToMem: virtualPage=%d\t physicalPage=%d\n",
+    DEBUG('Y', "AddrSpace::SwapToMem: virtualPage=%d\t physicalPage=%d\n",
           page->virtualPage, page->physicalPage);
 
     swapFile->ReadAt(&(machine->mainMemory[page->physicalPage * PageSize]),
