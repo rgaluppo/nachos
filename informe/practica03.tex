@@ -1,4 +1,4 @@
-\chapter{Resolución de la Práctica N\grad3: Programas de usuario y Multi-Programación}
+\chapter{Resolución de la Práctica N\grad3: Programas de usuario}
 \section{Desarrollo del API para copiar datos desde el núcleo al espacio de memoria del usuario y viceversa}
 La interfaz \texttt{usertranslate.h} contiene las funciones que integran la API para traducir \texttt{Strings} y \texttt{Arrays}. La API contiene las siguientes funciones:
 \begin{lstlisting}[style=C]
@@ -11,7 +11,7 @@ void writeStrToUsr(char *str, int usrAddr);
 // Traduce un array hacia la memoria de usuario.
 void writeBuffToUsr(char *str, int usrAddr, int byteCount);
 \end{lstlisting}
-Para implementarlas, se utilizaron los métodos \texttt{Machine::ReadMemory} y \texttt{Machine::WriteMemory}. A continuación, se muestran las implementación de la API:
+Para implementarlas, se utilizaron los métodos \texttt{Machine::ReadMemory} y \texttt{Machine::WriteMemory}.
 \begin{lstlisting}[style=C]
 void
 readStrFromUsr(int usrAddr, char *outStr) {
@@ -20,8 +20,7 @@ readStrFromUsr(int usrAddr, char *outStr) {
    
     done = machine->ReadMem(usrAddr, 1, &value);
     ASSERT(done);
-                
-    while((char) value != '\0'){
+    while((char) value != '\0') {
         outStr[count] = (char) value;
         count++;
         done = machine->ReadMem(usrAddr + count, 1, &value);
@@ -66,7 +65,7 @@ writeBuffToUsr(char *str, int usrAddr, int byteCount) {
 \end{lstlisting}
 \section{Implementación de las llamadas de sistema y la administración de interrupciones}
 Los programas de usuario invocan llamadas al sistema ejecutando la instrucción \texttt{syscall} de \textbf{\textit{MIPS}}, la cuál genera una trampa de hardware en el kernel de \textbf{\textit{NachOS}}. El simulador \textbf{\textit{NachOS/MIPS}} implementa trampas invocando al método \texttt{RaiseException}, pasándole argumentos que indican la causa exacta de la trampa. \texttt{RaiseException}, a su vez, llama a \texttt{ExceptionHandler} para que se ocupe del problema específico.\\
-Por convención, los programas de usuario colocan el código que indica la llamada de sistema deseada en el registro \texttt{R2} antes de ejecutar la instrucción \texttt{syscall}. Mientras que los argumentos adicionales se encuentran en los registros \texttt{R4 a R7}. Se espera que los valores de retorno de la función (y de la llamada del sistema) estén en el registro \texttt{R2} al regresar.\\
+Por convención, los programas de usuario colocan el código que indica la llamada de sistema deseada en el registro \texttt{R2} antes de ejecutar la instrucción \texttt{syscall}. Mientras que los argumentos adicionales se encuentran en los registros \texttt{R4 a R7}. Se espera que los valores de retorno de la función (y de la llamada del sistema) estén en el registro \texttt{R2} al regresar.\newpage
 Para poder implementarla las llamadas de sistema, se crearon las siguientes funciones y estructuras auxiliares:
 \begin{itemize}
     \item \texttt{type}: en esta variable se guarda el tipo de llamada.
@@ -91,15 +90,16 @@ El procesamiento de las llamadas a sistema quedó de la siguiente manera:
 void
 ExceptionHandler(ExceptionType which)
 {
-    int type = machine->ReadRegister(2);
-    int arguments[4];
+    int type = machine->ReadRegister(2),
+        arguments[4],
+        result;
+    OpenFile* file;
+    char name386[128];
+
     arguments[0] = machine->ReadRegister(4);
     arguments[1] = machine->ReadRegister(5);
     arguments[2] = machine->ReadRegister(6);
     arguments[3] = machine->ReadRegister(7);
-    int result;
-    OpenFile* file;
-    char name386[128];
 
     if (which == SyscallException) {
     	switch(type) {
@@ -123,14 +123,16 @@ ExceptionHandler(ExceptionType which)
             case SC_Close:
                 break;
             default: 
-                printf("Unexpected syscall exception %d %d\n", which, type);
+                printf("Unexpected syscall exception %d %d\n",
+                        which, type);
                 ASSERT(false);
     	}
         machine->WriteRegister(2, result);
     	movingPC();
     } else {
         DEBUG('e', "Is not a SyscallException\n");
-        printf("Unexpected user mode exception:\t which=%s  type=%d\n", exception, type);
+        printf("Unexpected exception:\t which=%s  type=%d\n",
+                exception, type);
         ASSERT(false);
     }
   }
@@ -143,7 +145,6 @@ class SynchConsole {
 public:
 	SynchConsole(const char *readFile, const char *writeFile);
 	~SynchConsole();
-	
     void WriteConsole(char c); // Write a char into console.
     char ReadConsole(); // Read a char from console.
     void RequestWrite();    // Provides sync access for writing
@@ -203,18 +204,19 @@ Por otro lado, cabe aclarar que una restricción que tiene un programa al maneja
 Otra restricción que tiene un programa al manejar archivos es que sólo puede leer o escribir los archivos abiertos por él. Para modelar esto, se creo en \texttt{threads.h} una estructura de control para llevar un registro de los archivos abiertos por cada programa usuario.
 \begin{lstlisting}[style=C]
 class Thread {
-...
-#ifdef USER_PROGRAM
 private:
 ...
- OpenFile* filesDescriptors[MAX_FILES_OPENED]; // Structure for maintain all files opened for this user program.
-
+ // Structure for maintain all files opened for this user program.
+    OpenFile* filesDescriptors[MAX_FILES_OPENED];
+    
 public:
 ...
-    OpenFile* GetFile(OpenFileId descriptor); // Given a descriptor, returns the corresponding file.
-    OpenFileId AddFile(OpenFile* file); // Loads a file, assing an descriptor and return its.
-    void RemoveFile(OpenFileId descriptor); // Given a descriptor, unload its corresponding file.
-#endif
+// Given a descriptor, returns the corresponding file.
+    OpenFile* GetFile(OpenFileId descriptor); 
+     // Loads a file, assing an descriptor and return its.
+    OpenFileId AddFile(OpenFile* file);
+     // Given a descriptor, unload its corresponding file.
+     void RemoveFile(OpenFileId descriptor);
 \end{lstlisting}
 Dicha estructura consta de un arreglo de archivos llamado \texttt{filesDescriptors}, de tamaño \texttt{MAX\_FILES\_OPENDED} y tres métodos para interactuar con dicha estructura:
 \begin{description}
@@ -279,7 +281,7 @@ Dado un archivo ejecutable, lo ejecuta. Para ejecutar un programa sin argumentos
 SpaceId Exec(char *name, int argc, char** argv);
 \end{lstlisting}
 Inicialmente, traducimos el nombre del archivo mediante \texttt{readStrFromUsr} e intentamos abrirlo invocando \texttt{OpenFile::Open}. Si falla, imprimimos un mensaje de error y retornamos el valor \texttt{-1}.\\
-En caso de poder abrir el archivo, obtenemos un id para el nuevo proceso. Para ello, invocamos a \texttt{ProcessTable::GetFreshSlot}. Luego, se crea un thread para ejecutar el archivo y se asigna un espacio de direcciones y se carga el archivo ejecutable en memoria. Todo ello esta modularizado en la función \texttt{makeProcess}.
+En caso de poder abrir el archivo, obtenemos un id para el nuevo proceso. Para ello, invocamos a \texttt{ProcessTable::GetFreshSlot}. Luego, se crea un thread para ejecutar el archivo y se asigna un espacio de direcciones y se carga el archivo ejecutable en memoria. Todo ello esta modularizado en la función \texttt{makeProcess}.\\
 \begin{lstlisting}[style=C]
 void
 makeProcess(int pid, OpenFile* executable, char* filename, int argc, char** argv)
@@ -307,11 +309,14 @@ Cuando el \textbf{Scheduler} ejecute el thread \texttt{execThread}, va inicializ
 \begin{lstlisting}[style=C]
 doExecution(void* arg)
 {
-    DEBUG ('e',"doExecution: currentThread name=%s\t id=%d\n", currentThread->getName(),
-           currentThread->getThreadId());
+    DEBUG ('e',"doExecution: currentThread name=%s\t id=%d\n",
+        currentThread->getName(), currentThread->getThreadId());
 
-	currentThread->space->InitRegisters();  //Inicialization for MIPS registers.
-	currentThread->space->RestoreState();   //Load page table register.
+  //Inicialization for MIPS registers.
+	currentThread->space->InitRegisters();
+	
+  //Load page table register.
+	currentThread->space->RestoreState();  
 
  	machine->Run();	
 
@@ -360,14 +365,7 @@ Para forzar los cambios de contexto, se modificó la creación del \texttt{timer
 \end{lstlisting}
 Al invocar el constructor con  el tercer parámetro en \texttt{false}, se crea un temporizador cuyo timeout ocurrirá cada \texttt{TimerTicks} unidades. La definición de \texttt{TimerTicks} se encuentra en \texttt{stats.h}.
 \section{Exec con argumentos}
-A lo desarrollado en \nameref{exec_without_args}, se agrego el procesamiento del segundo y tercer argumento. La cantidad de argumentos nos viene en el registro \texttt{R5} y el string de argumentos sin traducir, vienen por el registro \texttt{R6}. Para traducir el vector de argumentos, invocamos a método \texttt{readSpecialStringFromUser}, declarado en \texttt{usertranlate.h}, para traducir cada argumento y guardarlos en el array \texttt{argv}. Por convención, el string con los argumentos estará separado por espacios.
-\begin{lstlisting}[style=C]
-// Dado un string con argumentos separados por 'divide',
-//traduce un argumento y retorna la direccion del proximo
-//argumento a traducir.
-int readSpecialStringFromUser(int usrAddr,char *outStr,char divide);
-\end{lstlisting}
-Al finalizar la traducción, se invoca a \texttt{makeProcess} y se continua como mencionamos en \nameref{exec_without_args}. Ademas, se modifico la función \texttt{doExecution} para que inicialice los argumentos antes de ejecutar el archivo.\\
+A lo desarrollado en \nameref{exec_without_args}, se agrego el procesamiento del segundo y tercer argumento. La cantidad de argumentos nos viene en el registro \texttt{R5} y el string de argumentos sin traducir, vienen por el registro \texttt{R6}. Para traducir el vector de argumentos, invocamos a método \texttt{readSpecialStringFromUser}, declarado en \texttt{usertranlate.h}, para traducir cada argumento y guardarlos en el array \texttt{argv}. Por convención, el string con los argumentos estará separado por espacios. Al finalizar la traducción, se invoca a \texttt{makeProcess} y se continua como mencionamos en \nameref{exec_without_args}. Ademas, se modifico la función \texttt{doExecution} para que inicialice los argumentos antes de ejecutar el archivo.\\
 Por otro lado, se modifico la clase \texttt{AddSpace}, ya que necesitamos copiar los argumentos en el stack de usuario. En la llamada al constructor, se guardan \texttt{argc} y \texttt{argv}. Tambien se creo el método \texttt{AddrSpace::InitArguments}, el cual se encarga de almacenar correctamente los argumentos en el stack. Empieza guardando en la parte superior de la pila el valor de los argumentos, seguidos los punteros a esas direcciones. Finalmente, mueve el stackpointer cuatro posiciones mas abajo del ultimo argumento ingresado en la pila. 
 \section{Interpretes de comandos y programas de usuario}
 Se implemento un interprete de comandos, el cual lee un comando de la consola y lo ejecuta. Si el comando comienza con el carácter \texttt{\&}, debe ser ejecutado en background. En \texttt{test/shell.c} se encuentra la implementación del interprete.\\

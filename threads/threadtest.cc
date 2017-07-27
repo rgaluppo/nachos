@@ -290,7 +290,7 @@ ThreadTest()
     SemaphoreTest();
 #endif
 
-    //JoinTest();
-    //Lock_and_PriorityTest();
-    //PortTest();
+    JoinTest();
+    Lock_and_PriorityTest();
+    PortTest();
 }

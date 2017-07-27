@@ -132,28 +132,27 @@ Lock::~Lock()
 void
 Lock::Acquire()
 {
-	if(!isHeldByCurrentThread())
-    {	invPrController->P();
-        if(blocker != NULL)
-		{
-			int thpriority, pcurrent;
-            thpriority = blocker->getPriority();
-			pcurrent = currentThread->getPriority();
-			DEBUG('p', "Prioridades ,%d, %d \n", pcurrent, thpriority);
-			if(thpriority < pcurrent) 
-			{
-                DEBUG('p', "Prioridades ,%s, %d \n", blocker->getName(), pcurrent);
-				
-                scheduler->ChangePriorityQueue(blocker, pcurrent);
-                blocker->setPriority(pcurrent);
-				thpriority= pcurrent;
-			}
-		}	
-		
-        invPrController->V();
+    if(!isHeldByCurrentThread()) {
+        if(blocker != NULL) { // Puede ser que necesite intercambiar las prioridades
+          invPrController->P(); // Inicio del chequeo de prioridades
+
+          int blockerPr = blocker->getPriority(),
+                  currentPr = currentThread->getPriority();
+
+          DEBUG('p', "Lock::Acquire: Prioridades ,%d, %d \n", currentPr, blockerPr);
+
+          if(blockerPr < currentPr) { // Necesito cambiarlas.
+              scheduler->ChangePriorityQueue(blocker, currentPr);
+              blocker->setPriority(currentPr);
+              blockerPr= currentPr;
+          }
+
+          invPrController->V(); // Fin del chequeo de prioridades
+        }
+
         semLock->P();
         blocker = currentThread;
-	}
+    }
 }
 
 //----------------------------------------------------------------------
@@ -174,7 +173,8 @@ Lock::isHeldByCurrentThread()
 void Lock::Release()
 {
     ASSERT(blocker == currentThread);
-	if (isHeldByCurrentThread()){
+
+    if (isHeldByCurrentThread()){
         blocker = NULL;
         semLock -> V();
 	}
@@ -213,8 +213,10 @@ Condition::~Condition()
 //----------------------------------------------------------------------
 void Condition::Wait() { 
 	ASSERT(lock->isHeldByCurrentThread());
+
 	Semaphore * sem = new Semaphore(name, 0) ;
-	semList -> Append(sem);
+
+    semList -> Append(sem);
 	lock -> Release();
 	sem -> P();
 	lock -> Acquire();	
@@ -228,8 +230,10 @@ void Condition::Wait() {
 //----------------------------------------------------------------------
 void Condition::Signal() { 
 	ASSERT(lock->isHeldByCurrentThread());
-	Semaphore * sem;
-	if ( !(semList -> IsEmpty())){
+
+    Semaphore * sem;
+
+    if ( !(semList -> IsEmpty())){
 		sem = semList -> Remove(); 
 		sem -> V();
 	}
@@ -241,6 +245,7 @@ void Condition::Signal() {
 //----------------------------------------------------------------------
 void Condition::Broadcast() {
 	ASSERT(lock->isHeldByCurrentThread());
-	while ( !(semList -> IsEmpty()))
+
+    while ( !(semList -> IsEmpty()))
 		Signal();
 }

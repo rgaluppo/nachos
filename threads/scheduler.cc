@@ -82,12 +82,13 @@ Scheduler::FindNextToRun()
 
     int mayor_priority = max_priority - 1;
 
-    DEBUG('p', "Priodidad maxima, %d \n", mayor_priority);
+    DEBUG('p', "Scheduler::FindNextToRun: Priodidad maxima, %d \n", mayor_priority);
 
     while (mayor_priority > 0 && (readyList[mayor_priority])->IsEmpty()){
          mayor_priority--;  //Si las colas de mayor prioridad estan vacias, busco en las
                             // de menor prioridad.
 	}
+    DEBUG('p', "Elijo un thread con prioridad: %d\n", mayor_priority);
     Thread* nextThr = readyList[mayor_priority]->Remove();
     return nextThr;
 }
@@ -167,12 +168,11 @@ ThreadPrint (Thread* t) {
 void
 Scheduler::Print()
 {
-	int i ;
-    for ( i = 0; i < max_priority ; i++){ 				//Cambiar 3 por Length de readyList
-		printf("\nPRIORITY%d - Ready list contents:\n",  i);
+    printf("\nReady list contents:\n");
+    for (int i = 0; i < max_priority ; i++) {
         (readyList[i])->Apply(ThreadPrint);
-	}
-	
+    }
+    printf("\n");
 }
 //----------------------------------------------------------------------
 // Scheduler::ChangePriorityQueue
@@ -185,36 +185,32 @@ Scheduler::Print()
 void 
 Scheduler:: ChangePriorityQueue(Thread *thread, int priority)
 {	
-	DEBUG('p',"Estre a change \n");
-    int i = thread->getPriority();
- 	DEBUG('p',"Prioridad del thread, %d \n", i);
- 	DEBUG('p',"Nueva prioridad del thread, %d \n", priority);
-	DEBUG('p',"Antes de CAMBIAR \n");
-	Print();
-	Thread *thread1;
-	Thread *threadh;
-    threadh = (readyList[i])->Remove();
-	DEBUG('p',"Nombre: %s \n",threadh->getName());	
-    if(threadh == thread)
-	{
-		 DEBUG('p', "Soy la cabeza ,%d, %d \n", i, priority);
-        readyList[priority]->Prepend(thread);
-	}
-	else
-		{
-            readyList[i]->Append(threadh);
-            while((thread1 = readyList[i]->Remove())!= threadh)
-			{
-                if(thread1 == thread)
-				{	DEBUG('p', "No soy la cabeza ,%d, %d \n", i, priority);
-                    readyList[priority]->Prepend(thread);
-				}
-				else
-                    readyList[i]->Append(thread1);
-			}
-		
-	}
-	DEBUG('p',"Despues de CAMBIAR \n");
-	Print();
+    int currentPr = thread->getPriority();
 
+    DEBUG('p',"Scheduler:: ChangePriorityQueue\t currentPr=%d\t newPr=%d\n",
+          currentPr, priority);
+
+    Thread *head = (readyList[currentPr])->Remove();
+
+    if(head == thread) { // No hago nada, estoy en la cola correcta.
+        readyList[priority]->Prepend(thread);
+    } else {
+        Thread* currentElement;
+        bool belogsToQueue = false;
+
+        readyList[currentPr]->Append(head); // Pongo la cabeza al final
+        do {
+            currentElement = readyList[currentPr]->Remove();
+            if(thread == currentElement) {
+                readyList[priority]->Prepend(thread); // ya estoy en la lista
+                belogsToQueue = true;
+                break;
+            } else { // vuelvo a guardar el actual.
+                readyList[currentPr]->Append(currentElement);
+            }
+        } while(currentElement != head);
+
+        if(!belogsToQueue) // si no esta, lo pongo al principio de la cola.
+            readyList[priority]->Prepend(thread);
+    }
 }

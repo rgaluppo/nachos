@@ -248,5 +248,5 @@ En \textbf{\textit{NachOS}}, este problema puede ocurrir cuando dos threads comp
     \item \texttt{scheduler.h} y \texttt{scheduler.cc}: Se agregó un método llamado \texttt{Scheduller::ChangePriorityQueue} cuya función es cambiar de cola a un thread. Para ello, recibe dos argumentos: un thread y una prioridad.
     \item \texttt{Lock::Acquire}: Se modificó este método de modo tal que si un thread \texttt{T2} quiere adquirir el cerrojo pero éste está en manos de otro thread \texttt{T1} cuya prioridad es menor que la de \texttt{T2}, se proceda a asignarle a \texttt{T1} la misma prioridad que \texttt{T2}. Para ello, se invoca al método \texttt{Scheduller::ChangePriorityQueue}.
 \end{itemize}
-¿Por qué no se puede aplicar herencia de prioridades en semáforos?\\
+\textit{¿Por qué no se puede aplicar herencia de prioridades en semáforos?}\\
 Notemos que la clase \texttt{Semaphore} guarda una cola con los threads bloqueados pero se olvida del thread que lo bloquea. Por lo tanto, no sabemos a cuál thread cambiar la prioridad.
