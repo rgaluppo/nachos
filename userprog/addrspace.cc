@@ -214,7 +214,6 @@ AddrSpace::costructorForSwap(OpenFile *executable, int prg_argc, char** prg_argv
 #ifndef DEMAND_LOADING
     unsigned int offset;
 #endif
-    int firstFreePhySpace = -1;
 
     argc = prg_argc;
     argv = prg_argv;
@@ -243,16 +242,13 @@ AddrSpace::costructorForSwap(OpenFile *executable, int prg_argc, char** prg_argv
 #ifdef USE_TLB
         pageTable[i].valid = false;
     #ifdef DEMAND_LOADING
-        pageTable[i].physicalPage = firstFreePhySpace;
+        pageTable[i].physicalPage = -1;
     #else
         pageTable[i].physicalPage = memoryMap->FindFrameForVirtualAddress(pageTable[i].virtualPage);
-        ASSERT(firstFreePhySpace != -1);	//Always found space in physical memory.
         fifo->Append(pageTable[i].physicalPage);
     #endif
 #else
-        firstFreePhySpace = memoryMap->FindFrameForVirtualAddress(pageTable[i].virtualPage);
-        ASSERT(firstFreePhySpace != -1);	//Always found space in physical memory.
-        pageTable[i].physicalPage = firstFreePhySpace;
+        pageTable[i].physicalPage = memoryMap->FindFrameForVirtualAddress(pageTable[i].virtualPage);
         fifo->Append(pageTable[i].physicalPage);
         pageTable[i].valid = true;
 #endif

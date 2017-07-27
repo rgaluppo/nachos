@@ -12,7 +12,7 @@
 # All rights reserved.  See copyright.h for copyright notice and limitation 
 
 
-DEFINES = -DUSER_PROGRAM  -DFILESYS_NEEDED -DFILESYS_STUB -DDFS_TICKS_FIX -DVM -DUSE_TLB -DDEMAND_LOADING #-DVM_SWAP
+DEFINES = -DUSER_PROGRAM  -DFILESYS_NEEDED -DFILESYS_STUB -DDFS_TICKS_FIX -DVM -DUSE_TLB -DDEMAND_LOADING -DVM_SWAP
 INCPATH = -I../filesys -I../bin -I../vm -I../userprog -I../threads -I../machine
 HFILES = $(THREAD_H) $(USERPROG_H) $(VM_H)
 CFILES = $(THREAD_C) $(USERPROG_C) $(VM_C)
