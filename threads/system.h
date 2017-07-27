@@ -44,8 +44,6 @@ extern ProcessTable *processTable;
 #ifdef VM_SWAP
 #include "list.h"
 extern List<int>* fifo;
-#include "coremap.h"
-extern CoreMap* coreMap;
 #endif
 #ifdef FILESYS_NEEDED 		// FILESYS or FILESYS_STUB 
 #include "filesys.h"

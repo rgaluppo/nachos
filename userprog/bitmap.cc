@@ -8,6 +8,7 @@
 
 #include "copyright.h"
 #include "bitmap.h"
+#include "system.h"
 
 //----------------------------------------------------------------------
 // BitMap::BitMap
@@ -22,6 +23,10 @@ BitMap::BitMap(int nitems)
     numBits = nitems;
     numWords = divRoundUp(numBits, BitsInWord);
     map = new unsigned int[numWords];
+#ifdef VM_SWAP
+    physicalToVirtual = new int [nitems];
+#endif
+
     for (int i = 0; i < numBits; i++) 
         Clear(i);
 }
@@ -34,6 +39,7 @@ BitMap::BitMap(int nitems)
 BitMap::~BitMap()
 { 
     delete map;
+    delete physicalToVirtual;
 }
 
 //----------------------------------------------------------------------
@@ -48,8 +54,10 @@ BitMap::Mark(int which)
 { 
     ASSERT(which >= 0 && which < numBits);
     map[which / BitsInWord] |= 1 << (which % BitsInWord);
+
+
 }
-    
+
 //----------------------------------------------------------------------
 // BitMap::Clear
 // 	Clear the "nth" bit in a bitmap.
@@ -62,6 +70,11 @@ BitMap::Clear(int which)
 {
     ASSERT(which >= 0 && which < numBits);
     map[which / BitsInWord] &= ~(1 << (which % BitsInWord));
+
+#ifdef VM_SWAP
+    processTable->ClearProcessPhysAddress(which);
+    physicalToVirtual[which] = -1;
+#endif
 }
 
 //----------------------------------------------------------------------
@@ -95,12 +108,106 @@ int
 BitMap::Find() 
 {
     for (int i = 0; i < numBits; i++)
-	if (!Test(i)) {
-	    Mark(i);
-	    return i;
-	}
+    if (!Test(i)) {
+        Mark(i);
+        return i;
+    }
     return -1;
 }
+
+#ifdef VM_SWAP
+//----------------------------------------------------------------------
+// BitMap::FindFrameForVirtualAddress
+//  Return the number of the first bit which is clear.
+//	As a side effect, set the bit (mark it as in use).
+//  If no bits are clear, find a page candite to leave
+//  the memory and put it into swap. Then, return his place
+//  into the memory.
+//----------------------------------------------------------------------
+int
+BitMap::FindFrameForVirtualAddress(int virtualPage) {
+    int freeVAddr = Find();
+    DEBUG('W', "BitMap::FindFrameForVirtualAddress: freeVAddr=%d\n", freeVAddr);
+
+    if(freeVAddr == -1) {     // Memory full.
+       //freeVAddr = fifoAlgorithm();
+       freeVAddr = secondChanceAlgorithm();
+    }
+
+    Mark(freeVAddr);
+    processTable->SetPhysAddress(currentThread->getThreadId(), freeVAddr);
+    physicalToVirtual[freeVAddr] = virtualPage;
+    return freeVAddr;
+}
+
+
+//----------------------------------------------------------------------
+// CoreMap::fifoAlgorithm
+//----------------------------------------------------------------------
+int
+BitMap::fifoAlgorithm()
+{
+    int victim = fifo->Remove(),
+            leavingVAddr = physicalToVirtual[victim];
+
+    Thread *thread = processTable->getProcessByPhysAddr(victim);
+
+    thread->space->MemToSwap(leavingVAddr, victim);
+    return victim;
+}
+
+//----------------------------------------------------------------------
+// CoreMap::secondChanceAlgorithm
+//----------------------------------------------------------------------
+int
+BitMap::secondChanceAlgorithm()
+{
+    if(fifo->IsEmpty()) {
+        return -1;
+    } else {
+        Thread *thread;
+        int victim = fifo->Remove(),
+                first = victim,
+                leavingVAddr;
+        bool firstRound = false;
+
+        for(;;) {
+            thread = processTable->getProcessByPhysAddr(victim);
+            leavingVAddr = physicalToVirtual[victim];
+            bool isUsed = thread->space->IsUsed(leavingVAddr);
+            bool isDirty = thread->space->IsDirty(leavingVAddr);
+
+            if(first == victim) {
+                firstRound = true;
+            }
+
+            if(!isUsed && !isDirty) { // not used and not dirty
+                break;
+            } else if(!isUsed && isDirty) { // not used but dirty
+                if(firstRound) {
+                    fifo->Append(victim);
+                    victim = fifo->Remove();
+                } else {
+                    break;
+                }
+            } else if(isUsed && !isDirty) { // used but not dirty
+                    thread->space->SetUse(leavingVAddr, false);
+                    fifo->Append(victim);
+                    victim = fifo->Remove();
+            } else { // used and dirty
+                thread->space->SetUse(leavingVAddr, false);
+                fifo->Append(victim);
+                victim = fifo->Remove();
+            }
+        }
+
+
+        Clear(victim);
+        thread->space->MemToSwap(leavingVAddr, victim);
+        return victim;
+    }
+}
+#endif
 
 //----------------------------------------------------------------------
 // BitMap::NumClear

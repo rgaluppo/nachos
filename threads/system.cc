@@ -43,7 +43,6 @@ SynchConsole* synchConsole;
 
 #ifdef VM_SWAP
     List<int> *fifo;
-    CoreMap *coreMap;
 #endif
 
 #ifdef NETWORK
@@ -202,7 +201,6 @@ Initialize(int argc, char **argv)
 #endif
 #ifdef VM_SWAP
     fifo = new List<int>;
-    coreMap = new CoreMap(NumPhysPages);
 #endif
 
 #ifdef FILESYS
@@ -244,7 +242,6 @@ Cleanup()
 
 #ifdef VM_SWAP
     delete fifo;
-    delete coreMap;
 #endif
 
 #ifdef FILESYS_NEEDED

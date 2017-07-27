@@ -40,9 +40,7 @@ class AddrSpace {
                                             // the virtual address i.
 
 #ifdef VM
-    void NoSwap(int pos);
-    void MemToSwap(int vpn);
-    int UpdateTLB2(int p);
+    void MemToSwap(int virtualAddr, int physicalAddr);
     void SwapToMem(TranslationEntry *page);
     int* swapMemory;    // Boolean list that indicates if a page is on SWAP.
 

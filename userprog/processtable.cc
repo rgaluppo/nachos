@@ -9,10 +9,12 @@ extern Thread* currentThread;
 //----------------------------------------------------------------------
 ProcessTable::ProcessTable()
 {
-    int i;
     table = new Thread* [MAX_EXEC_THREADS];
-    for(i=0; i < MAX_EXEC_THREADS; i++)
+    pids = new SpaceId[MAX_EXEC_THREADS];
+    for(int i = 0; i < MAX_EXEC_THREADS; i++) {
         table[i] = NULL;    // inicializo la tabla de procesos con NULL.
+        pids[i] = -1;
+    }
 }
 	     		
 //----------------------------------------------------------------------
@@ -81,6 +83,32 @@ ProcessTable::getProcess(SpaceId pid)
     if(pid == -1)
         return NULL;
     return table[pid];
+}
+
+//----------------------------------------------------------------------
+// ProcessTable::getProcessByPhysAddr
+//  Given a physical address, returns the corresponding thread.
+//
+//  pid A process id.
+//  return A thread corresponding to physical address
+//         or NULL if was not founded.
+//----------------------------------------------------------------------
+Thread*
+ProcessTable::getProcessByPhysAddr(int physAddr)
+{
+    Thread* process = NULL;
+    process = getProcess(pids[physAddr]);
+    return process;
+}
+
+void
+ProcessTable::SetPhysAddress(SpaceId pid, int physAddr){
+    pids[physAddr] = pid;
+}
+
+void
+ProcessTable::ClearProcessPhysAddress(int physAddr) {
+    pids[physAddr] = -1;
 }
 
 //----------------------------------------------------------------------

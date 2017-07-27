@@ -12,6 +12,11 @@ class ProcessTable{
     Thread* getProcess(SpaceId pid); // Given a pid, returns the appropiate process.
     void freeSlot(SpaceId pid);		// Delete process from the table.
 
+    Thread* getProcessByPhysAddr(int physAddr); //Given a physical address, returns the appropiate process.
+    void SetPhysAddress(SpaceId pid, int physAddr);
+    void ClearProcessPhysAddress(int physAddr);
+
   private:
     Thread** table;
+    SpaceId* pids;  // Map of physical address to pid.
 };

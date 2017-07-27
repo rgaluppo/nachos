@@ -19,6 +19,7 @@
 #include "utility.h"
 #include "openfile.h"
 
+
 // Definitions helpful for representing a bitmap as an array of integers
 #define BitsInByte 	8
 #define BitsInWord 	32
@@ -43,6 +44,13 @@ class BitMap {
     int Find();            	// Return the # of a clear bit, and as a side
 				// effect, set the bit. 
 				// If no bits are clear, return -1.
+
+#ifdef VM_SWAP
+    int FindFrameForVirtualAddress(int virtualPage); // effect, set the bit.
+            // If no bits are clear, find a page candite to leave the memory
+            //and put it into swap. Then, return his place into the memory.
+#endif
+
     int NumClear();		// Return the number of clear bits
 
     void Print();		// Print contents of bitmap
@@ -59,6 +67,16 @@ class BitMap {
 					//  multiple of the number of bits in
 					//  a word)
     unsigned int *map;			// bit storage
+
+#ifdef VM_SWAP
+    int* physicalToVirtual;	// Map from physical address to virtual address.
+
+    int fifoAlgorithm(); // Return the virtual address of the page candidated to leave memory
+                // using FIFO algorithm.
+
+    int secondChanceAlgorithm(); // Return the virtual address of the page candidated to leave
+                // memory using 'second chance' algorithm.
+#endif
 };
 
 #endif // BITMAP_H

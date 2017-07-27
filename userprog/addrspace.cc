@@ -93,6 +93,11 @@ AddrSpace::costructorForUserProg(OpenFile *executable, int prg_argc, char** prg_
     argc = prg_argc;
     argv = prg_argv;
 
+#ifdef VM
+    swapMemory = new int [numPages];
+#endif
+
+
     executable->ReadAt((char *)&noffH, sizeof(noffH), 0);
     if ((noffH.noffMagic != NOFFMAGIC) &&
         (WordToHost(noffH.noffMagic) == NOFFMAGIC))
@@ -228,9 +233,8 @@ AddrSpace::costructorForSwap(OpenFile *executable, int prg_argc, char** prg_argv
                         // to leave room for the stack
     numPages = divRoundUp(size, PageSize);
     size = numPages * PageSize;
-#if defined(VM_SWAP) || defined(DEMAND_LOADING)
     swapMemory = new int [numPages];
-#endif
+
 
 #ifndef VM
 // check we're not trying to run something too big -.-
@@ -247,7 +251,7 @@ AddrSpace::costructorForSwap(OpenFile *executable, int prg_argc, char** prg_argv
 #ifdef USE_TLB
     #ifdef VM_SWAP
         #ifndef DEMAND_LOADING
-        pageTable[i].physicalPage = coreMap->Find(pageTable[i].virtualPage);
+        pageTable[i].physicalPage = memoryMap->FindFrameForVirtualAddress(pageTable[i].virtualPage);
         fifo->Append(pageTable[i].physicalPage);
         swapMemory[i] = false;
         #endif
@@ -290,8 +294,8 @@ AddrSpace::costructorForSwap(OpenFile *executable, int prg_argc, char** prg_argv
 #endif
 
     sprintf(swapFileName, "swap.%d", pid);
+    fileSystem->Create(swapFileName, size);
     swapFile = fileSystem->Open(swapFileName);
-
 }
 #endif
 //----------------------------------------------------------------------
@@ -336,7 +340,7 @@ AddrSpace::~AddrSpace()
 
     for (unsigned int i=0; i< numPages; i++) {
         if (pageTable[i].physicalPage != -1) {
-            coreMap->Clear(pageTable[i].physicalPage);
+            memoryMap->Clear(pageTable[i].physicalPage);
             head = fifo->Remove();
             if(head != pageTable[i].physicalPage) {
                 fifo->Append(head);
@@ -518,12 +522,13 @@ AddrSpace::UpdateTLB(int position)
     int freeSlot = -1;
     TranslationEntry* page = GetEntryByVAddr(position);
 
-#ifdef VM
+
     bool pageInSwap = swapMemory[position],
-            wasNotLoaded = page->physicalPage == -1 && !pageInSwap; // no esta cargado en memoria
+            wasNotLoaded = page->physicalPage == -1 && !pageInSwap; // no esta cargada en memoria ni en swap
 
+    DEBUG('V',"UpdateTLB: position=%d\t wasNotLoaded=%s\t phys=%d\t pageInSwap=%s\n",
+          position, wasNotLoaded?"true":"false",page->physicalPage, pageInSwap?"true":"false");
     if(wasNotLoaded) {
-
     #ifdef DEMAND_LOADING
         LoadPage(page);
     #endif
@@ -531,16 +536,18 @@ AddrSpace::UpdateTLB(int position)
     #ifdef VM_SWAP
 
         fifo->Append(page->physicalPage);
-    } else if(pageInSwap) {
-        int bitIndex = coreMap->Find(page->virtualPage);
-        page->physicalPage = bitIndex;
+        #endif
+    } else if(pageInSwap) { // si esta cargada en swap
+#ifdef VM_SWAP
 
+        int bitIndex = memoryMap->FindFrameForVirtualAddress(page->virtualPage);
+        page->physicalPage = bitIndex;
         SwapToMem(page);
         fifo->Append(page->physicalPage);
-
-    #endif
-    }
 #endif
+
+    }
+
 
     //Busco un lugar disponible en la TLB.
     for (int i = 0; i < TLBSize; i++){
@@ -560,7 +567,7 @@ AddrSpace::UpdateTLB(int position)
     machine->tlb[freeSlot].virtualPage = page->virtualPage;
     machine->tlb[freeSlot].physicalPage = page->physicalPage;
     machine->tlb[freeSlot].dirty = page->dirty;
-    machine->tlb[freeSlot].use = page->use;			// esta en el tlb
+    machine->tlb[freeSlot].use = page->use;
     machine->tlb[freeSlot].valid = page->valid;
     machine->tlb[freeSlot].readOnly = page->readOnly;
 }
@@ -583,11 +590,12 @@ AddrSpace::LoadPage(TranslationEntry *page)
     DEBUG('W',"LoadPage\n");
 
 #ifdef VM_SWAP
-    freePhysAddr = coreMap->Find(page->virtualPage);
+    freePhysAddr = memoryMap->FindFrameForVirtualAddress(page->virtualPage);
 #else
     freePhysAddr = memoryMap->Find();
 #endif
 
+    DEBUG('W',"freePhysAddr=%d\n", freePhysAddr);
     page->physicalPage = freePhysAddr;
 
     virtualAddr = page->virtualPage * PageSize;
@@ -661,84 +669,53 @@ AddrSpace :: IsDirty(int p)
 }
 
 //----------------------------------------------------------------------
-// AddrSpace::NoSwap
-//  Obtains the page corresponding to a given virtual address.
+// AddrSpace::MemToSwap
+//  Store a page into swap.
 //
-// i A virtual address.
-// return The correspinding page.
+// page A page in swap
 //----------------------------------------------------------------------
 void
-AddrSpace :: NoSwap(int pos)
+AddrSpace::MemToSwap(int virtualAddr, int physicalAddr)
 {
-    pageTable[pos].physicalPage = -1;
-    pageTable[pos].valid = false;
-}
+    DEBUG('G', "AddrSpace::MemToSwap: virtualPage=%d\n", virtualAddr);
 
-//----------------------------------------------------------------------
-// AddrSpace::UpdateTLB2
-//  Obtains the page corresponding to a given virtual address.
-//
-// i A virtual address.
-// return The correspinding page.
-//----------------------------------------------------------------------
-int
-AddrSpace::UpdateTLB2(int p)
-{
+    TranslationEntry *page =  &(pageTable[virtualAddr]);
+
+    swapFile->WriteAt(&(machine->mainMemory[page->physicalPage * PageSize]),
+            PageSize, page->virtualPage * PageSize);
+
+    swapMemory[virtualAddr] = true;
+
+    memoryMap->Clear(page->physicalPage);
+    page->physicalPage = -1;
+    page->valid = false;
+    page->dirty = false;
+
+    pageTable[virtualAddr].physicalPage = -1;
+    pageTable[virtualAddr].valid = false;
+
     for(int i = 0; i < TLBSize; i++)
-        if (machine->tlb[i].physicalPage == p) {
+        if (machine->tlb[i].physicalPage == physicalAddr) {
                 machine->tlb[i].valid = false;
                 break;
         }
 }
 
 //----------------------------------------------------------------------
-// AddrSpace::MemToSwap
-//  Obtains the page corresponding to a given virtual address.
-//
-// i A virtual address.
-// return The correspinding page.
-//----------------------------------------------------------------------
-void
-AddrSpace :: MemToSwap(int vpn)
-{
-    DEBUG('G', "MemToSwap>>>>>>>>\n");
-
-    TranslationEntry *page = GetEntryByVAddr(vpn);
-    int p = page->virtualPage;
-    int i = p*PageSize;
-
-    DEBUG('G', "1Pagina pos = %d .... phys = %d  .... vir = %d ...Valid = %o ... swap = %o \n", p, page->physicalPage, page->virtualPage, page->valid, swapMemory[vpn]);
-    swapFile->WriteAt(&(machine->mainMemory[page->physicalPage * PageSize]),PageSize, i);
-
-    coreMap->Clear(page->physicalPage);
-
-    swapMemory[vpn] = true;
-    page->physicalPage = -1;
-    page->valid = false;
-    page->dirty = false;
-
-    DEBUG('G', "2Pagina pos = %d .... phys = %d  .... vir = %d ...Valid = %o ... swap = %o \n", p, page->physicalPage, page->virtualPage, page->valid, swapMemory[vpn]);
-
-
-    //bzero( &(machine->mainMemory[page->physicalPage*PageSize]), PageSize);
-    DEBUG('G', "<<<< MemtoSwap\n");
-    //modificar el tlb de esa pagina
-}
-
-//----------------------------------------------------------------------
 // AddrSpace::SwapToMem
-//  Obtains the page corresponding to a given virtual address.
+//  Load a page in memory from swap.
 //
-// i A virtual address.
-// return The correspinding page.
+// page A page in swap
 //----------------------------------------------------------------------
 void
-AddrSpace :: SwapToMem(TranslationEntry *page)
+AddrSpace::SwapToMem(TranslationEntry *page)
 {
-    int p = page->virtualPage;
+    DEBUG('G', "AddrSpace::SwapToMem: virtualPage=%d\t physicalPage=%d\n",
+          page->virtualPage, page->physicalPage);
 
-    swapFile->ReadAt(&(machine->mainMemory[page->physicalPage * PageSize]),PageSize, p);
-    swapMemory[p] = false;
-    DEBUG('G', "DENTRO DE VM_SWAP SwapToMem\n");
+    swapFile->ReadAt(&(machine->mainMemory[page->physicalPage * PageSize]),
+            PageSize, page->virtualPage * PageSize);
+
+    swapMemory[page->virtualPage] = false;
 }
 #endif

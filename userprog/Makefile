@@ -639,7 +639,14 @@ bitmap.o: ../userprog/bitmap.cc /usr/include/stdc-predef.h \
  /usr/lib/gcc/x86_64-linux-gnu/4.8/include/stdarg.h \
  /usr/include/x86_64-linux-gnu/bits/stdio_lim.h \
  /usr/include/x86_64-linux-gnu/bits/sys_errlist.h /usr/include/string.h \
- ../filesys/openfile.h
+ ../filesys/openfile.h ../threads/system.h ../threads/utility.h \
+ ../threads/thread.h ../machine/machine.h ../machine/translate.h \
+ ../machine/disk.h ../userprog/addrspace.h ../filesys/filesys.h \
+ ../filesys/openfile.h ../bin/noff.h ../userprog/syscall.h \
+ ../threads/scheduler.h ../threads/list.h ../machine/interrupt.h \
+ ../threads/list.h ../machine/stats.h ../machine/timer.h \
+ ../userprog/bitmap.h ../userprog/synchconsole.h ../machine/console.h \
+ ../threads/synch.h ../userprog/processtable.h ../threads/thread.h
 exception.o: ../userprog/exception.cc /usr/include/stdc-predef.h \
  ../userprog/syscall.h ../threads/copyright.h ../userprog/usertranslate.h \
  ../machine/machine.h ../threads/utility.h ../threads/copyright.h \
