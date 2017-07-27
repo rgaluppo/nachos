@@ -129,18 +129,18 @@ BitMap::Find()
 //----------------------------------------------------------------------
 int
 BitMap::FindFrameForVirtualAddress(int virtualPage) {
-    int freeVAddr = Find();
-    DEBUG('W', "BitMap::FindFrameForVirtualAddress: freeVAddr=%d\n", freeVAddr);
+    int freeAddr = Find();
+    DEBUG('W', "BitMap::FindFrameForVirtualAddress: freeAddr=%d\n", freeAddr);
 
-    if(freeVAddr == -1) {     // Memory full.
-       //freeVAddr = fifoAlgorithm();
-       freeVAddr = secondChanceAlgorithm();
+    if(freeAddr == -1) {     // Memory full.
+       //freeAddr = fifoAlgorithm();
+       freeAddr = secondChanceAlgorithm();
     }
 
-    Mark(freeVAddr);
-    processTable->SetPhysAddress(currentThread->getThreadId(), freeVAddr);
-    physicalToVirtual[freeVAddr] = virtualPage;
-    return freeVAddr;
+    Mark(freeAddr);
+    processTable->SetPhysAddress(currentThread->getThreadId(), freeAddr);
+    physicalToVirtual[freeAddr] = virtualPage;
+    return freeAddr;
 }
 
 
@@ -151,11 +151,11 @@ int
 BitMap::fifoAlgorithm()
 {
     int victim = fifo->Remove(),
-            leavingVAddr = physicalToVirtual[victim];
+            leavingAddr = physicalToVirtual[victim];
 
     Thread *thread = processTable->getProcessByPhysAddr(victim);
 
-    thread->space->MemToSwap(leavingVAddr, victim);
+    thread->space->MemToSwap(leavingAddr, victim);
     return victim;
 }
 
@@ -171,14 +171,14 @@ BitMap::secondChanceAlgorithm()
         Thread *thread;
         int victim = fifo->Remove(),
                 first = victim,
-                leavingVAddr;
+                leavingAddr;
         bool firstRound = false;
 
         for(;;) {
             thread = processTable->getProcessByPhysAddr(victim);
-            leavingVAddr = physicalToVirtual[victim];
-            bool isUsed = thread->space->IsUsed(leavingVAddr);
-            bool isDirty = thread->space->IsDirty(leavingVAddr);
+            leavingAddr = physicalToVirtual[victim];
+            bool isUsed = thread->space->IsUsed(leavingAddr);
+            bool isDirty = thread->space->IsDirty(leavingAddr);
 
             if(first == victim) {
                 firstRound = true;
@@ -194,11 +194,11 @@ BitMap::secondChanceAlgorithm()
                     break;
                 }
             } else if(isUsed && !isDirty) { // used but not dirty
-                    thread->space->SetUse(leavingVAddr, false);
+                    thread->space->SetUse(leavingAddr, false);
                     fifo->Append(victim);
                     victim = fifo->Remove();
             } else { // used and dirty
-                thread->space->SetUse(leavingVAddr, false);
+                thread->space->SetUse(leavingAddr, false);
                 fifo->Append(victim);
                 victim = fifo->Remove();
             }
@@ -206,7 +206,7 @@ BitMap::secondChanceAlgorithm()
 
 
         Clear(victim);
-        thread->space->MemToSwap(leavingVAddr, victim);
+        thread->space->MemToSwap(leavingAddr, victim);
         return victim;
     }
 }

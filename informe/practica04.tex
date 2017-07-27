@@ -6,41 +6,39 @@ Cuando ocurre la primera, se obtiene la dirección de memoria que la originó le
 if (which == SyscallException) {
 	...
 } else {
-	DEBUG('e', "Is not a SyscallException\n");
-    const char *exception = "";
-    switch(which) {
-    	...
-        case PageFaultException:
-        {
-            int failVirtAddr = machine -> ReadRegister(BadVAddrReg);
+  DEBUG('e', "Is not a SyscallException\n");
+  
+  const char *exception = "";
+  switch(which) {
+    ...
+    case PageFaultException:
+    {
+      int failVirtAddr = machine -> ReadRegister(BadVAddrReg);
 
-            DEBUG('v',"Antes de actualizar la TLB: failVAddr=%d\n",
-                    failVirtAddr);
-            currentThread->space->UpdateTLB(failVirtAddr / PageSize);
-            return;
-        }
-        case ReadOnlyException: 
-        exception = "ReadOnlyException";
-        // Solamente notificamos que ocurrio.
-        printf("An exception was triggered: which=%s  type=%d\n",
-                    exception, type);
-        return;    
-        ...
-        
-    	default:
-            printf("Unexpected user mode exception.");
-            ASSERT(false);
+      DEBUG('v',"Antes de actualizar la TLB: failVAddr=%d\n", failVirtAddr);
+      currentThread->space->UpdateTLB(failVirtAddr / PageSize);
+      return;
     }
-    printf("Unexpected exception:\t which=%s  type=%d\n",
-                    exception, type);
-    ASSERT(false);
+    case ReadOnlyException: 
+      exception = "ReadOnlyException";
+   // Solamente notificamos que ocurrio.
+      printf("An exception was triggered: which=%s  type=%d\n",
+             exception, type);
+      return;    
+      ...
+    	
+      default:
+        printf("Unexpected user mode exception.\n");
+        ASSERT(false);
+  }
+  printf("Unexpected exception:\t which=%s  type=%d\n",
+         exception, type);
+  ASSERT(false);
 }
 \end{lstlisting}
 Como mencionamos anteriormente, se modificó la clase \texttt{AddrSpace}
 \begin{lstlisting}[style=C]
 void UpdateTLB(int position);   // update TLB table;
-TranslationEntry* GetEntryByVAddr(int i);  // Getter for an entry 
-   // in a translation table, corresponding to the virtual address i.
 \end{lstlisting}
 Se utiliza para cuando la página a utilizar no se encuentra en el \textbf{TLB}. Se encarga de buscarla en la memoria y guardarla en la \textbf{TLB}.
 \section{Análisis de TLB cambiando la cantidad de entradas}
@@ -94,55 +92,84 @@ private:
 \end{lstlisting}
 Se modificó el método \texttt{AddrSpace::UpdateTLB} para que se verifique el estado de la página. Si ya tiene asignada una dirección física, se continúa con la actualización del \textbf{TLB} como se explicó en \nameref{update_TLB}. En caso contrario, se llama al método \texttt{AddrSpace::LoadPage}, el cual le asigna a la página una posición en el mapa de bits y la carga en memoria. Finalmente, continua la ejecución de \texttt{AddrSpace::UpdateTLB} para actualizar el \textbf{TLB}.
 \section{Implementar la política de paginación FIFO e implementar SWAP}
-\subsection*{Desarrollo de SWAP}
+\subsection*{Desarrollo de SWAP} \label{swap_subsec}
 Con el objetivo de proveer la ilusión de una memoria mucho más grande que la física, cuando se crea el espacio de direcciones para un programa, se creará un archivo que servirá de \textbf{SWAP}.\\
 Además, necesitamos saber qué páginas se encuentran \textit{swappeadas}. Para manejar esto, se crea un arreglo \texttt{swapMemory} de booleanos, donde el \texttt{i-ésimo} elemento indica si la página \texttt{i} está o no \textit{swappeada}.\newpage
 Se agregaron los siguiente miembros a la clase \texttt{AddrSpace}:
 \begin{lstlisting}[style=C]
 private:
-    ...
-    OpenFile *swapFile;     // File for swapping.
-    char swapFileName[8];   // Name of swapping file.
-    int* swapMemory;    // Boolean list that indicates if a page is on SWAP.
+  ...
+  OpenFile *swapFile;     // File for swapping.
+  char swapFileName[8];   // Name of swapping file.
+  int* swapMemory; //Boolean list that indicates if a page is on SWAP.
+    
+// Class constructor with VM_SWAP flag
+  void costructorForSwap(OpenFile *executable, int prg_argc,
+                          char** prg_argv, int pid);
+                          
+  void MemToSwap(int virtualAddr, int physicalAddr);
+  void SwapToMem(TranslationEntry *page);
 \end{lstlisting}
-Finalmente, se creó una estructura para llevar un control de las direcciones físicas ocupadas y con qué direcciones virtuales y procesos están vinculadas. Esta estructura está implementada en la clase \texttt{CoreMap}, y es una modificación de la clase \texttt{BitMap}:
+Finalmente, se debe llevar un control de las direcciones físicas ocupadas y con qué direcciones virtuales y procesos están vinculadas. Para ello, se modificaron dos clases: \texttt{BitMap} y \texttt{ProcessTable}. En la primera se guarda la vinculación entre \texttt{physical address} y \texttt{virtual address}.
 \begin{lstlisting}[style=C]
-class CoreMap {
+class BitMap {
+  ...
   public:
-    CoreMap(int nitems); // Initialize a CoreMap, with "nitems" bits
-                        // initially, all bits are cleared.
-
-    ~CoreMap();    // De-allocate CoreMap
-    
-    void Mark(int which, int pid, int vir);    // Set the "nth" bit
-    void Clear(int which);    // Clear the "nth" bit
-
-    int Find(int virtualPage); //Effect, set the bit. If no bits are
-        // clear, find a page candite to leave the memory and
-        // put it into swap. Then, return his place into the memory.
-    
-    int NumClear();    // Return the number of clear bits
-    void Print();    // Print contents of CoreMap
-    
+// effect, set a bit. If no bits are clear, find a candite to leave
+// the memory and put it into swap. Then, return his position.
+    int FindFrameForVirtualAddress(int virtualPage);
   private:
-    BitMap *memoryMap; // Indicates wich frames are free.
-    int numbit;    // Indicates the amount of elements of memoryMap.
-
-    int* pids;    // List of pids. The pid[i] is the threadId
-                 // corresponding to page i.
-    
-    int* virAdds;    // List of virtual address that was loaded
-                    // into the memory.
-
-
-    int fifoAlgorithm(); // Return the virtual address of the page 
-                        // candidated to leave memory using
-                        // FIFO algorithm.
-
-    int secondChanceAlgorithm(); // Return the virtual address of
-                        // the page candidated to leave memory
-                        // using 'second chance' algorithm.
-};
+// Map from physical address to virtual address.
+    int* physicalToVirtual;
 \end{lstlisting}
+Mientras que en la segunda, se guarda la vinculación entre \texttt{physical address} y \texttt{threadId}.
+\begin{lstlisting}[style=C]
+class ProcessTable {
+  public:
+    ...
+ //Given a physical address, returns the appropiate process.
+    Thread* getProcessByPhysAddr(int physAddr);
+    void SetPhysAddress(SpaceId pid, int physAddr);
+    void ClearProcessPhysAddress(int physAddr);
+  private:
+    ...
+    SpaceId* pids;  // Map of physical address to pid.
+\end{lstlisting}
+Cuando se necesita espacio para cargar una página, en vez de invocar a \texttt{memoryMap->Find()}, se invocará a \texttt{memoryMap->FindFrameForVirtualAddress()}. Su función es la siguiente:
+\begin{enumerate}
+    \item Invoca a \texttt{BitMap::Find()}. Si obtiene un espacio, lo devuelve.
+    \item Si el resultado fue \texttt{-{}1}, entonces la memoria está llena. Por lo tanto, tiene que aplicar una política para obtener un espacio. Cada algoritmo se encarga de liberar un espacio en memoria, enviando a un archivo de \textbf{SWAP}, la página que se eligió como víctima.
+    \item Marca esa dirección como ocupada, invocando a \texttt{BitMap::Mark()}.
+    \item Asocia el \texttt{pid} del proceso actual con la dirección obtenida, invocando a\\ \texttt{ProcessTable::SetPhysAddress}.
+    \item Asocia la dirección virtual dada con la dirección física obtenida, guardándola en el mapa \texttt{physicalToVirtual}.
+    \item Retorna la dirección obtenida.
+\end{enumerate}
 \subsection*{Política de paginación FIFO}
+Para implementar esta política se define en \texttt{system.cc} una cola \texttt{fifo}, la cual se encargará de guardar el orden en que las direcciones físicas van siendo asignadas. Al iniciarse el sistema, se creará dicha cola.\\
+La lógica del algoritmo queda encapsulada en el método privado \texttt{BitMap::fifoAlgorithm}, el cual será invocado por \texttt{BitMap::FindFrameForVirtualAddress}, tal como se explicó en \nameref{swap_subsec}
+\begin{lstlisting}[style=C]
+  private:
+    ...
+// Return the virtual address of the page candidated to leave
+// the memory using FIFO algorithm.
+    int fifoAlgorithm();
+\end{lstlisting}
+
 \section{Mejorar la política de paginación}
+Se desarrollo la política llamada \textit{Segunda oportunidad mejorada}. Para ello, necesitamos información del estado de los bits de las páginas. También necesitamos poder modificar el \texttt{bit 'modificación'}. Se modificó la clase \texttt{AddrSpace} agregando los siguientes métodos:
+\begin{lstlisting}[style=C]
+public:
+  ...
+  bool IsValid (int pos); //  Getter for bit valid of a page.
+  bool IsUsed (int pos);  //  Getter for bit used of a page.
+  void SetUse (int pos, bool b);  //  Setter for bit used a page.
+  bool IsDirty (int pos); //  Getter for bit dirty of a page.  
+\end{lstlisting}
+Finalmente, se encapsula el algoritmo en el método privado \texttt{BitMap::secondChanceAlgorithm}. Como se mencionó en la sección anterior, este método será invocado por\\ \texttt{BitMap::FindFrameForVirtualAddress}, tal como se explicó en \nameref{swap_subsec}.
+\begin{lstlisting}[style=C]
+  private:
+    ...
+// Return the virtual address of the page candidated to leave
+// the memory using 'second chance' algorithm.
+    int secondChanceAlgorithm();
+\end{lstlisting}    
