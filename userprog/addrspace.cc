@@ -365,7 +365,6 @@ AddrSpace::InitArguments() {
     int SP;
     int Argv_addr[argc];
     int Arg_addr;
-    bool writeDone;
 
     if(argc > 0) {
         for(int i = 0; i<argc; i++) {
@@ -375,8 +374,8 @@ AddrSpace::InitArguments() {
             Arg_addr = SP-length;
 
             for(int j = 0; j < length; j++) {
-                writeDone = machine->WriteMem(Arg_addr+j, 1, argv[i][j]);
-                ASSERT(writeDone);
+                if(! machine->WriteMem(Arg_addr+j, 1, argv[i][j]) )
+                    ASSERT(machine->WriteMem(Arg_addr+j, 1, argv[i][j]));
             }
 
             machine->WriteRegister(StackReg, Arg_addr);
@@ -388,8 +387,8 @@ AddrSpace::InitArguments() {
 
         for(int i = argc; i >= 0 ; i--) {
             SP = machine -> ReadRegister(StackReg);
-            writeDone = machine->WriteMem(SP-4, 4, Argv_addr[i]);
-            ASSERT(writeDone);
+            if(! machine->WriteMem(SP-4, 4, Argv_addr[i]) )
+                ASSERT(machine->WriteMem(SP-4, 4, Argv_addr[i]));
             machine->WriteRegister(StackReg, SP-4);
         }
 

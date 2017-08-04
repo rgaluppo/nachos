@@ -13,8 +13,8 @@ main()
     Join(newproc);
 
     // will be execute when finish 'writetest' program.
-    OpenFileId o = Open("writetest.txt");
-    Write("\nGoodbye !!!\n", 13, o);
+    OpenFileId o = Open("../userprog/writetest.txt");
+    Write("\n Goodbye !!!\n", 14, o);
     Close(o);
 
     return 0;
