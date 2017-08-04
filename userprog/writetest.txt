@@ -1,2 +1,4 @@
-This is a test for write file syscall:
+
+ Goodbye !!!
+ for write file syscall:
  Hello world! Put this on file 'writetest.txt'

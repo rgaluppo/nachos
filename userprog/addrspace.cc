@@ -248,7 +248,7 @@ AddrSpace::costructorForSwap(OpenFile *executable, int prg_argc, char** prg_argv
         fifo->Append(pageTable[i].physicalPage);
     #endif
 #else
-        pageTable[i].physicalPage = memoryMap->FindFrameForVirtualAddress(pageTable[i].virtualPage);
+        pageTable[i].physicalPage = memoryMap->Find();
         fifo->Append(pageTable[i].physicalPage);
         pageTable[i].valid = true;
 #endif
@@ -365,6 +365,7 @@ AddrSpace::InitArguments() {
     int SP;
     int Argv_addr[argc];
     int Arg_addr;
+    bool done;
 
     if(argc > 0) {
         for(int i = 0; i<argc; i++) {
@@ -374,7 +375,8 @@ AddrSpace::InitArguments() {
             Arg_addr = SP-length;
 
             for(int j = 0; j < length; j++) {
-                if(! machine->WriteMem(Arg_addr+j, 1, argv[i][j]) )
+                done = machine->WriteMem(Arg_addr+j, 1, argv[i][j]);
+                if(!done)
                     ASSERT(machine->WriteMem(Arg_addr+j, 1, argv[i][j]));
             }
 
@@ -387,7 +389,8 @@ AddrSpace::InitArguments() {
 
         for(int i = argc; i >= 0 ; i--) {
             SP = machine -> ReadRegister(StackReg);
-            if(! machine->WriteMem(SP-4, 4, Argv_addr[i]) )
+            done = machine->WriteMem(SP-4, 4, Argv_addr[i]) ;
+            if(!done)
                 ASSERT(machine->WriteMem(SP-4, 4, Argv_addr[i]));
             machine->WriteRegister(StackReg, SP-4);
         }

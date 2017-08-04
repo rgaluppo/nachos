@@ -11,14 +11,16 @@ void
 readStrFromUsr(int usrAddr, char *outStr) {
     int value;
     int count = 0;
+    bool done = machine->ReadMem(usrAddr, 1, &value);
 
-    if( !machine->ReadMem(usrAddr, 1, &value) )
+    if(!done)
         ASSERT(machine->ReadMem(usrAddr, 1, &value));
 
     while((char) value != '\0'){
         outStr[count] = (char) value;
         count++;
-        if( !machine->ReadMem(usrAddr + count, 1, &value) )
+        done = machine->ReadMem(usrAddr + count, 1, &value);
+        if(!done)
             ASSERT(machine->ReadMem(usrAddr + count, 1, &value));
     }
     outStr[count] = '\0';
@@ -35,9 +37,11 @@ readStrFromUsr(int usrAddr, char *outStr) {
 void
 readBuffFromUsr(int usrAddr, char *outBuff, int byteCount) {
     int value;
+    bool done;
 
     for(int i=0; i < byteCount; i++) {
-        if( !machine->ReadMem(usrAddr + i, 1, &value) )
+        done = machine->ReadMem(usrAddr + i, 1, &value);
+        if(!done)
             ASSERT(machine->ReadMem(usrAddr + i, 1, &value));
         outBuff[i] = (char) value;
     }
@@ -53,8 +57,11 @@ readBuffFromUsr(int usrAddr, char *outBuff, int byteCount) {
 //----------------------------------------------------------------------
 void
 writeStrToUsr(char *str, int usrAddr) {
+    bool done;
+
     while(*str != '\0') {
-        if( !machine->WriteMem(usrAddr, 1, *(str)) )
+        done = machine->WriteMem(usrAddr, 1, *(str));
+        if(!done)
             ASSERT(machine->WriteMem(usrAddr, 1, *(str)));
         usrAddr++;
         str++;
@@ -72,9 +79,11 @@ writeStrToUsr(char *str, int usrAddr) {
 //----------------------------------------------------------------------
 void
 writeBuffToUsr(char *str, int usrAddr, int byteCount) {
+    bool done;
 
     for(int i=0; i < byteCount; i++) {
-        if( !machine->WriteMem(usrAddr + i, 1, (int) str[i]) );
+        done = machine->WriteMem(usrAddr + i, 1, (int) str[i]);
+        if(!done)
             ASSERT(machine->WriteMem(usrAddr + i, 1, (int) str[i]));
     }
 }
@@ -95,21 +104,25 @@ readSpecialStringFromUser(int usrAddr, char *outStr, char divide) {
         size = 1,
         i = 0,
         nextAddr = 0;
+    bool done;
 
-    if( !machine->ReadMem(usrAddr, size, &value) )
+    done = machine->ReadMem(usrAddr, size, &value);
+    if(!done)
         ASSERT(machine->ReadMem(usrAddr, size, &value));
     nextAddr = usrAddr + 1;
 
     // limpio los caracteres separadores
     while( (char) value == divide ) {
-        if( ! machine->ReadMem(nextAddr, size, &value) )
+        done = machine->ReadMem(nextAddr, size, &value);
+        if(!done)
             ASSERT(machine->ReadMem(nextAddr, size, &value));
         nextAddr++;
     }
 
     while( (char)value != '\0' and (char)value != divide) {
         outStr[i] = (char) value;
-        if( !machine->ReadMem(nextAddr, size, &value) )
+        done = machine->ReadMem(nextAddr, size, &value);
+        if(!done)
             ASSERT(machine->ReadMem(nextAddr, size, &value));
         i++;
         nextAddr++;

@@ -13,11 +13,11 @@ void writeBuffToUsr(char *str, int usrAddr, int byteCount);
 \end{lstlisting}
 Para implementarlas, se utilizaron los métodos \texttt{Machine::ReadMemory} y \texttt{Machine::WriteMemory}.
 \begin{lstlisting}[style=C]
-void
-readStrFromUsr(int usrAddr, char *outStr) {
+void readStrFromUsr(int usrAddr, char *outStr) {
     int value, count = 0;
-   
-    if( !machine->ReadMem(usrAddr, 1, &value) )
+    bool done = machine->ReadMem(usrAddr, 1, &value);
+    
+    if(!done)
         ASSERT(machine->ReadMem(usrAddr, 1, &value));
         
     while((char) value != '\0') {
@@ -33,10 +33,12 @@ readStrFromUsr(int usrAddr, char *outStr) {
 void
 readBuffFromUsr(int usrAddr, char *outBuff, int byteCount) {
     int value;
+    bool done;    
 
     for(int i=0; i < byteCount; i++) {
-        if( !machine->ReadMem(usrAddr+i, 1, &value))
-            ASSERT(machine->ReadMem(usrAddr+i, 1, &value));
+        done = machine->ReadMem(usrAddr + i, 1, &value);
+        if(!done)
+            ASSERT(machine->ReadMem(usrAddr + i, 1, &value));
         outBuff[i] = (char) value;
     }
 }
@@ -44,8 +46,11 @@ readBuffFromUsr(int usrAddr, char *outBuff, int byteCount) {
 \begin{lstlisting}[style=C]
 void
 writeStrToUsr(char *str, int usrAddr) {
+    bool done;
+
     while(*str != '\0') {
-        if( !machine->WriteMem(usrAddr, 1, *(str)))
+        done = machine->WriteMem(usrAddr, 1, *(str));
+        if(!done)
             ASSERT(machine->WriteMem(usrAddr, 1, *(str)));
         usrAddr++;
         str++;
@@ -55,8 +60,11 @@ writeStrToUsr(char *str, int usrAddr) {
 \begin{lstlisting}[style=C]
 void
 writeBuffToUsr(char *str, int usrAddr, int byteCount) {
+    bool done;
+
     for(int i=0; i < byteCount; i++) {
-        if( !machine->WriteMem(usrAddr + i, 1, (int) str[i]))
+        done = machine->WriteMem(usrAddr + i, 1, (int) str[i]);
+        if(!done)
             ASSERT(machine->WriteMem(usrAddr + i, 1, (int) str[i]));
     }
 }
